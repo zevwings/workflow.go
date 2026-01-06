@@ -1,0 +1,22 @@
+// 标准测试用例模板
+
+package {包名}
+
+import (
+    "testing"
+)
+
+// Test{FunctionName}With{Condition} 测试 {功能描述}
+func Test{FunctionName}With{Condition}(t *testing.T) {
+    // Arrange: 准备测试数据和环境
+    input := // TODO: 准备输入数据
+    expected := // TODO: 定义预期结果
+
+    // Act: 执行被测试的功能
+    result := {FunctionName}(input)
+
+    // Assert: 验证结果
+    if result != expected {
+        t.Errorf("expected %v, got %v", expected, result)
+    }
+}

@@ -1,0 +1,28 @@
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  gosec:
+    severity: medium
+  govet:
+    check-shadowing: true
+  unused:
+    check-exported: false
+
+linters:
+  enable:
+    - errcheck
+    - gosec
+    - govet
+    - staticcheck
+    - unused
+    - gofmt
+    - goimports
+    - gocritic
+    - revive
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+

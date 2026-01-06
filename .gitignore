@@ -1,0 +1,47 @@
+# Binaries
+bin/
+workflow
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+
+# Config files (optional - 如果不想提交配置文件)
+# config.toml
+# .workflow/
+
+# Logs
+*.log
+
+# Completions
+completions/
+

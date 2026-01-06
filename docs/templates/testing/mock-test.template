@@ -1,0 +1,35 @@
+// Mock测试模板
+
+package {包名}
+
+import (
+    "net/http"
+    "net/http/httptest"
+    "testing"
+)
+
+// Test{APICallName} 测试 {API调用描述}
+func Test{APICallName}(t *testing.T) {
+    // 创建 Mock 服务器
+    mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        // 验证请求
+        if r.Method != "GET" {
+            t.Errorf("expected GET, got %s", r.Method)
+        }
+        if r.URL.Path != "/api/ENDPOINT" {
+            t.Errorf("expected /api/ENDPOINT, got %s", r.URL.Path)
+        }
+
+        // 返回 Mock 响应
+        w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte(`{"result": "success"}`))
+    }))
+    defer mockServer.Close()
+
+    // 执行测试
+    // TODO: 调用被测试的API，使用 mockServer.URL 作为基础URL
+
+    // 验证结果
+    // TODO: 添加断言
+}
