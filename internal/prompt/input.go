@@ -271,7 +271,7 @@ func ValidateLength(minLen, maxLen int) Validator {
 
 // InputBuilder Input 的链式构建器
 type InputBuilder struct {
-	message      string
+	BaseBuilder
 	defaultValue string
 	placeholder  string
 	isPassword   bool
@@ -294,9 +294,9 @@ func Password() *InputBuilder {
 	}
 }
 
-// Prompt 设置提示消息
+// Prompt 设置提示消息（覆盖基类方法以返回正确的类型）
 func (b *InputBuilder) Prompt(message string) *InputBuilder {
-	b.message = message
+	b.BaseBuilder.Prompt(message)
 	return b
 }
 
@@ -322,7 +322,7 @@ func (b *InputBuilder) Validate(validator Validator) *InputBuilder {
 // Run 执行输入并返回结果
 func (b *InputBuilder) Run() (string, error) {
 	if b.isPassword {
-		return inputFunc(b.message, "", "", true, b.validator)
+		return inputFunc(b.GetMessage(), "", "", true, b.validator)
 	}
-	return inputFunc(b.message, b.defaultValue, b.placeholder, false, b.validator)
+	return inputFunc(b.GetMessage(), b.defaultValue, b.placeholder, false, b.validator)
 }

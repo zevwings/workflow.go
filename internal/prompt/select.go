@@ -24,7 +24,7 @@ func selectFunc(message string, options []string, defaultIndex int) (int, error)
 
 // SelectBuilder Select 的链式构建器
 type SelectBuilder struct {
-	message      string
+	BaseBuilder
 	options      []string
 	defaultIndex int
 }
@@ -37,9 +37,9 @@ func Select() *SelectBuilder {
 	}
 }
 
-// Prompt 设置提示消息
+// Prompt 设置提示消息（覆盖基类方法以返回正确的类型）
 func (b *SelectBuilder) Prompt(message string) *SelectBuilder {
-	b.message = message
+	b.BaseBuilder.Prompt(message)
 	return b
 }
 
@@ -57,5 +57,5 @@ func (b *SelectBuilder) Default(index int) *SelectBuilder {
 
 // Run 执行选择并返回结果（返回选中的索引）
 func (b *SelectBuilder) Run() (int, error) {
-	return selectFunc(b.message, b.options, b.defaultIndex)
+	return selectFunc(b.GetMessage(), b.options, b.defaultIndex)
 }

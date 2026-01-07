@@ -23,7 +23,7 @@ func confirmFunc(message string, defaultYes bool) (bool, error) {
 
 // ConfirmBuilder Confirm 的链式构建器
 type ConfirmBuilder struct {
-	message    string
+	BaseBuilder
 	defaultYes bool
 }
 
@@ -35,9 +35,9 @@ func Confirm() *ConfirmBuilder {
 	}
 }
 
-// Prompt 设置提示消息
+// Prompt 设置提示消息（覆盖基类方法以返回正确的类型）
 func (b *ConfirmBuilder) Prompt(message string) *ConfirmBuilder {
-	b.message = message
+	b.BaseBuilder.Prompt(message)
 	return b
 }
 
@@ -49,5 +49,5 @@ func (b *ConfirmBuilder) Default(defaultYes bool) *ConfirmBuilder {
 
 // Run 执行确认并返回结果
 func (b *ConfirmBuilder) Run() (bool, error) {
-	return confirmFunc(b.message, b.defaultYes)
+	return confirmFunc(b.GetMessage(), b.defaultYes)
 }

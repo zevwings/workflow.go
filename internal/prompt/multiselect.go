@@ -24,7 +24,7 @@ func multiselectFunc(message string, options []string, defaultSelected []int) ([
 
 // MultiSelectBuilder MultiSelect 的链式构建器
 type MultiSelectBuilder struct {
-	message         string
+	BaseBuilder
 	options         []string
 	defaultSelected []int
 }
@@ -37,9 +37,9 @@ func MultiSelect() *MultiSelectBuilder {
 	}
 }
 
-// Prompt 设置提示消息
+// Prompt 设置提示消息（覆盖基类方法以返回正确的类型）
 func (b *MultiSelectBuilder) Prompt(message string) *MultiSelectBuilder {
-	b.message = message
+	b.BaseBuilder.Prompt(message)
 	return b
 }
 
@@ -57,5 +57,5 @@ func (b *MultiSelectBuilder) Default(indices []int) *MultiSelectBuilder {
 
 // Run 执行多选并返回结果（返回选中的索引列表）
 func (b *MultiSelectBuilder) Run() ([]int, error) {
-	return multiselectFunc(b.message, b.options, b.defaultSelected)
+	return multiselectFunc(b.GetMessage(), b.options, b.defaultSelected)
 }

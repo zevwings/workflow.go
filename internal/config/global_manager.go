@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/viper"
 )
 
@@ -66,16 +65,7 @@ func (m *GlobalManager) Load() error {
 
 // Save 保存配置到文件
 func (m *GlobalManager) Save(config interface{}) error {
-	data, err := toml.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("序列化配置失败: %w", err)
-	}
-
-	if err := os.WriteFile(m.path, data, 0644); err != nil {
-		return fmt.Errorf("写入配置文件失败: %w", err)
-	}
-
-	return nil
+	return SaveConfigToFile(m.path, config)
 }
 
 // SaveDefault 保存默认配置
@@ -129,6 +119,40 @@ func (m *GlobalManager) GetLLMConfig() *LLMConfig {
 	cfg.Proxy.URL = m.GetString("llm.proxy.url")
 	cfg.Proxy.APIKey = m.GetString("llm.proxy.api_key")
 	cfg.Proxy.Model = m.GetString("llm.proxy.model")
+
+	return cfg
+}
+
+// GetGitHubConfig 获取 GitHub 配置
+//
+// 从 viper 中读取完整的 GitHub 配置。
+//
+// 返回:
+//   - *GitHubConfig: GitHub 配置结构
+func (m *GlobalManager) GetGitHubConfig() *GitHubConfig {
+	cfg := &GitHubConfig{
+		Current: m.GetString("github.current"),
+	}
+
+	// 读取账号列表
+	if accountsVal := m.Get("github.accounts"); accountsVal != nil {
+		if accounts, ok := accountsVal.([]interface{}); ok {
+			for _, acc := range accounts {
+				if accMap, ok := acc.(map[string]interface{}); ok {
+					account := GitHubAccount{}
+					if name, ok := accMap["name"].(string); ok {
+						account.Name = name
+					}
+					if token, ok := accMap["token"].(string); ok {
+						account.Token = token
+					}
+					if account.Name != "" || account.Token != "" {
+						cfg.Accounts = append(cfg.Accounts, account)
+					}
+				}
+			}
+		}
+	}
 
 	return cfg
 }
