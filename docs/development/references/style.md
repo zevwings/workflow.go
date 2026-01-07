@@ -91,7 +91,7 @@ make test
 # 代码示例
 ```go
 // Go 代码示例
-import "github.com/your-org/workflow/internal/lib/util/date"
+import "github.com/zevwings/workflow/internal/lib/util/date"
 
 timestamp := date.FormatFilenameTimestamp()
 ```

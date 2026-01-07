@@ -236,13 +236,12 @@ grep -r "http\.Client" internal/
 - 响应处理和错误处理
 
 **已封装工具**：
-- `internal/lib/http/client.go` - `HttpClient` - 统一的 HTTP 客户端
-- `internal/lib/http/retry.go`（如适用） - HTTP 重试机制
+- `internal/http/client.go` - `HttpClient` - 统一的 HTTP 客户端（内置 go-resty 重试机制）
 
 **检查清单**：
 - [ ] 是否直接使用 `net/http` 而不是 `HttpClient`？
 - [ ] 是否有重复的请求构建逻辑？
-- [ ] 是否可以使用 `HttpRetry` 处理重试？
+- [ ] HTTP 客户端已内置智能重试机制（自动处理 5xx 错误和网络错误）
 
 #### 7. 配置读取模式
 
@@ -356,7 +355,7 @@ grep -r "spinner\|progress" internal/
 **导入顺序规范**：
 1. **标准库导入**：Go 标准库（如 `fmt`、`os`、`net/http`）
 2. **第三方库导入**：外部包（如 `github.com/spf13/cobra`）
-3. **项目内部导入**：项目内部包（如 `github.com/your-org/workflow/internal/lib/config`）
+3. **项目内部导入**：项目内部包（如 `github.com/zevwings/workflow/internal/lib/config`）
 4. **每个分组之间用空行分隔**
 
 **平台特定导入例外**：
@@ -399,8 +398,8 @@ import (
     "github.com/spf13/viper"
 
     // 项目内部导入
-    "github.com/your-org/workflow/internal/lib/util/file"
-    "github.com/your-org/workflow/internal/lib/config"
+    "github.com/zevwings/workflow/internal/lib/util/file"
+    "github.com/zevwings/workflow/internal/lib/config"
 )
 ```
 
@@ -410,7 +409,7 @@ import (
 package config
 
 import (
-    "github.com/your-org/workflow/internal/lib/util/file"  // 项目内部导入应该在最后
+    "github.com/zevwings/workflow/internal/lib/util/file"  // 项目内部导入应该在最后
     "fmt"  // 标准库导入应该在前面
     "github.com/spf13/cobra"  // 第三方库导入
 )
@@ -432,7 +431,7 @@ import (
     "github.com/spf13/cobra"
 
     // 项目内部导入
-    "github.com/your-org/workflow/internal/lib/util/file"
+    "github.com/zevwings/workflow/internal/lib/util/file"
 )
 ```
 
@@ -719,16 +718,15 @@ grep -r 'exec.Command.*"git"' internal/ | grep -v "internal/lib/git/helpers.go"
 
 #### HTTP 客户端工具
 
-**位置**：`internal/lib/http/`
+**位置**：`internal/http/`
 
-- `HttpClient` - 统一的 HTTP 客户端
-- `HttpRetry`（如适用） - HTTP 重试机制
+- `HttpClient` - 统一的 HTTP 客户端（内置 go-resty 重试机制）
 - `HttpResponse`（如适用） - HTTP 响应处理
 
 **检查方法**：
 ```bash
 # 查找直接使用 net/http 的地方
-grep -r "http\.Client\|http\.NewRequest" internal/ | grep -v "internal/lib/http"
+grep -r "http\.Client\|http\.NewRequest" internal/ | grep -v "internal/http"
 ```
 
 #### 日志工具
@@ -1016,7 +1014,7 @@ grep -r "error\|fmt\.Errorf\|errors\." internal/
 - [ ] **日期格式化**：是否可以使用日期格式化函数？
 - [ ] **表格输出**：是否可以使用 `TableBuilder`？
 - [ ] **Git 操作**：是否可以使用 `git/helpers.go` 中的函数？
-- [ ] **HTTP 客户端**：是否可以使用 `HttpClient` 和 `HttpRetry`？
+- [ ] **HTTP 客户端**：是否可以使用 `HttpClient`（已内置智能重试机制）？
 - [ ] **日志**：是否可以使用日志函数？
 - [ ] **对话框**：是否可以使用封装的 Prompt 类型？
 - [ ] **进度指示器**：是否可以使用封装的 Spinner/Progress？
@@ -1086,7 +1084,7 @@ if err != nil {
 **改进方案**：
 ```go
 // 使用已封装的工具函数
-import "github.com/your-org/workflow/internal/lib/git"
+import "github.com/zevwings/workflow/internal/lib/git"
 
 output, err := git.ExecuteCommand("rev-parse", "--abbrev-ref", "HEAD")
 if err != nil {
@@ -1106,7 +1104,7 @@ fmt.Printf("✗ Failed to create branch: %v\n", err)
 **改进方案**：
 ```go
 // 使用封装的输出工具
-import "github.com/your-org/workflow/internal/output"
+import "github.com/zevwings/workflow/internal/output"
 
 output := output.NewOutput(true)
 output.Success("Successfully created branch: %s", branchName)
@@ -1129,7 +1127,7 @@ resp, err := http.DefaultClient.Do(req)
 **改进方案**：
 ```go
 // 使用封装的 HTTP 客户端
-import "github.com/your-org/workflow/internal/lib/http"
+import "github.com/zevwings/workflow/internal/http"
 
 client := http.NewClient()
 resp, err := client.Get(url, http.WithAuthToken(token))
@@ -1149,7 +1147,7 @@ input, err := prompt.Run()
 **改进方案**：
 ```go
 // 使用封装好的输入工具
-import "github.com/your-org/workflow/internal/lib/prompt"
+import "github.com/zevwings/workflow/internal/lib/prompt"
 
 input, err := prompt.Input("Enter branch name")
 ```
@@ -1162,7 +1160,7 @@ input, err := prompt.Input("Enter branch name")
 package config
 
 import (
-    "github.com/your-org/workflow/internal/lib/util/file"  // 项目内部导入应该在最后
+    "github.com/zevwings/workflow/internal/lib/util/file"  // 项目内部导入应该在最后
     "fmt"  // 标准库导入应该在前面
     "github.com/spf13/cobra"  // 第三方库导入
 )
@@ -1182,7 +1180,7 @@ import (
     "github.com/spf13/cobra"
 
     // 项目内部导入
-    "github.com/your-org/workflow/internal/lib/util/file"
+    "github.com/zevwings/workflow/internal/lib/util/file"
 )
 ```
 
@@ -1236,7 +1234,7 @@ import (
 
 - `internal/lib/util/` - 通用工具函数
 - `internal/lib/git/helpers.go` - Git 操作辅助函数
-- `internal/lib/http/` - HTTP 客户端工具
+- `internal/http/` - HTTP 客户端工具
 - `internal/lib/prompt/` - 用户交互工具
 - `internal/lib/output/` - 输出格式化工具
 - `internal/logging/` - 日志工具

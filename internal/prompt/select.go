@@ -1,7 +1,7 @@
 package prompt
 
 import (
-	selectpkg "github.com/your-org/workflow/internal/prompt/select"
+	selectpkg "github.com/zevwings/workflow/internal/prompt/select"
 )
 
 // AskSelect 函数式调用 Select（保持向后兼容）
@@ -59,4 +59,3 @@ func (b *SelectBuilder) Default(index int) *SelectBuilder {
 func (b *SelectBuilder) Run() (int, error) {
 	return selectFunc(b.message, b.options, b.defaultIndex)
 }
-

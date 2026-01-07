@@ -347,8 +347,8 @@ import (
     "github.com/go-resty/resty/v2"
 
     // 项目内部
-    "github.com/your-org/workflow/internal/lib/config"
-    "github.com/your-org/workflow/internal/logging"
+    "github.com/zevwings/workflow/internal/lib/config"
+    "github.com/zevwings/workflow/internal/logging"
 )
 ```
 
@@ -359,11 +359,11 @@ import (
 
 ### 包声明
 
-- **包名**：应该与目录名一致（如 `package http` 在 `internal/lib/http/` 目录中）
+- **包名**：应该与目录名一致（如 `package http` 在 `internal/http/` 目录中）
 - **main 包**：只有 `main.go` 文件使用 `package main`
 
 ```go
-// internal/lib/http/client.go
+// internal/http/client.go
 package http  // ✅ 包名与目录名一致
 
 // cmd/workflow/main.go

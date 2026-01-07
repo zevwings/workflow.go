@@ -5,8 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/your-org/workflow/internal/output"
-	"github.com/your-org/workflow/internal/prompt"
+	"github.com/zevwings/workflow/internal/prompt"
 )
 
 // NewDemoInputCmd 创建一个演示 Input 和 Password 功能的命令
@@ -26,7 +25,7 @@ func NewDemoInputCmd() *cobra.Command {
 }
 
 func runDemoInput(cmd *cobra.Command, args []string) error {
-	out := output.NewOutput(false)
+	out := prompt.NewMessage(false)
 
 	out.Info("欢迎使用 Input 和 Password 功能演示")
 	out.Println("")

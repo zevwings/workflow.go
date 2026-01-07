@@ -1,7 +1,7 @@
 package prompt
 
 import (
-	"github.com/your-org/workflow/internal/prompt/multiselect"
+	"github.com/zevwings/workflow/internal/prompt/multiselect"
 )
 
 // AskMultiSelect 函数式调用 MultiSelect（保持向后兼容）

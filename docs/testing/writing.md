@@ -303,7 +303,7 @@ func TestParsePRResponse(t *testing.T) {
 **使用测试数据工厂**：
 ```go
 // ✅ 使用测试数据工厂生成测试数据
-import "github.com/your-org/workflow/testutils"
+import "github.com/zevwings/workflow/testutils"
 
 func TestWithFactory(t *testing.T) {
     pr := testutils.NewGitHubPR().
@@ -540,7 +540,7 @@ func TestValidator(t *testing.T) {
 ```go
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
 )
 
 func TestExample(t *testing.T) {
@@ -575,7 +575,7 @@ func TestExample(t *testing.T) {
 ```go
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
 )
 
 func TestExample(t *testing.T) {
@@ -682,7 +682,7 @@ func TestBasicIsolation(t *testing.T) {
 
 **CLI 测试环境（testutils）**：
 ```go
-import "github.com/your-org/workflow/testutils"
+import "github.com/zevwings/workflow/testutils"
 
 func TestCLICommand(t *testing.T) {
     env := testutils.SetupTestEnv(t)

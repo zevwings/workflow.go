@@ -372,7 +372,7 @@ type PaginationArgs struct {
 使用嵌入结构体复用参数组：
 
 ```go
-import "github.com/your-org/workflow/internal/cli/args"
+import "github.com/zevwings/workflow/internal/cli/args"
 
 type ListCommand struct {
 	args.PaginationArgs // 嵌入参数组

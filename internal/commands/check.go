@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/your-org/workflow/internal/lib/config"
-	"github.com/your-org/workflow/internal/lib/http"
-	"github.com/your-org/workflow/internal/output"
+	"github.com/zevwings/workflow/internal/config"
+	"github.com/zevwings/workflow/internal/http"
+	"github.com/zevwings/workflow/internal/prompt"
 )
 
 // NewCheckCmd 创建 check 命令
@@ -27,11 +27,11 @@ func NewCheckCmd() *cobra.Command {
 }
 
 func runCheck(cmd *cobra.Command, args []string) error {
-	out := output.NewOutput(false)
+	out := prompt.NewMessage(false)
 	out.Info("开始环境检查...")
 	out.Println("")
 
-	table := output.NewTable([]string{"检查项", "状态", "说明"})
+	table := prompt.NewTable([]string{"检查项", "状态", "说明"})
 
 	// 1. 检查 Git
 	gitOK := checkGit(out)
@@ -78,7 +78,7 @@ func runCheck(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func checkGit(out *output.Output) bool {
+func checkGit(out *prompt.Message) bool {
 	cmd := exec.Command("git", "version")
 	if err := cmd.Run(); err != nil {
 		return false
@@ -86,7 +86,7 @@ func checkGit(out *output.Output) bool {
 	return true
 }
 
-func checkGitRepo(out *output.Output) bool {
+func checkGitRepo(out *prompt.Message) bool {
 	cmd := exec.Command("git", "rev-parse", "--git-dir")
 	if err := cmd.Run(); err != nil {
 		return false
@@ -94,8 +94,8 @@ func checkGitRepo(out *output.Output) bool {
 	return true
 }
 
-func checkConfig(out *output.Output) bool {
-	manager, err := config.NewManager()
+func checkConfig(out *prompt.Message) bool {
+	manager, err := config.NewGlobalManager()
 	if err != nil {
 		return false
 	}
@@ -107,7 +107,7 @@ func checkConfig(out *output.Output) bool {
 	return true
 }
 
-func checkNetwork(out *output.Output) bool {
+func checkNetwork(out *prompt.Message) bool {
 	client := http.NewClient()
 
 	// 检查 GitHub 连接（使用超时上下文）

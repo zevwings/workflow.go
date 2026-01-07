@@ -62,7 +62,7 @@
 使用配置验证函数进行配置验证：
 
 ```go
-import "github.com/your-org/workflow/internal/commands/config"
+import "github.com/zevwings/workflow/internal/commands/config"
 
 // 验证配置
 err := config.Validate(nil, false, false)
@@ -193,7 +193,7 @@ err = ValidationError{
 使用 `MigrationHistory` 管理迁移历史：
 
 ```go
-import "github.com/your-org/workflow/internal/commands/migrate"
+import "github.com/zevwings/workflow/internal/commands/migrate"
 
 // 检查是否已迁移
 hasMigrated, err := migrate.HasMigrated("v1.1.0")

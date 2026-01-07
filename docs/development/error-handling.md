@@ -326,7 +326,7 @@ underlyingErr := errors.Unwrap(err)
 ```go
 import (
     "fmt"
-    "github.com/your-org/workflow/internal/logging"
+    "github.com/zevwings/workflow/internal/logging"
 )
 
 // 命令层：提供友好的错误提示

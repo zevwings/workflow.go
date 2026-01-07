@@ -33,7 +33,7 @@
 ```go
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
 )
 
 func TestWithPaths(t *testing.T) {
@@ -105,7 +105,7 @@ func TestCrossPlatform(t *testing.T) {
 ```go
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
 )
 
 func TestLoadFixture(t *testing.T) {
@@ -165,7 +165,7 @@ testdata/
 ```go
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
 )
 
 func TestCLICommand(t *testing.T) {

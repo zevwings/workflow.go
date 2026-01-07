@@ -47,7 +47,7 @@
 Commands 层使用 `output` 包，直接输出到控制台，用户可见：
 
 ```go
-import "github.com/your-org/workflow/internal/output"
+import "github.com/zevwings/workflow/internal/output"
 
 out := output.NewOutput(false)
 
@@ -72,7 +72,7 @@ out.Debug("Debug information: %s", data)
 Lib 层使用 `logging` 包，默认输出到日志文件，不输出到控制台：
 
 ```go
-import "github.com/your-org/workflow/internal/logging"
+import "github.com/zevwings/workflow/internal/logging"
 
 // 调试信息（输出到日志文件）
 logging.Debugf("Processing data: %s", data)
@@ -138,8 +138,8 @@ Lib 层的 `trace_*!` 日志默认输出到日志文件：
 
 ```go
 import (
-    "github.com/your-org/workflow/internal/logging"
-    "github.com/your-org/workflow/internal/lib/config"
+    "github.com/zevwings/workflow/internal/logging"
+    "github.com/zevwings/workflow/internal/lib/config"
 )
 
 func main() error {
@@ -169,7 +169,7 @@ func main() error {
 ### 使用 `MaskSensitiveValue` 函数
 
 ```go
-import "github.com/your-org/workflow/internal/lib/util"
+import "github.com/zevwings/workflow/internal/lib/util"
 
 // ❌ 不安全
 logging.Infof("API token: %s", token)
@@ -181,7 +181,7 @@ logging.Infof("API token: %s", util.MaskSensitiveValue(token))
 ### 使用敏感值包装器
 
 ```go
-import "github.com/your-org/workflow/internal/lib/util"
+import "github.com/zevwings/workflow/internal/lib/util"
 
 // ❌ 不安全
 out.Info("API token: %s", token)
@@ -246,7 +246,7 @@ logging.Infof("Downloading")
 
 ```go
 // ✅ 好的做法：过滤敏感信息
-import "github.com/your-org/workflow/internal/lib/util"
+import "github.com/zevwings/workflow/internal/lib/util"
 logging.Infof("API token: %s", util.MaskSensitiveValue(token))
 logging.Infof("User: %s", util.MaskSensitiveValue(user))
 

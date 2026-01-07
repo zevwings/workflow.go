@@ -1,7 +1,7 @@
 package prompt
 
 import (
-	"github.com/your-org/workflow/internal/prompt/confirm"
+	"github.com/zevwings/workflow/internal/prompt/confirm"
 )
 
 // AskConfirm 函数式调用 Confirm（保持向后兼容）
@@ -51,4 +51,3 @@ func (b *ConfirmBuilder) Default(defaultYes bool) *ConfirmBuilder {
 func (b *ConfirmBuilder) Run() (bool, error) {
 	return confirmFunc(b.message, b.defaultYes)
 }
-

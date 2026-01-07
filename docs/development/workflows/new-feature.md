@@ -154,7 +154,7 @@ package commands
 
 import (
     "github.com/spf13/cobra"
-    "github.com/your-org/workflow/internal/lib/mymodule"
+    "github.com/zevwings/workflow/internal/lib/mymodule"
 )
 
 // MyCommand 新功能命令
@@ -210,7 +210,7 @@ package cli
 
 import (
     "github.com/spf13/cobra"
-    "github.com/your-org/workflow/internal/commands"
+    "github.com/zevwings/workflow/internal/commands"
 )
 
 // NewRootCommand 创建根命令

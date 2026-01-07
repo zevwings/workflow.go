@@ -5,7 +5,7 @@ BINARY_NAME=workflow
 VERSION?=0.1.0
 BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 GIT_COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-LDFLAGS=-ldflags "-X github.com/your-org/workflow/internal/cli.version=$(VERSION) -X github.com/your-org/workflow/internal/cli.buildDate=$(BUILD_DATE) -X github.com/your-org/workflow/internal/cli.gitCommit=$(GIT_COMMIT) -s -w"
+LDFLAGS=-ldflags "-X github.com/zevwings/workflow/internal/cli.version=$(VERSION) -X github.com/zevwings/workflow/internal/cli.buildDate=$(BUILD_DATE) -X github.com/zevwings/workflow/internal/cli.gitCommit=$(GIT_COMMIT) -s -w"
 
 # 默认目标
 .DEFAULT_GOAL := help

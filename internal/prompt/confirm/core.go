@@ -223,4 +223,3 @@ func confirmFallback(message string, defaultYes bool, config Config) (bool, erro
 	fmt.Print("\033[0m")    // 重置所有 ANSI 格式
 	return defaultYes, nil
 }
-

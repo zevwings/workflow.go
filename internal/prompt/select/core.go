@@ -222,4 +222,3 @@ func selectFallback(message string, options []string, defaultIndex int, config C
 
 	return input - 1, nil
 }
-

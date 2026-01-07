@@ -388,7 +388,7 @@ func NewFeature() error {
 ### 基本使用
 
 ```go
-import "github.com/your-org/workflow/internal/lib/module"
+import "github.com/zevwings/workflow/internal/lib/module"
 
 // 基本使用示例
 result, err := module.Method()
@@ -910,7 +910,7 @@ make check-docs
 
 **基本用法**：
 ```go
-import "github.com/your-org/workflow/internal/lib/util/date"
+import "github.com/zevwings/workflow/internal/lib/util/date"
 
 // 生成"最后更新"时间戳（格式：YYYY-MM-DD）
 timestamp := date.FormatLastUpdated()
@@ -923,7 +923,7 @@ timestamp := date.FormatLastUpdated()
 
 ```go
 import (
-    "github.com/your-org/workflow/internal/lib/util/date"
+    "github.com/zevwings/workflow/internal/lib/util/date"
     "time"
 )
 

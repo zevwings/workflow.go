@@ -82,6 +82,7 @@
 | | [依赖管理规范](./references/dependency-management.md) | 添加依赖、依赖更新、安全漏洞处理 |
 | | [性能优化规范](./references/performance.md) | 性能分析、优化策略 |
 | | [开发工具规范](./references/development-tools.md) | 开发工具使用指南 |
+| | [Embed 文件使用指南](./references/embed-files.md) | Go embed 功能使用指南 |
 | | [发布前检查清单](./references/pre-release-checklist.md) | 发布前的检查清单 |
 | | [定期检查机制](./references/periodic-review.md) | 定期检查计划和检查记录 |
 | | [快速参考指南](./references/quick-reference.md) | 快速查找命令和清单 |

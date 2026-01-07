@@ -5,8 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/your-org/workflow/internal/prompt"
-	"github.com/your-org/workflow/internal/output"
+	"github.com/zevwings/workflow/internal/prompt"
 )
 
 // NewDemoMultiSelectCmd 创建一个演示 MultiSelect 功能的命令
@@ -27,7 +26,7 @@ func NewDemoMultiSelectCmd() *cobra.Command {
 }
 
 func runDemoMultiSelect(cmd *cobra.Command, args []string) error {
-	out := output.NewOutput(false)
+	out := prompt.NewMessage(false)
 
 	out.Info("欢迎使用 MultiSelect 功能演示")
 	out.Println("")

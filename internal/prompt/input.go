@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/your-org/workflow/internal/prompt/input"
+	"github.com/zevwings/workflow/internal/prompt/input"
 )
 
 // Validator 验证函数类型（重新导出，保持向后兼容）

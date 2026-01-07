@@ -4,8 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/your-org/workflow/internal/prompt"
-	"github.com/your-org/workflow/internal/output"
+	"github.com/zevwings/workflow/internal/prompt"
 )
 
 // NewDemoSelectCmd 创建一个演示 Select 功能的命令
@@ -26,7 +25,7 @@ func NewDemoSelectCmd() *cobra.Command {
 }
 
 func runDemoSelect(cmd *cobra.Command, args []string) error {
-	out := output.NewOutput(false)
+	out := prompt.NewMessage(false)
 
 	out.Info("欢迎使用 Select 功能演示")
 	out.Println("")

@@ -10,12 +10,15 @@ import (
 // Theme 表示交互式 UI 的主题配置（颜色、前缀、样式等）
 type Theme struct {
 	// 基础样式（使用 lipgloss.Style）
-	InfoStyle   lipgloss.Style
-	WarnStyle   lipgloss.Style
-	ErrorStyle  lipgloss.Style
-	PromptStyle lipgloss.Style
-	AnswerStyle lipgloss.Style
-	HintStyle   lipgloss.Style // 提示信息样式（如操作说明）
+	InfoStyle    lipgloss.Style
+	SuccessStyle lipgloss.Style // 成功信息样式
+	WarnStyle    lipgloss.Style
+	ErrorStyle   lipgloss.Style
+	DebugStyle   lipgloss.Style // 调试信息样式
+	PromptStyle  lipgloss.Style
+	AnswerStyle  lipgloss.Style
+	HintStyle    lipgloss.Style // 提示信息样式（如操作说明）
+	BorderStyle  lipgloss.Style // 表格边框样式
 
 	// 前缀符号
 	PrefixInfo  string // e.g. "INFO"
@@ -36,12 +39,18 @@ var (
 		InfoStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("51")). // HiCyan
 			Bold(false),
+		SuccessStyle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("46")). // HiGreen
+			Bold(false),
 		WarnStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("226")). // HiYellow
 			Bold(false),
 		ErrorStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("196")). // HiRed
 			Bold(true),
+		DebugStyle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("129")). // Magenta
+			Bold(false),
 		PromptStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("51")). // HiCyan
 			Bold(false),
@@ -50,6 +59,9 @@ var (
 			Bold(false),
 		HintStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("240")). // HiBlack (gray)
+			Bold(false),
+		BorderStyle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("240")). // HiBlack (gray) - 表格边框颜色
 			Bold(false),
 
 		PrefixInfo:  "",

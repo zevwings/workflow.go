@@ -165,7 +165,7 @@ test/                              # 集成测试（可选）
 ```go
 // 源代码文件 → 测试文件
 internal/lib/config/manager.go          → internal/lib/config/manager_test.go
-internal/lib/http/client.go             → internal/lib/http/client_test.go
+internal/http/client.go                 → internal/http/client_test.go
 internal/commands/check.go              → internal/commands/check_test.go
 internal/cli/root.go                    → internal/cli/root_test.go
 ```
@@ -247,7 +247,7 @@ package config
 
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
     "github.com/stretchr/testify/assert"
 )
 
@@ -270,7 +270,7 @@ package http
 
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
     "github.com/stretchr/testify/assert"
 )
 
@@ -294,7 +294,7 @@ package pr
 
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
     "github.com/stretchr/testify/assert"
 )
 
@@ -319,10 +319,10 @@ func TestParsePR(t *testing.T) {
 
 ```go
 // 测试辅助函数
-import "github.com/your-org/workflow/testutils"
+import "github.com/zevwings/workflow/testutils"
 
 // 或使用内部包
-import "github.com/your-org/workflow/internal/testutils"
+import "github.com/zevwings/workflow/internal/testutils"
 ```
 
 ---
@@ -374,7 +374,7 @@ package http
 
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
 )
 
 func TestParsePRResponse(t *testing.T) {

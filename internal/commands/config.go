@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/your-org/workflow/internal/lib/config"
-	"github.com/your-org/workflow/internal/output"
+	"github.com/zevwings/workflow/internal/config"
+	"github.com/zevwings/workflow/internal/prompt"
 )
 
 // NewConfigCmd 创建 config 命令
@@ -31,9 +31,9 @@ func newConfigShowCmd() *cobra.Command {
 		Short: "查看当前配置",
 		Long:  `显示当前 Workflow CLI 配置文件的内容。`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out := output.NewOutput(false)
+			out := prompt.NewMessage(false)
 
-			manager, err := config.NewManager()
+			manager, err := config.NewGlobalManager()
 			if err != nil {
 				return fmt.Errorf("创建配置管理器失败: %w", err)
 			}
@@ -75,9 +75,9 @@ func newConfigValidateCmd() *cobra.Command {
 		Long:  `验证配置文件格式和内容是否正确。`,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			out := output.NewOutput(false)
+			out := prompt.NewMessage(false)
 
-			manager, err := config.NewManager()
+			manager, err := config.NewGlobalManager()
 			if err != nil {
 				return fmt.Errorf("创建配置管理器失败: %w", err)
 			}

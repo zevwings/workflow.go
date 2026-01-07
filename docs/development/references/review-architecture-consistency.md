@@ -379,7 +379,7 @@ grep -r "^func [A-Z]\|^type [A-Z]\|^const [A-Z]\|^var [A-Z]" internal/lib/$MODUL
 
 ```bash
 # 查找 import 语句（排除项目内部导入）
-grep -r "^import" internal/lib/$MODULE/ | grep -v "github.com/your-org/workflow"
+grep -r "^import" internal/lib/$MODULE/ | grep -v "github.com/zevwings/workflow"
 ```
 
 #### 步骤 2：对比文档中的依赖关系图
@@ -635,7 +635,7 @@ grep -r "^func [A-Z]\|^type [A-Z]\|^const [A-Z]\|^var [A-Z]" internal/lib/$MODUL
 
 ```bash
 # 查找 import 语句（排除项目内部导入）
-grep -r "^import" internal/lib/$MODULE/ | grep -v "github.com/your-org/workflow"
+grep -r "^import" internal/lib/$MODULE/ | grep -v "github.com/zevwings/workflow"
 ```
 
 ---

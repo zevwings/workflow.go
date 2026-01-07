@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/your-org/workflow/internal/commands"
-	"github.com/your-org/workflow/internal/lib/config"
-	"github.com/your-org/workflow/internal/logging"
+	"github.com/zevwings/workflow/internal/commands"
+	"github.com/zevwings/workflow/internal/config"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 var (
@@ -34,7 +34,7 @@ func Execute() error {
 // initLogging 初始化日志系统
 func initLogging() {
 	// 尝试加载配置以获取日志级别
-	manager, err := config.NewManager()
+	manager, err := config.NewGlobalManager()
 	if err != nil {
 		// 如果配置管理器创建失败，使用默认设置
 		logging.Init("info", "text", nil)
@@ -64,12 +64,13 @@ func init() {
 	rootCmd.AddCommand(commands.NewVersionCmd(version, buildDate, gitCommit))
 	rootCmd.AddCommand(commands.NewConfigCmd())
 	rootCmd.AddCommand(commands.NewCheckCmd())
-	rootCmd.AddCommand(commands.NewDemoHuhCmd())
 	// 添加分离的演示命令
 	rootCmd.AddCommand(commands.NewDemoInputCmd())
 	rootCmd.AddCommand(commands.NewDemoConfirmCmd())
 	rootCmd.AddCommand(commands.NewDemoSelectCmd())
 	rootCmd.AddCommand(commands.NewDemoMultiSelectCmd())
+	rootCmd.AddCommand(commands.NewDemoTableCmd())
+	rootCmd.AddCommand(commands.NewDemoMessageCmd())
 
 	// 设置版本模板
 	rootCmd.SetVersionTemplate(fmt.Sprintf("workflow version %s\nBuild Date: %s\nGit Commit: %s\n", version, buildDate, gitCommit))

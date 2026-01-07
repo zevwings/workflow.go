@@ -565,7 +565,7 @@ import (
     "github.com/spf13/cobra"
 
     // 项目内部
-    "github.com/your-org/workflow/internal/lib/config"
+    "github.com/zevwings/workflow/internal/lib/config"
 )
 ```
 
@@ -575,7 +575,7 @@ import (
 package config
 
 import (
-    "github.com/your-org/workflow/internal/lib/config"  // 应该在最后
+    "github.com/zevwings/workflow/internal/lib/config"  // 应该在最后
     "fmt"  // 应该在前面
 )
 ```
@@ -583,7 +583,7 @@ import (
 **导入顺序规范**：
 1. 标准库导入（`fmt`, `os`, `path/filepath` 等）
 2. 第三方库导入（按字母顺序）
-3. 项目内部导入（`github.com/your-org/workflow/...`）
+3. 项目内部导入（`github.com/zevwings/workflow/...`）
 
 **平台特定导入**：
 - 使用构建标签 `//go:build` 标记平台特定代码

@@ -366,7 +366,7 @@ workflow.go/
 
 ```go
 // go.mod
-module github.com/your-org/workflow
+module github.com/zevwings/workflow
 
 go 1.21
 
@@ -769,7 +769,7 @@ func (m *Manager) Save(config interface{}) error {
 ### 3. HTTP 客户端封装
 
 ```go
-// internal/lib/http/client.go
+// internal/http/client.go
 package http
 
 import (

@@ -82,7 +82,7 @@ package main
 
 import (
     "os"
-    "github.com/your-org/workflow/internal/cli"
+    "github.com/zevwings/workflow/internal/cli"
 )
 
 func main() {
@@ -162,7 +162,7 @@ cmd/ → internal/cli → internal/commands → internal/lib
 package commands
 
 import (
-    "github.com/your-org/workflow/internal/lib/config"  // ✅ 命令层依赖库层
+    "github.com/zevwings/workflow/internal/lib/config"  // ✅ 命令层依赖库层
 )
 
 // ❌ 不好的依赖方向
@@ -170,7 +170,7 @@ import (
 package config
 
 import (
-    "github.com/your-org/workflow/internal/commands"  // ❌ 库层不能依赖命令层
+    "github.com/zevwings/workflow/internal/commands"  // ❌ 库层不能依赖命令层
 )
 ```
 
@@ -355,7 +355,7 @@ package util_test
 
 import (
     "testing"
-    "github.com/your-org/workflow/internal/lib/util"
+    "github.com/zevwings/workflow/internal/lib/util"
 )
 
 func TestMacOSSpecificFeature(t *testing.T) {

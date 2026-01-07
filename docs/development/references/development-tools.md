@@ -276,7 +276,7 @@ issues:
 项目的 Go 版本要求在 `go.mod` 文件中指定：
 
 ```go
-module github.com/your-org/workflow
+module github.com/zevwings/workflow
 
 go 1.21
 ```

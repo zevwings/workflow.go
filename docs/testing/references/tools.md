@@ -312,7 +312,7 @@ func Test2(t *testing.T) {
 ```go
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
 )
 
 func TestCLICommand(t *testing.T) {
@@ -348,7 +348,7 @@ func TestCLICommand(t *testing.T) {
 ```go
 import (
     "testing"
-    "github.com/your-org/workflow/testutils"
+    "github.com/zevwings/workflow/testutils"
 )
 
 func TestCLICommand(t *testing.T) {

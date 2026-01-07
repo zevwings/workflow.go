@@ -77,7 +77,7 @@ if token == "" {
 **使用 `MaskSensitiveValue` 函数**：
 
 ```go
-import "github.com/your-org/workflow/internal/lib/util"
+import "github.com/zevwings/workflow/internal/lib/util"
 
 // ❌ 不安全：直接输出敏感信息
 logging.Infof("API token: %s", token)
@@ -89,7 +89,7 @@ logging.Infof("API token: %s", util.MaskSensitiveValue(token))
 **使用敏感值包装**：
 
 ```go
-import "github.com/your-org/workflow/internal/lib/util"
+import "github.com/zevwings/workflow/internal/lib/util"
 
 // ❌ 不安全：直接输出敏感信息
 out.Info("API token: %s", token)
@@ -129,7 +129,7 @@ out.Info("API token: %s", maskedToken)
 **使用 `Input` 的验证器**：
 
 ```go
-import "github.com/your-org/workflow/internal/lib/prompt"
+import "github.com/zevwings/workflow/internal/lib/prompt"
 
 // ✅ 正确：使用验证器验证输入
 input, err := prompt.Input("Enter JIRA ID", prompt.WithValidator(func(s string) error {

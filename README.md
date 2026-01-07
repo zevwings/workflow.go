@@ -19,7 +19,7 @@ Workflow CLI 是一个功能强大的 Git 工作流自动化工具，支持 PR �
 
 ```bash
 # 克隆仓库
-git clone https://github.com/your-org/workflow.git
+git clone https://github.com/zevwings/workflow.git
 cd workflow
 
 # 构建

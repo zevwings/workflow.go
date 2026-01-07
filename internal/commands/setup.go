@@ -4,9 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/your-org/workflow/internal/lib/config"
-	"github.com/your-org/workflow/internal/output"
-	"github.com/your-org/workflow/internal/prompt"
+	"github.com/zevwings/workflow/internal/config"
+	"github.com/zevwings/workflow/internal/prompt"
 )
 
 // NewSetupCmd 创建 setup 命令
@@ -23,19 +22,19 @@ func NewSetupCmd() *cobra.Command {
 }
 
 func runSetup(cmd *cobra.Command, args []string) error {
-	output := output.NewOutput(false)
+	msg := prompt.NewMessage(false)
 
-	output.Info("欢迎使用 Workflow CLI 配置向导")
-	output.Println("")
+	msg.Info("欢迎使用 Workflow CLI 配置向导")
+	msg.Println("")
 
 	// 创建配置管理器
-	manager, err := config.NewManager()
+	manager, err := config.NewGlobalManager()
 	if err != nil {
 		return fmt.Errorf("创建配置管理器失败: %w", err)
 	}
 
 	// 尝试加载现有配置
-	var cfg config.Config
+	var cfg config.GlobalConfig
 	if err := manager.Load(); err == nil {
 		// 如果配置文件存在，询问是否更新
 		update, err := prompt.AskConfirm("检测到现有配置文件，是否要更新？", false)
@@ -43,11 +42,11 @@ func runSetup(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		if !update {
-			output.Info("已取消配置更新")
+			msg.Info("已取消配置更新")
 			return nil
 		}
 		// 加载现有配置
-		cfg = config.Config{
+		cfg = config.GlobalConfig{
 			Log: config.LogConfig{
 				Level: manager.GetString("log.level"),
 			},
@@ -55,7 +54,7 @@ func runSetup(cmd *cobra.Command, args []string) error {
 	}
 
 	// 收集用户信息
-	output.Info("配置用户信息")
+	msg.Info("配置用户信息")
 
 	name, err := prompt.AskInput("请输入您的姓名", cfg.User.Name)
 	if err != nil {
@@ -125,8 +124,8 @@ func runSetup(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
 
-	output.Success("配置已保存到: %s", manager.GetConfigPath())
-	output.Info("您可以使用 'workflow config show' 查看配置")
+	msg.Success("配置已保存到: %s", manager.GetConfigPath())
+	msg.Info("您可以使用 'workflow config show' 查看配置")
 
 	return nil
 }
