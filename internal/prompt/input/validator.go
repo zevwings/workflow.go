@@ -2,6 +2,8 @@ package input
 
 import (
 	"fmt"
+	"net/mail"
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -25,12 +27,53 @@ func ValidateRegex(pattern string, errorMsg string) Validator {
 
 // ValidateEmail 验证邮箱格式
 func ValidateEmail() Validator {
-	return ValidateRegex(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`, "请输入有效的邮箱地址")
+	return func(value string) error {
+		if value == "" {
+			return fmt.Errorf("请输入有效的邮箱地址")
+		}
+		addr, err := mail.ParseAddress(value)
+		if err != nil {
+			return fmt.Errorf("请输入有效的邮箱地址")
+		}
+		// 确保邮箱地址包含 @ 符号
+		email := addr.Address
+		parts := strings.Split(email, "@")
+		if len(parts) != 2 {
+			return fmt.Errorf("请输入有效的邮箱地址")
+		}
+		// 确保域名部分包含至少一个点（顶级域名）
+		domain := parts[1]
+		if !strings.Contains(domain, ".") {
+			return fmt.Errorf("请输入有效的邮箱地址")
+		}
+		return nil
+	}
 }
 
 // ValidateURL 验证 URL 格式
 func ValidateURL() Validator {
-	return ValidateRegex(`^https?://[^\s/$.?#].[^\s]*$`, "请输入有效的 URL 地址")
+	return func(value string) error {
+		if value == "" {
+			return fmt.Errorf("请输入有效的 URL 地址")
+		}
+		// 检查是否包含空格（URL 不应该包含未编码的空格）
+		if strings.Contains(value, " ") {
+			return fmt.Errorf("请输入有效的 URL 地址")
+		}
+		parsedURL, err := url.Parse(value)
+		if err != nil {
+			return fmt.Errorf("请输入有效的 URL 地址")
+		}
+		// 确保 URL 有有效的 scheme（http 或 https）
+		if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+			return fmt.Errorf("请输入有效的 URL 地址")
+		}
+		// 确保 URL 有有效的 host
+		if parsedURL.Host == "" {
+			return fmt.Errorf("请输入有效的 URL 地址")
+		}
+		return nil
+	}
 }
 
 // ValidateRequired 验证输入不能为空
