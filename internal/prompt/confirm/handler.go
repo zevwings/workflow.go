@@ -61,9 +61,9 @@ func (h *ConfirmHandler) FormatPromptText(message string) string {
 	promptMsg := h.config.FormatPrompt(message)
 	var hintText string
 	if h.defaultYes {
-		hintText = "【Y/n】"
+		hintText = "[Y/n]"
 	} else {
-		hintText = "【y/N】"
+		hintText = "[y/N]"
 	}
 
 	// 如果配置了 FormatHint，使用它来格式化提示文本

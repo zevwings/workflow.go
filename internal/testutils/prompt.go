@@ -376,6 +376,29 @@ func RunPromptTest(t *testing.T, input string, fn func() (interface{}, error)) (
 	return NewPromptTest().WithInput(input).Run(t, fn)
 }
 
+// NewDefaultPromptConfig 创建默认的 PromptConfig（用于测试）
+// 返回一个简单的配置，所有格式化函数都是恒等函数（直接返回输入）
+//
+// 使用示例：
+//
+//	cfg := testutils.NewDefaultPromptConfig()
+//	result, err := confirm.Confirm("消息", false, cfg, terminal)
+func NewDefaultPromptConfig() struct {
+	FormatPrompt func(message string) string
+	FormatAnswer func(value string) string
+	FormatHint   func(message string) string
+} {
+	return struct {
+		FormatPrompt func(message string) string
+		FormatAnswer func(value string) string
+		FormatHint   func(message string) string
+	}{
+		FormatPrompt: func(msg string) string { return msg },
+		FormatAnswer: func(v string) string { return v },
+		FormatHint:   func(msg string) string { return msg },
+	}
+}
+
 // BasePromptTestSuite 是所有 prompt 测试套件的基类
 // 提供通用的 runPromptTest 方法，消除各个测试套件中的重复代码
 //

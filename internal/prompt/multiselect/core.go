@@ -7,13 +7,8 @@ import (
 	"github.com/zevwings/workflow/internal/prompt/io"
 )
 
-// Config 多选功能配置
-type Config struct {
-	// 格式化函数
-	FormatPrompt func(message string) string
-	FormatAnswer func(value string) string
-	FormatHint   func(message string) string
-}
+// Config 多选功能配置（使用 common.PromptConfig 的别名，保持向后兼容）
+type Config = common.PromptConfig
 
 // MultiSelect 多选功能（使用 TerminalIO 接口）
 func MultiSelect(message string, options []string, defaultSelected []int, config Config, terminal io.TerminalIO) ([]int, error) {
@@ -42,125 +37,60 @@ func MultiSelect(message string, options []string, defaultSelected []int, config
 
 	err := rawModeMgr.WithRawModeAndFallback(
 		func() error {
-			// 渲染选项列表
-			renderMultiSelect := func(isFirst bool) error {
-				if !isFirst {
-					renderer.ReRender(func(bool) error {
-						// 渲染选项
-						for i := range options {
-							terminal.MoveToStart()
-							line, isHighlighted := handler.FormatOptionLine(i, currentIndex, selected)
-							if isHighlighted {
-								highlightedLine := config.FormatAnswer(line)
-								terminal.Print(highlightedLine)
-							} else {
-								terminal.Print(line)
-							}
-							terminal.ClearLine()
-							terminal.Println("")
-						}
-
-						// 空行
-						terminal.MoveToStart()
-						terminal.Println("")
-
-						// 显示提示信息
-						hintMsg := config.FormatHint("使用 ↑/↓ 导航，空格键切换选择，回车确认")
-						terminal.MoveToStart()
-						terminal.Print(hintMsg)
-						terminal.Print("\r\n")
-
-						terminal.HideCursor()
-						return nil
-					})
-				} else {
-					// 首次渲染：渲染选项
-					for i := range options {
-						terminal.MoveToStart()
-						line, isHighlighted := handler.FormatOptionLine(i, currentIndex, selected)
-						if isHighlighted {
-							highlightedLine := config.FormatAnswer(line)
-							terminal.Print(highlightedLine)
-						} else {
-							terminal.Print(line)
-						}
-						terminal.ClearLine()
-						terminal.Println("")
-					}
-
-					// 空行
-					terminal.MoveToStart()
-					terminal.Println("")
-
-					// 显示提示信息
-					hintMsg := config.FormatHint("使用 ↑/↓ 导航，空格键切换选择，回车确认")
-					terminal.MoveToStart()
-					terminal.Print(hintMsg)
-					terminal.Print("\r\n")
-
-					terminal.HideCursor()
-				}
-				return nil
+			// 使用通用渲染函数渲染选项列表
+			// 通过闭包捕获 selected 和 currentIndex，创建符合 FormatOptionLineFunc 签名的函数
+			formatLine := func(index int, currentIdx int) (string, bool) {
+				return handler.FormatOptionLine(index, currentIdx, selected)
 			}
+			// 使用闭包捕获 currentIndex 的引用，支持动态更新
+			getCurrentIndex := func() int {
+				return currentIndex
+			}
+			renderMultiSelect := common.RenderOptions(
+				terminal,
+				renderer,
+				len(options),
+				getCurrentIndex,
+				formatLine,
+				"使用 ↑/↓ 导航，空格键切换选择，回车确认",
+				config,
+			)
 
 			// 使用渲染器渲染提示和初始界面
 			if err := renderer.RenderWithPrompt(promptMsg, renderMultiSelect); err != nil {
 				return err
 			}
 
-			// 读取输入
-			for {
-				keyType, _, err := parser.ReadKey()
-				if err != nil {
-					return fmt.Errorf("读取输入失败: %w", err)
-				}
-
-				// 处理箭头键
-				if keyType == io.KeyUp {
-					newIndex, shouldRender := handler.ProcessArrowKey(currentIndex, "up")
-					if shouldRender {
-						currentIndex = newIndex
-						renderMultiSelect(false)
-					}
-					continue
-				}
-				if keyType == io.KeyDown {
-					newIndex, shouldRender := handler.ProcessArrowKey(currentIndex, "down")
-					if shouldRender {
-						currentIndex = newIndex
-						renderMultiSelect(false)
-					}
-					continue
-				}
-
-				// 处理空格键（切换选择状态）
-				if keyType == io.KeySpace {
-					handler.ToggleSelection(selected, currentIndex)
-					renderMultiSelect(false)
-					continue
-				}
-
-				// 处理回车键（确认选择）
-				if keyType == io.KeyEnter {
+			// 使用通用输入处理函数
+			err := common.HandleInteractiveInput(
+				parser,
+				terminal,
+				&currentIndex,
+				func(idx int, dir string) (int, bool) {
+					return handler.ProcessArrowKey(idx, dir)
+				},
+				func() (bool, error) {
 					selectedIndices := mapToSlice(selected)
 					selectedText := handler.FormatSelectedOptions(selectedIndices)
-					// handler.FormatSelectedOptions 已经返回格式化后的文本，所以不需要再次格式化
-					// 由于 RenderWithPrompt 已经输出了提示消息，所以这里不需要再次输出
 					if err := common.FormatResultWithOptions(terminal, promptMsg, selectedText, nil, false); err != nil {
-						return err
+						return false, err
 					}
 					result = selectedIndices
-					return nil
-				}
-
-				// 处理 Ctrl+C
-				if keyType == io.KeyCtrlC {
-					resultErr = common.HandleCancel(terminal)
-					return resultErr
-				}
-
-				// 其他字符：静默忽略
+					return true, nil
+				},
+				func() bool {
+					handler.ToggleSelection(selected, currentIndex)
+					return true
+				},
+				func() {
+					renderMultiSelect(false)
+				},
+			)
+			if err != nil {
+				resultErr = err
+				return err
 			}
+			return nil
 		},
 		func() error {
 			// Fallback: 如果无法设置原始模式，使用简单多选

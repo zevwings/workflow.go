@@ -6,14 +6,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/zevwings/workflow/internal/testutils"
 )
 
 func TestSelectHandler_ValidateAndAdjustDefaultIndex(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	options := []string{"A", "B", "C"}
 
@@ -31,11 +28,7 @@ func TestSelectHandler_ValidateAndAdjustDefaultIndex(t *testing.T) {
 }
 
 func TestSelectHandler_ProcessArrowKey(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	options := []string{"A", "B", "C"}
 	handler := NewSelectHandler(options, 0, cfg)
@@ -62,11 +55,7 @@ func TestSelectHandler_ProcessArrowKey(t *testing.T) {
 }
 
 func TestSelectHandler_FormatOptionLine(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	options := []string{"A", "B", "C"}
 	handler := NewSelectHandler(options, 0, cfg)
@@ -99,11 +88,7 @@ func TestSelectHandler_FormatSelectedOption(t *testing.T) {
 }
 
 func TestSelectHandler_ParseNumericInput(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	options := []string{"A", "B", "C"}
 	handler := NewSelectHandler(options, 0, cfg)

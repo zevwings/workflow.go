@@ -50,3 +50,6 @@ completions/
 !.cursor/rules/**
 
 .cursor/mcp.json
+
+
+docs/analysis/

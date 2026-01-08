@@ -7,15 +7,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/zevwings/workflow/internal/prompt/io"
+	"github.com/zevwings/workflow/internal/testutils"
 )
 
 // TestSelect_EmptyOptions 验证空选项时直接返回错误
 func TestSelect_EmptyOptions(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	mockTerminal := io.NewMockTerminal([]byte{})
 	index, err := Select("请选择", []string{}, 0, cfg, mockTerminal)
@@ -26,11 +23,7 @@ func TestSelect_EmptyOptions(t *testing.T) {
 // Test_selectFallback_ValidAndInvalidInput 验证回退模式下合法与非法输入行为
 func Test_selectFallback_ValidAndInvalidInput(t *testing.T) {
 	options := []string{"A", "B", "C"}
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	// 1) 非法输入时应返回默认索引
 	mockTerminal := io.NewMockTerminalWithLines([]string{"invalid"})
@@ -48,11 +41,7 @@ func Test_selectFallback_ValidAndInvalidInput(t *testing.T) {
 // Test_selectFallback_OutOfRangeInput 验证超出范围的输入会返回默认索引
 func Test_selectFallback_OutOfRangeInput(t *testing.T) {
 	options := []string{"A", "B", "C"}
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	// 测试超出上限
 	mockTerminal := io.NewMockTerminalWithLines([]string{"10"})
@@ -70,11 +59,7 @@ func Test_selectFallback_OutOfRangeInput(t *testing.T) {
 // Test_selectFallback_EmptyInput 验证空输入时返回默认索引
 func Test_selectFallback_EmptyInput(t *testing.T) {
 	options := []string{"A", "B", "C"}
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	// 空输入会触发 ReadLine 错误，返回默认索引
 	mockTerminal := io.NewMockTerminalWithLines([]string{})
@@ -85,11 +70,7 @@ func Test_selectFallback_EmptyInput(t *testing.T) {
 
 // TestSelect_InvalidDefaultIndex 验证无效的默认索引会被调整为 0
 func TestSelect_InvalidDefaultIndex(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	options := []string{"A", "B", "C"}
 

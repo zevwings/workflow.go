@@ -10,21 +10,15 @@ func AskSelect(message string, options []string, defaultIndex int) (int, error) 
 	return selectFunc(message, options, defaultIndex)
 }
 
-// selectFunc 统一的选择函数
+// selectFunc 统一的选择函数（私有函数）
 func selectFunc(message string, options []string, defaultIndex int) (int, error) {
-	// 构建配置
-	config := selectpkg.Config{
-		FormatPrompt: formatTitle,
-		FormatAnswer: formatAnswer,
-		FormatHint:   formatHint,
-	}
-
+	config := newDefaultConfig()
 	return selectpkg.SelectDefault(message, options, defaultIndex, config)
 }
 
 // SelectBuilder Select 的链式构建器
 type SelectBuilder struct {
-	BaseBuilder
+	baseBuilder
 	options      []string
 	defaultIndex int
 }
@@ -39,7 +33,7 @@ func Select() *SelectBuilder {
 
 // Prompt 设置提示消息（覆盖基类方法以返回正确的类型）
 func (b *SelectBuilder) Prompt(message string) *SelectBuilder {
-	b.BaseBuilder.Prompt(message)
+	b.baseBuilder.Prompt(message)
 	return b
 }
 

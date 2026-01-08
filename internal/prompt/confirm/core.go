@@ -7,13 +7,8 @@ import (
 	"github.com/zevwings/workflow/internal/prompt/io"
 )
 
-// Config 确认功能配置
-type Config struct {
-	// 格式化函数
-	FormatPrompt func(message string) string
-	FormatAnswer func(value string) string
-	FormatHint   func(message string) string // 格式化提示信息（如 【y/N】）
-}
+// Config 确认功能配置（使用 common.PromptConfig 的别名，保持向后兼容）
+type Config = common.PromptConfig
 
 // Confirm 内部实现函数（使用 TerminalIO 接口）
 // 这是新的实现，接受 TerminalIO 参数以便测试

@@ -98,7 +98,7 @@ func GetTheme() Theme {
 	return currentTheme
 }
 
-// formatTitle 格式化标题消息
+// formatTitle 格式化标题消息（私有函数）
 func formatTitle(message string) string {
 	t := GetTheme()
 	if !t.EnableColor {
@@ -107,7 +107,7 @@ func formatTitle(message string) string {
 	return t.TitleStyle.Render(message)
 }
 
-// formatAnswer 格式化答案显示
+// formatAnswer 格式化答案显示（私有函数）
 func formatAnswer(value string) string {
 	t := GetTheme()
 	if !t.EnableColor {
@@ -116,7 +116,7 @@ func formatAnswer(value string) string {
 	return t.AnswerStyle.Render(value)
 }
 
-// formatError 格式化错误消息
+// formatError 格式化错误消息（私有函数）
 func formatError(message string) string {
 	t := GetTheme()
 	// 统一错误提示文案格式为: "* 错误提示"
@@ -127,11 +127,30 @@ func formatError(message string) string {
 	return t.ErrorStyle.Render(formatted)
 }
 
-// formatHint 格式化提示信息（如操作说明）
+// formatHint 格式化提示信息（如操作说明）（私有函数）
 func formatHint(message string) string {
 	t := GetTheme()
 	if !t.EnableColor {
 		return message
 	}
 	return t.HintStyle.Render(message)
+}
+
+// newDefaultConfig 创建默认的 PromptConfig（私有函数）
+// 用于 select、multiselect、confirm 等提示功能
+// 返回 common.PromptConfig，由于各模块的 Config 都是它的别名，可以直接使用
+func newDefaultConfig() struct {
+	FormatPrompt func(message string) string
+	FormatAnswer func(value string) string
+	FormatHint   func(message string) string
+} {
+	return struct {
+		FormatPrompt func(message string) string
+		FormatAnswer func(value string) string
+		FormatHint   func(message string) string
+	}{
+		FormatPrompt: formatTitle,
+		FormatAnswer: formatAnswer,
+		FormatHint:   formatHint,
+	}
 }

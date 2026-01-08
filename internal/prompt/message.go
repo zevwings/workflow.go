@@ -80,7 +80,7 @@ func (m *Message) Println(format string, args ...interface{}) {
 	fmt.Println(fmt.Sprintf(format, args...))
 }
 
-// formatMessage 格式化消息（使用主题样式）
+// formatMessage 格式化消息（使用主题样式）（私有函数）
 func formatMessage(prefix, message string, style lipgloss.Style) string {
 	t := GetTheme()
 	// 拼接前缀和消息，确保前缀和消息之间有一个空格

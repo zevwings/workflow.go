@@ -148,13 +148,13 @@ func (t *Table) Render() *Table {
 	return t
 }
 
-// stripAnsiCodes 去除 ANSI 转义码，返回纯文本（用于计算显示宽度）
+// stripAnsiCodes 去除 ANSI 转义码，返回纯文本（用于计算显示宽度）（私有函数）
 func stripAnsiCodes(s string) string {
 	ansiRegex := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
 	return ansiRegex.ReplaceAllString(s, "")
 }
 
-// calculateColumnWidths 计算每列的最大宽度
+// calculateColumnWidths 计算每列的最大宽度（私有方法）
 func (t *Table) calculateColumnWidths() []int {
 	colWidths := make([]int, len(t.headers))
 
@@ -190,7 +190,7 @@ func (t *Table) calculateColumnWidths() []int {
 	return colWidths
 }
 
-// renderRow 渲染一行数据
+// renderRow 渲染一行数据（私有方法）
 func (t *Table) renderRow(row []string, colWidths []int, isHeader bool, borderStyle lipgloss.Style) string {
 	var cells []string
 
@@ -230,7 +230,7 @@ func (t *Table) renderRow(row []string, colWidths []int, isHeader bool, borderSt
 	return strings.Join(cells, separator)
 }
 
-// alignCell 对齐单元格内容
+// alignCell 对齐单元格内容（私有方法）
 // cell: 原始单元格内容（可能包含 ANSI 代码）
 // targetWidth: 目标宽度（列宽）
 // actualWidth: 实际显示宽度（已去除 ANSI 代码）
@@ -254,7 +254,7 @@ func (t *Table) alignCell(cell string, targetWidth int, actualWidth int) string 
 	}
 }
 
-// renderSeparator 渲染分隔线
+// renderSeparator 渲染分隔线（私有方法）
 func (t *Table) renderSeparator(colWidths []int, horizontal, cross, left, right string) string {
 	var parts []string
 	for _, width := range colWidths {
@@ -263,7 +263,7 @@ func (t *Table) renderSeparator(colWidths []int, horizontal, cross, left, right 
 	return left + strings.Join(parts, cross) + right
 }
 
-// renderTopBorder 渲染顶部边框
+// renderTopBorder 渲染顶部边框（私有方法）
 func (t *Table) renderTopBorder(colWidths []int, horizontal, left, right, cross string) string {
 	var parts []string
 	for _, width := range colWidths {
@@ -272,7 +272,7 @@ func (t *Table) renderTopBorder(colWidths []int, horizontal, left, right, cross 
 	return left + strings.Join(parts, cross) + right
 }
 
-// renderBottomBorder 渲染底部边框
+// renderBottomBorder 渲染底部边框（私有方法）
 func (t *Table) renderBottomBorder(colWidths []int, horizontal, left, right, cross string) string {
 	var parts []string
 	for _, width := range colWidths {

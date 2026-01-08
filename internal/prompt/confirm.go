@@ -10,21 +10,15 @@ func AskConfirm(message string, defaultYes bool) (bool, error) {
 	return confirmFunc(message, defaultYes)
 }
 
-// confirmFunc 统一的确认函数
+// confirmFunc 统一的确认函数（私有函数）
 func confirmFunc(message string, defaultYes bool) (bool, error) {
-	// 构建配置
-	config := confirm.Config{
-		FormatPrompt: formatTitle,
-		FormatAnswer: formatAnswer,
-		FormatHint:   formatHint, // 使用 HintStyle 格式化 【y/N】 提示
-	}
-
+	config := newDefaultConfig()
 	return confirm.ConfirmDefault(message, defaultYes, config)
 }
 
 // ConfirmBuilder Confirm 的链式构建器
 type ConfirmBuilder struct {
-	BaseBuilder
+	baseBuilder
 	defaultYes bool
 }
 
@@ -38,7 +32,7 @@ func Confirm() *ConfirmBuilder {
 
 // Prompt 设置提示消息（覆盖基类方法以返回正确的类型）
 func (b *ConfirmBuilder) Prompt(message string) *ConfirmBuilder {
-	b.BaseBuilder.Prompt(message)
+	b.baseBuilder.Prompt(message)
 	return b
 }
 

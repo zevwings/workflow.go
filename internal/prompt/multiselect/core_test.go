@@ -7,17 +7,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/zevwings/workflow/internal/prompt/io"
+	"github.com/zevwings/workflow/internal/testutils"
 )
 
 // ==================== MultiSelect 主函数测试 ====================
 
 // TestMultiSelect_EmptyOptions 验证空选项时直接返回错误
 func TestMultiSelect_EmptyOptions(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	mockTerminal := io.NewMockTerminal([]byte{})
 	indices, err := MultiSelect("请选择", []string{}, nil, cfg, mockTerminal)
@@ -28,11 +25,7 @@ func TestMultiSelect_EmptyOptions(t *testing.T) {
 
 // TestMultiSelect_WithMockTerminal_EnterKey 验证直接回车时返回空选择
 func TestMultiSelect_WithMockTerminal_EnterKey(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	options := []string{"A", "B", "C"}
 	mockTerminal := io.NewMockTerminal([]byte{'\r'}) // 直接回车
@@ -44,11 +37,7 @@ func TestMultiSelect_WithMockTerminal_EnterKey(t *testing.T) {
 
 // TestMultiSelect_WithMockTerminal_SpaceThenEnter 验证空格选中后回车
 func TestMultiSelect_WithMockTerminal_SpaceThenEnter(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	options := []string{"A", "B", "C"}
 	// 空格选中第一个，然后回车
@@ -61,11 +50,7 @@ func TestMultiSelect_WithMockTerminal_SpaceThenEnter(t *testing.T) {
 
 // TestMultiSelect_WithMockTerminal_ArrowKeys 验证箭头键导航
 func TestMultiSelect_WithMockTerminal_ArrowKeys(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	options := []string{"A", "B", "C"}
 	// 下箭头（转义序列：ESC [ B），然后空格选中，然后回车
@@ -78,11 +63,7 @@ func TestMultiSelect_WithMockTerminal_ArrowKeys(t *testing.T) {
 
 // TestMultiSelect_WithMockTerminal_CtrlC 验证 Ctrl+C 取消
 func TestMultiSelect_WithMockTerminal_CtrlC(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	options := []string{"A", "B", "C"}
 	mockTerminal := io.NewMockTerminal([]byte{3}) // Ctrl+C
@@ -98,11 +79,7 @@ func TestMultiSelect_WithMockTerminal_CtrlC(t *testing.T) {
 // Test_multiselectFallback_ParseInput 验证回退模式下解析逗号分隔的编号
 func Test_multiselectFallback_ParseInput(t *testing.T) {
 	options := []string{"A", "B", "C", "D"}
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	mockTerminal := io.NewMockTerminalWithLines([]string{"1,3"})
 	indices, err := multiselectFallback("请选择", options, []int{}, cfg, mockTerminal)
@@ -114,11 +91,7 @@ func Test_multiselectFallback_ParseInput(t *testing.T) {
 func Test_multiselectFallback_EmptyInput(t *testing.T) {
 	options := []string{"A", "B", "C"}
 	defaultSelected := []int{0, 2}
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	mockTerminal := io.NewMockTerminalWithLines([]string{""})
 	indices, err := multiselectFallback("请选择", options, defaultSelected, cfg, mockTerminal)
@@ -129,11 +102,7 @@ func Test_multiselectFallback_EmptyInput(t *testing.T) {
 // Test_multiselectFallback_InvalidNumbers 验证无效数字输入会被忽略
 func Test_multiselectFallback_InvalidNumbers(t *testing.T) {
 	options := []string{"A", "B", "C"}
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	// 输入包含无效数字：abc, 5 (超出范围), 2 (有效)
 	mockTerminal := io.NewMockTerminalWithLines([]string{"abc,5,2"})
@@ -146,11 +115,7 @@ func Test_multiselectFallback_InvalidNumbers(t *testing.T) {
 // Test_multiselectFallback_OutOfRangeNumbers 验证超出范围的数字会被忽略
 func Test_multiselectFallback_OutOfRangeNumbers(t *testing.T) {
 	options := []string{"A", "B", "C"}
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	// 输入超出范围的数字：0 (无效，从1开始), 10 (超出范围), 1 (有效)
 	mockTerminal := io.NewMockTerminalWithLines([]string{"0,10,1"})
@@ -164,11 +129,7 @@ func Test_multiselectFallback_OutOfRangeNumbers(t *testing.T) {
 func Test_multiselectFallback_DefaultSelected(t *testing.T) {
 	options := []string{"A", "B", "C", "D"}
 	defaultSelected := []int{1, 3}
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	// 直接回车，使用默认值
 	mockTerminal := io.NewMockTerminalWithLines([]string{""})
@@ -182,11 +143,7 @@ func Test_multiselectFallback_InvalidDefaultIndices(t *testing.T) {
 	options := []string{"A", "B", "C"}
 	// 包含无效索引：-1 (无效), 10 (超出范围), 1 (有效)
 	defaultSelected := []int{-1, 10, 1}
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	// 空输入，会返回清理后的 defaultSelected
 	mockTerminal := io.NewMockTerminalWithLines([]string{""})
@@ -199,11 +156,7 @@ func Test_multiselectFallback_InvalidDefaultIndices(t *testing.T) {
 // Test_multiselectFallback_NoSelection 验证未选择任何选项时返回空切片
 func Test_multiselectFallback_NoSelection(t *testing.T) {
 	options := []string{"A", "B", "C"}
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	// 输入空字符串
 	mockTerminal := io.NewMockTerminalWithLines([]string{""})

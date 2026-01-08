@@ -1,10 +1,10 @@
 package prompt
 
-// BaseBuilder Builder 模式的基础结构
+// baseBuilder Builder 模式的基础结构
 //
 // 提供通用的 Builder 功能，减少各具体 Builder 的代码重复。
 // 各具体 Builder 可以嵌入此结构以复用 Prompt() 方法。
-type BaseBuilder struct {
+type baseBuilder struct {
 	message string
 }
 
@@ -16,14 +16,13 @@ type BaseBuilder struct {
 //   - message: 提示消息文本
 //
 // 返回:
-//   - *BaseBuilder: 返回自身，支持链式调用
-func (b *BaseBuilder) Prompt(message string) *BaseBuilder {
+//   - *baseBuilder: 返回自身，支持链式调用
+func (b *baseBuilder) Prompt(message string) *baseBuilder {
 	b.message = message
 	return b
 }
 
 // GetMessage 获取提示消息（供子类使用）
-func (b *BaseBuilder) GetMessage() string {
+func (b *baseBuilder) GetMessage() string {
 	return b.message
 }
-

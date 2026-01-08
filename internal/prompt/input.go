@@ -10,7 +10,7 @@ import (
 // Validator 验证函数类型（重新导出，保持向后兼容）
 type Validator = input.Validator
 
-// input 统一的输入函数，通过 isPassword 参数控制是否使用密文模式
+// inputFunc 统一的输入函数，通过 isPassword 参数控制是否使用密文模式（私有函数）
 // placeholder 参数用于显示占位符文本（仅在非密码模式下有效）
 func inputFunc(message string, defaultValue string, placeholder string, isPassword bool, validator Validator) (string, error) {
 	// 格式化提示消息（类似 huh 的 Title，单独显示）
@@ -271,7 +271,7 @@ func ValidateLength(minLen, maxLen int) Validator {
 
 // InputBuilder Input 的链式构建器
 type InputBuilder struct {
-	BaseBuilder
+	baseBuilder
 	defaultValue string
 	placeholder  string
 	isPassword   bool
@@ -296,7 +296,7 @@ func Password() *InputBuilder {
 
 // Prompt 设置提示消息（覆盖基类方法以返回正确的类型）
 func (b *InputBuilder) Prompt(message string) *InputBuilder {
-	b.BaseBuilder.Prompt(message)
+	b.baseBuilder.Prompt(message)
 	return b
 }
 

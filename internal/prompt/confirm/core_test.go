@@ -7,15 +7,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/zevwings/workflow/internal/prompt/io"
+	"github.com/zevwings/workflow/internal/testutils"
 )
 
 // ==================== Confirm 主函数测试（使用 MockTerminal） ====================
 
 func TestConfirm_WithMockTerminal_YesInput(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	mockTerminal := io.NewMockTerminal([]byte{'y'})
 	result, err := Confirm("是否继续？", false, cfg, mockTerminal)
@@ -27,10 +25,7 @@ func TestConfirm_WithMockTerminal_YesInput(t *testing.T) {
 }
 
 func TestConfirm_WithMockTerminal_NoInput(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	mockTerminal := io.NewMockTerminal([]byte{'n'})
 	result, err := Confirm("是否继续？", true, cfg, mockTerminal)
@@ -42,10 +37,7 @@ func TestConfirm_WithMockTerminal_NoInput(t *testing.T) {
 }
 
 func TestConfirm_WithMockTerminal_EnterKey(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	// 默认 yes，回车应返回 true
 	mockTerminal := io.NewMockTerminal([]byte{'\r'})
@@ -65,10 +57,7 @@ func TestConfirm_WithMockTerminal_EnterKey(t *testing.T) {
 }
 
 func TestConfirm_WithMockTerminal_CtrlC(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	mockTerminal := io.NewMockTerminal([]byte{3}) // Ctrl+C
 	result, err := Confirm("是否继续？", true, cfg, mockTerminal)
@@ -82,10 +71,7 @@ func TestConfirm_WithMockTerminal_CtrlC(t *testing.T) {
 }
 
 func TestConfirm_WithMockTerminal_InvalidCharThenYes(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	// 先输入无效字符 'x'，然后输入 'y'
 	mockTerminal := io.NewMockTerminal([]byte{'x', 'y'})
@@ -96,10 +82,7 @@ func TestConfirm_WithMockTerminal_InvalidCharThenYes(t *testing.T) {
 }
 
 func TestConfirm_WithMockTerminal_TerminalControl(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	mockTerminal := io.NewMockTerminal([]byte{'y'})
 	_, err := Confirm("test", false, cfg, mockTerminal)
@@ -120,10 +103,7 @@ func TestConfirm_WithMockTerminal_TerminalControl(t *testing.T) {
 
 // Test_confirmFallback_DefaultYes_NoInput 验证在默认值为 true 且无有效输入时返回默认值
 func Test_confirmFallback_DefaultYes_NoInput(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	mockTerminal := io.NewMockTerminalWithLines([]string{""})
 	result, err := confirmFallback("是否继续？", true, cfg, mockTerminal)
@@ -135,10 +115,7 @@ func Test_confirmFallback_DefaultYes_NoInput(t *testing.T) {
 func Test_confirmFallback_DefaultNo_InvalidInput(t *testing.T) {
 	mockTerminal := io.NewMockTerminalWithLines([]string{"invalid"})
 
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-	}
+	cfg := Config(testutils.NewDefaultPromptConfig())
 
 	result, err := confirmFallback("是否继续？", false, cfg, mockTerminal)
 	assert.NoError(t, err)

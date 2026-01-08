@@ -10,21 +10,15 @@ func AskMultiSelect(message string, options []string, defaultSelected []int) ([]
 	return multiselectFunc(message, options, defaultSelected)
 }
 
-// multiselectFunc 统一的多选函数
+// multiselectFunc 统一的多选函数（私有函数）
 func multiselectFunc(message string, options []string, defaultSelected []int) ([]int, error) {
-	// 构建配置
-	config := multiselect.Config{
-		FormatPrompt: formatTitle,
-		FormatAnswer: formatAnswer,
-		FormatHint:   formatHint,
-	}
-
+	config := newDefaultConfig()
 	return multiselect.MultiSelectDefault(message, options, defaultSelected, config)
 }
 
 // MultiSelectBuilder MultiSelect 的链式构建器
 type MultiSelectBuilder struct {
-	BaseBuilder
+	baseBuilder
 	options         []string
 	defaultSelected []int
 }
@@ -39,7 +33,7 @@ func MultiSelect() *MultiSelectBuilder {
 
 // Prompt 设置提示消息（覆盖基类方法以返回正确的类型）
 func (b *MultiSelectBuilder) Prompt(message string) *MultiSelectBuilder {
-	b.BaseBuilder.Prompt(message)
+	b.baseBuilder.Prompt(message)
 	return b
 }
 

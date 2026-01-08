@@ -123,13 +123,13 @@ func TestConfirmHandler_FormatPromptText(t *testing.T) {
 	handler := NewConfirmHandler(true, cfg)
 	text := handler.FormatPromptText("test")
 	assert.Contains(t, text, "[test]")
-	assert.Contains(t, text, "【Y/n】")
+	assert.Contains(t, text, "[Y/n]")
 
 	// 默认 no
 	handler = NewConfirmHandler(false, cfg)
 	text = handler.FormatPromptText("test")
 	assert.Contains(t, text, "[test]")
-	assert.Contains(t, text, "【y/N】")
+	assert.Contains(t, text, "[y/N]")
 }
 
 func TestConfirmHandler_FormatAnswer(t *testing.T) {
@@ -205,4 +205,3 @@ func TestConfirmHandler_ProcessLineInput(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.True(t, *result)
 }
-
