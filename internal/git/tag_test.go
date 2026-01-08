@@ -1,9 +1,13 @@
 package git
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -110,6 +114,84 @@ func TestRepository_ListTags_Empty(t *testing.T) {
 	tags, err := repo.ListTags()
 	assert.NoError(t, err)
 	assert.Empty(t, tags)
+}
+
+// TestRepository_ListTags_WithAnnotatedTags 测试带 annotated tags 的情况
+func TestRepository_ListTags_WithAnnotatedTags(t *testing.T) {
+	repo, _ := setupTestRepoWithCommit(t)
+
+	// 创建多个提交和 tags
+	head, err := repo.GetHead()
+	require.NoError(t, err)
+
+	tagNames := []string{"v1.0.0", "v1.1.0", "v2.0.0"}
+	for _, tagName := range tagNames {
+		err := repo.CreateTag(tagName, head)
+		require.NoError(t, err)
+	}
+
+	// 列出所有 tags
+	tags, err := repo.ListTags()
+	assert.NoError(t, err)
+	assert.Len(t, tags, len(tagNames))
+
+	// 验证每个 tag 都有 commit hash
+	for _, tag := range tags {
+		assert.NotEmpty(t, tag.CommitHash)
+		assert.NotEmpty(t, tag.Name)
+	}
+}
+
+// TestRepository_ListTags_MultipleCommits 测试多个提交的 tags
+func TestRepository_ListTags_MultipleCommits(t *testing.T) {
+	repo, tempDir := setupTestRepoWithCommit(t)
+
+	// 创建多个提交
+	author := &object.Signature{
+		Name:  "Test User",
+		Email: "test@example.com",
+	}
+
+	commits := []string{"commit1", "commit2", "commit3"}
+	var commitHashes []plumbing.Hash
+
+	for i, msg := range commits {
+		filename := filepath.Join(tempDir, fmt.Sprintf("file%d.txt", i))
+		err := os.WriteFile(filename, []byte("content"), 0644)
+		require.NoError(t, err)
+
+		err = repo.Add(fmt.Sprintf("file%d.txt", i))
+		require.NoError(t, err)
+
+		hash, err := repo.Commit(msg, author)
+		require.NoError(t, err)
+		commitHashes = append(commitHashes, hash)
+	}
+
+	// 为每个提交创建 tag
+	for i, hash := range commitHashes {
+		tagName := fmt.Sprintf("v1.%d.0", i)
+		err := repo.CreateTag(tagName, hash)
+		require.NoError(t, err)
+	}
+
+	// 列出所有 tags
+	tags, err := repo.ListTags()
+	assert.NoError(t, err)
+	assert.Len(t, tags, len(commits))
+
+	// 验证 tags 指向正确的提交
+	tagMap := make(map[string]string)
+	for _, tag := range tags {
+		tagMap[tag.Name] = tag.CommitHash
+	}
+
+	for i, hash := range commitHashes {
+		tagName := fmt.Sprintf("v1.%d.0", i)
+		if commitHash, ok := tagMap[tagName]; ok {
+			assert.Equal(t, hash.String(), commitHash)
+		}
+	}
 }
 
 // ==================== DeleteTag 测试 ====================

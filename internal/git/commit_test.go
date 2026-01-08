@@ -186,6 +186,50 @@ func TestRepository_AddAll(t *testing.T) {
 	}
 }
 
+// TestRepository_AddAll_WithModifiedFiles 测试 AddAll 包含修改的文件
+func TestRepository_AddAll_WithModifiedFiles(t *testing.T) {
+	repo, tempDir := setupTestRepoWithCommit(t)
+
+	// 修改已存在的文件
+	existingFile := filepath.Join(tempDir, "test.txt")
+	err := os.WriteFile(existingFile, []byte("modified content"), 0644)
+	require.NoError(t, err)
+
+	// 创建新文件
+	newFile := filepath.Join(tempDir, "new.txt")
+	err = os.WriteFile(newFile, []byte("new content"), 0644)
+	require.NoError(t, err)
+
+	// 添加所有文件
+	err = repo.AddAll()
+	assert.NoError(t, err)
+
+	// 验证所有文件已添加到暂存区
+	status, err := repo.Status()
+	assert.NoError(t, err)
+	assert.Contains(t, status.StagedFiles, "test.txt")
+	assert.Contains(t, status.StagedFiles, "new.txt")
+}
+
+// TestRepository_AddAll_EmptyRepo 测试空仓库的 AddAll
+func TestRepository_AddAll_EmptyRepo(t *testing.T) {
+	repo, tempDir := setupTestRepo(t)
+
+	// 创建文件
+	testFile := filepath.Join(tempDir, "test.txt")
+	err := os.WriteFile(testFile, []byte("content"), 0644)
+	require.NoError(t, err)
+
+	// 添加所有文件
+	err = repo.AddAll()
+	assert.NoError(t, err)
+
+	// 验证文件已添加
+	status, err := repo.Status()
+	assert.NoError(t, err)
+	assert.Contains(t, status.StagedFiles, "test.txt")
+}
+
 // ==================== Commit 测试 ====================
 
 func TestRepository_Commit(t *testing.T) {
@@ -314,6 +358,47 @@ func TestRepository_GetLastCommit(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, commit)
 	assert.Equal(t, "Last commit", commit.Message)
+}
+
+// TestRepository_GetLastCommit_MultipleCommits 测试多个提交的情况
+func TestRepository_GetLastCommit_MultipleCommits(t *testing.T) {
+	repo, tempDir := setupTestRepoWithCommit(t)
+
+	author := &object.Signature{
+		Name:  "Test User",
+		Email: "test@example.com",
+	}
+
+	// 创建多个提交
+	commits := []string{"First commit", "Second commit", "Third commit"}
+	for i, msg := range commits {
+		filename := filepath.Join(tempDir, fmt.Sprintf("file%d.txt", i))
+		err := os.WriteFile(filename, []byte("content"), 0644)
+		require.NoError(t, err)
+
+		err = repo.Add(fmt.Sprintf("file%d.txt", i))
+		require.NoError(t, err)
+
+		_, err = repo.Commit(msg, author)
+		require.NoError(t, err)
+	}
+
+	// 获取最后一次提交（应该是 "Third commit"）
+	commit, err := repo.GetLastCommit()
+	assert.NoError(t, err)
+	assert.NotNil(t, commit)
+	assert.Equal(t, "Third commit", commit.Message)
+}
+
+// TestRepository_GetLastCommit_InitialCommit 测试初始提交
+func TestRepository_GetLastCommit_InitialCommit(t *testing.T) {
+	repo, _ := setupTestRepoWithCommit(t)
+
+	// 获取最后一次提交（应该是初始提交）
+	commit, err := repo.GetLastCommit()
+	assert.NoError(t, err)
+	assert.NotNil(t, commit)
+	assert.Equal(t, "Initial commit", commit.Message)
 }
 
 // ==================== Log 测试 ====================

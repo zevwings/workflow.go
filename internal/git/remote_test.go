@@ -154,44 +154,75 @@ func TestRepository_GetRemoteURL_NonExistent(t *testing.T) {
 // ==================== Fetch 测试 ====================
 
 func TestRepository_Fetch(t *testing.T) {
-	// 注意：Fetch 需要真实的远程仓库或 Mock 服务器
-	// 这里我们测试错误处理
+	// 使用测试远程仓库（Mock 或真实）
 	repo, _ := setupTestRepoWithCommit(t)
 
-	// 添加远程（使用不存在的 URL）
-	err := repo.AddRemote("origin", "https://github.com/non-existent/repo.git")
+	// 设置测试远程仓库
+	remotePath, isReal, _ := setupTestRemoteRepo(t, "main")
+
+	// 添加远程
+	err := repo.AddRemote("origin", remotePath)
 	require.NoError(t, err)
 
-	// 尝试 Fetch（应该失败，因为没有真实的远程）
+	// 执行 Fetch
 	err = repo.Fetch("origin", nil)
-	// 这个测试可能会失败，因为需要网络连接
-	// 我们主要测试方法调用不会 panic
-	if err != nil {
-		t.Logf("Fetch 失败（预期行为，因为没有真实远程）: %v", err)
+	if isReal {
+		// 真实远程仓库可能因为网络问题失败，这是可以接受的
+		if err != nil {
+			t.Logf("从真实远程仓库 Fetch 失败（可能是网络问题）: %v", err)
+			return
+		}
+		t.Logf("从真实远程仓库 Fetch 成功")
+	} else {
+		// Mock 远程仓库：Fetch 可能会成功或失败（取决于 go-git 的实现）
+		// 我们主要测试方法调用不会 panic
+		if err != nil {
+			t.Logf("Fetch 结果: %v", err)
+			// 某些错误是可以接受的（如 NoErrAlreadyUpToDate）
+		}
 	}
 }
 
 // ==================== Push 测试 ====================
 
 func TestRepository_Push(t *testing.T) {
-	// 注意：Push 需要真实的远程仓库或 Mock 服务器
-	// 这里我们测试错误处理
+	// 使用测试远程仓库（Mock 或真实）
 	repo, _ := setupTestRepoWithCommit(t)
 
-	// 添加远程（使用不存在的 URL）
-	err := repo.AddRemote("origin", "https://github.com/non-existent/repo.git")
+	// 设置测试远程仓库
+	remotePath, isReal, _ := setupTestRemoteRepo(t, "main")
+
+	// 添加远程
+	err := repo.AddRemote("origin", remotePath)
 	require.NoError(t, err)
 
 	// 获取当前分支
 	branch, err := repo.CurrentBranch()
 	require.NoError(t, err)
 
-	// 尝试 Push（应该失败，因为没有真实的远程）
+	// 执行 Push
 	err = repo.Push("origin", branch, nil)
-	// 这个测试可能会失败，因为需要网络连接
-	// 我们主要测试方法调用不会 panic
-	if err != nil {
-		t.Logf("Push 失败（预期行为，因为没有真实远程）: %v", err)
+	if isReal {
+		// 真实远程仓库需要认证，可能会失败
+		// 这是可以接受的，因为测试环境可能没有配置认证
+		if err != nil {
+			t.Logf("推送到真实远程仓库失败（可能需要认证）: %v", err)
+			return
+		}
+		t.Logf("推送到真实远程仓库成功")
+	} else {
+		// Mock 远程仓库：Push 可能会成功或失败（取决于 go-git 的实现）
+		// 我们主要测试方法调用不会 panic
+		if err != nil {
+			t.Logf("Push 结果: %v", err)
+			// 某些错误是可以接受的
+		} else {
+			// 如果成功，验证远程仓库有新的引用
+			refs, err := repo.ListRemoteRefs("origin")
+			if err == nil {
+				assert.NotNil(t, refs)
+			}
+		}
 	}
 }
 
@@ -222,21 +253,68 @@ func TestRepository_PushWithUpstream(t *testing.T) {
 // ==================== ListRemoteRefs 测试 ====================
 
 func TestRepository_ListRemoteRefs(t *testing.T) {
-	// 注意：ListRemoteRefs 需要真实的远程仓库或 Mock 服务器
-	// 这里我们测试错误处理
+	// 使用测试远程仓库（Mock 或真实）
 	repo, _ := setupTestRepoWithCommit(t)
 
-	// 添加远程（使用不存在的 URL）
-	err := repo.AddRemote("origin", "https://github.com/non-existent/repo.git")
+	// 设置测试远程仓库
+	remotePath, isReal, commitHash := setupTestRemoteRepo(t, "main")
+
+	// 添加远程
+	err := repo.AddRemote("origin", remotePath)
 	require.NoError(t, err)
 
-	// 尝试列出远程引用（应该失败，因为没有真实的远程）
+	// 列出远程引用
 	refs, err := repo.ListRemoteRefs("origin")
-	// 这个测试可能会失败，因为需要网络连接
-	if err != nil {
-		t.Logf("ListRemoteRefs 失败（预期行为，因为没有真实远程）: %v", err)
-	} else {
+	if isReal {
+		// 真实远程仓库可能因为网络问题失败，这是可以接受的
+		if err != nil {
+			t.Logf("从真实远程仓库列出引用失败（可能是网络问题）: %v", err)
+			return
+		}
 		assert.NotNil(t, refs)
+		// 真实远程仓库应该至少包含一些引用
+		assert.NotEmpty(t, refs)
+	} else {
+		assert.NoError(t, err)
+		assert.NotNil(t, refs)
+
+		// 验证包含默认分支引用
+		mainRef := "refs/heads/main"
+		assert.Contains(t, refs, mainRef)
+		assert.Equal(t, commitHash, refs[mainRef])
+	}
+}
+
+// TestRepository_ListRemoteRefs_NonExistent 测试远程不存在的情况
+func TestRepository_ListRemoteRefs_NonExistent(t *testing.T) {
+	repo, _ := setupTestRepoWithCommit(t)
+
+	// 尝试列出不存在的远程引用
+	refs, err := repo.ListRemoteRefs("non-existent")
+	assert.Error(t, err)
+	assert.Nil(t, refs)
+	assert.Contains(t, err.Error(), "failed to get remote")
+}
+
+// TestRepository_ListRemoteRefs_EmptyRemote 测试空远程的情况
+func TestRepository_ListRemoteRefs_EmptyRemote(t *testing.T) {
+	repo, _ := setupTestRepoWithCommit(t)
+
+	// 添加远程
+	err := repo.AddRemote("test", "https://github.com/user/repo.git")
+	require.NoError(t, err)
+
+	// 注意：由于没有真实的远程连接，ListRemoteRefs 可能会失败
+	// 但我们至少验证了方法调用不会 panic
+	refs, err := repo.ListRemoteRefs("test")
+	if err != nil {
+		// 这是预期的，因为没有真实的远程连接
+		t.Logf("ListRemoteRefs 失败（预期行为）: %v", err)
+		assert.Nil(t, refs)
+	} else {
+		// 如果成功，验证返回的结构
+		assert.NotNil(t, refs)
+		// refs 可能是空的，这是正常的
 	}
 }
 

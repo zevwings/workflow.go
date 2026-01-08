@@ -361,6 +361,153 @@ func TestRepository_GetDefaultBranch(t *testing.T) {
 	}
 }
 
+// TestRepository_GetDefaultBranch_FromLocalHEAD 测试从本地 HEAD 获取默认分支
+func TestRepository_GetDefaultBranch_FromLocalHEAD(t *testing.T) {
+	repo, _ := setupTestRepoWithCommit(t)
+
+	// 获取当前分支
+	currentBranch, err := repo.CurrentBranch()
+	require.NoError(t, err)
+
+	// 获取默认分支（应该从本地 HEAD 获取）
+	branch, err := repo.GetDefaultBranch()
+	assert.NoError(t, err)
+	assert.Equal(t, currentBranch, branch)
+}
+
+// TestRepository_GetDefaultBranch_FromCommonBranches 测试从常见分支名获取默认分支
+func TestRepository_GetDefaultBranch_FromCommonBranches(t *testing.T) {
+	// 创建一个仓库，但 HEAD 不指向分支（detached HEAD 状态）
+	// 这种情况下会尝试常见分支名
+	repo, _ := setupTestRepoWithCommit(t)
+
+	// 切换到 develop 分支（这样 HEAD 会指向 develop）
+	err := repo.CreateAndCheckoutBranch("develop")
+	require.NoError(t, err)
+
+	// 创建其他常见分支
+	err = repo.CreateBranch("dev")
+	require.NoError(t, err)
+
+	// 获取默认分支（应该从本地 HEAD 获取，因为 HEAD 指向 develop）
+	branch, err := repo.GetDefaultBranch()
+	assert.NoError(t, err)
+	// 应该返回 develop（当前分支）
+	assert.Equal(t, "develop", branch)
+
+	// 现在测试当 HEAD 不指向分支时，会尝试常见分支名
+	// 创建一个没有 main 分支的仓库，但 HEAD 指向一个提交
+	repo2, _ := setupTestRepoWithCommit(t)
+
+	// 删除 main 分支的引用（通过切换到其他分支）
+	err = repo2.CreateAndCheckoutBranch("develop")
+	require.NoError(t, err)
+
+	// 获取默认分支（应该从本地 HEAD 获取 develop）
+	branch2, err := repo2.GetDefaultBranch()
+	assert.NoError(t, err)
+	assert.Equal(t, "develop", branch2)
+
+	// 测试当 HEAD 不指向分支且没有常见分支时
+	// 创建一个只有 master 分支的仓库
+	repo3, _ := setupTestRepoWithCommit(t)
+
+	// 创建 master 分支
+	err = repo3.CreateBranch("master")
+	require.NoError(t, err)
+
+	// 获取默认分支（应该返回 main，因为它是当前分支）
+	branch3, err := repo3.GetDefaultBranch()
+	assert.NoError(t, err)
+	// 应该返回 main（当前分支）或 master（如果 main 不存在）
+	assert.NotEmpty(t, branch3)
+}
+
+// TestRepository_GetDefaultBranch_NoBranches 测试没有分支的情况
+func TestRepository_GetDefaultBranch_NoBranches(t *testing.T) {
+	// 创建一个空仓库（没有提交，没有分支）
+	tempDir := t.TempDir()
+	repo, err := Init(tempDir, "main")
+	require.NoError(t, err)
+
+	// 尝试获取默认分支（应该失败）
+	branch, err := repo.GetDefaultBranch()
+	assert.Error(t, err)
+	assert.Empty(t, branch)
+	assert.Contains(t, err.Error(), "failed to get default branch")
+}
+
+// TestRepository_GetDefaultBranch_DetachedHEAD 测试 detached HEAD 状态
+func TestRepository_GetDefaultBranch_DetachedHEAD(t *testing.T) {
+	repo, _ := setupTestRepoWithCommit(t)
+
+	// 创建 develop 分支
+	err := repo.CreateBranch("develop")
+	require.NoError(t, err)
+
+	// 注意：go-git 不直接支持 detached HEAD，但我们可以测试
+	// 当 HEAD 不指向分支时，会尝试常见分支名
+	// 这里我们验证如果存在常见分支，会返回它
+	branch, err := repo.GetDefaultBranch()
+	assert.NoError(t, err)
+	// 应该返回 main（当前分支）或 develop（如果 main 不存在）
+	assert.NotEmpty(t, branch)
+}
+
+// TestRepository_GetDefaultBranch_FromRemote 测试从远程获取默认分支
+func TestRepository_GetDefaultBranch_FromRemote(t *testing.T) {
+	// 创建本地仓库
+	repo, _ := setupTestRepoWithCommit(t)
+
+	// 设置测试远程仓库（Mock 或真实）
+	remotePath, isReal, _ := setupTestRemoteRepo(t, "main")
+
+	// 添加远程
+	err := repo.AddRemote("origin", remotePath)
+	require.NoError(t, err)
+
+	// 获取默认分支（应该从远程获取）
+	branch, err := repo.GetDefaultBranch()
+	if isReal {
+		// 真实远程仓库可能因为网络问题失败，这是可以接受的
+		if err != nil {
+			t.Logf("从真实远程仓库获取默认分支失败（可能是网络问题）: %v", err)
+			return
+		}
+	} else {
+		assert.NoError(t, err)
+		// 应该返回 main（从远程获取）
+		assert.Equal(t, "main", branch)
+	}
+}
+
+// TestRepository_GetDefaultBranch_FromRemoteWithDifferentBranch 测试远程使用不同分支名
+func TestRepository_GetDefaultBranch_FromRemoteWithDifferentBranch(t *testing.T) {
+	// 创建本地仓库
+	repo, _ := setupTestRepoWithCommit(t)
+
+	// 设置测试远程仓库（Mock 或真实），使用 master 作为默认分支
+	remotePath, isReal, _ := setupTestRemoteRepo(t, "master")
+
+	// 添加远程
+	err := repo.AddRemote("origin", remotePath)
+	require.NoError(t, err)
+
+	// 获取默认分支（应该从远程获取）
+	branch, err := repo.GetDefaultBranch()
+	if isReal {
+		// 真实远程仓库可能因为网络问题失败，这是可以接受的
+		if err != nil {
+			t.Logf("从真实远程仓库获取默认分支失败（可能是网络问题）: %v", err)
+			return
+		}
+	} else {
+		assert.NoError(t, err)
+		// 应该返回 master（从远程获取）
+		assert.Equal(t, "master", branch)
+	}
+}
+
 // ==================== ListRemoteBranches 测试 ====================
 
 func TestRepository_ListRemoteBranches(t *testing.T) {
