@@ -1,10 +1,10 @@
+//go:build test
+
 package http
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +12,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zevwings/workflow/internal/testutils"
 )
 
 // ==================== 客户端基础功能测试 ====================
@@ -43,15 +44,14 @@ func TestClient_GetRestyClient(t *testing.T) {
 
 // TestClient_Get 测试 GET 请求（旧版 API）
 func TestClient_Get(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodGet, r.Method)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"message": "success"}`))
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithMethodCheck(http.MethodGet).
+		WithStatus(http.StatusOK).
+		WithJSONBody(map[string]string{"message": "success"}).
+		Build(t)
 
 	client := NewClient()
-	resp, err := client.Get(server.URL)
+	resp, err := client.Get(server.URL())
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -59,20 +59,19 @@ func TestClient_Get(t *testing.T) {
 
 // TestClient_Post 测试 POST 请求（旧版 API）
 func TestClient_Post(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPost, r.Method)
-
-		var body map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&body)
-		assert.Equal(t, "test", body["key"])
-
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(`{"id": 123}`))
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithMethodCheck(http.MethodPost).
+		WithStatus(http.StatusCreated).
+		WithJSONBody(map[string]int{"id": 123}).
+		WithRequestCheck(func(t *testing.T, r *http.Request) {
+			var body map[string]interface{}
+			testutils.ReadRequestBody(t, r, &body)
+			assert.Equal(t, "test", body["key"])
+		}).
+		Build(t)
 
 	client := NewClient()
-	resp, err := client.Post(server.URL, map[string]string{"key": "test"})
+	resp, err := client.Post(server.URL(), map[string]string{"key": "test"})
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode())
@@ -80,15 +79,14 @@ func TestClient_Post(t *testing.T) {
 
 // TestClient_Put 测试 PUT 请求（旧版 API）
 func TestClient_Put(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPut, r.Method)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"updated": true}`))
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithMethodCheck(http.MethodPut).
+		WithStatus(http.StatusOK).
+		WithJSONBody(map[string]bool{"updated": true}).
+		Build(t)
 
 	client := NewClient()
-	resp, err := client.Put(server.URL, map[string]string{"key": "value"})
+	resp, err := client.Put(server.URL(), map[string]string{"key": "value"})
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -96,14 +94,13 @@ func TestClient_Put(t *testing.T) {
 
 // TestClient_Delete 测试 DELETE 请求（旧版 API）
 func TestClient_Delete(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodDelete, r.Method)
-		w.WriteHeader(http.StatusNoContent)
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithMethodCheck(http.MethodDelete).
+		WithStatus(http.StatusNoContent).
+		Build(t)
 
 	client := NewClient()
-	resp, err := client.Delete(server.URL)
+	resp, err := client.Delete(server.URL())
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode())
@@ -111,15 +108,14 @@ func TestClient_Delete(t *testing.T) {
 
 // TestClient_Patch 测试 PATCH 请求（旧版 API）
 func TestClient_Patch(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPatch, r.Method)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"patched": true}`))
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithMethodCheck(http.MethodPatch).
+		WithStatus(http.StatusOK).
+		WithJSONBody(map[string]bool{"patched": true}).
+		Build(t)
 
 	client := NewClient()
-	resp, err := client.Patch(server.URL, map[string]string{"key": "value"})
+	resp, err := client.Patch(server.URL(), map[string]string{"key": "value"})
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
@@ -129,19 +125,20 @@ func TestClient_Patch(t *testing.T) {
 
 // TestClient_GetWithConfig 测试 GET 请求（新版 API）
 func TestClient_GetWithConfig(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodGet, r.Method)
-		assert.Equal(t, "test-value", r.Header.Get("X-Test-Header"))
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"message": "success"}`))
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithMethodCheck(http.MethodGet).
+		WithStatus(http.StatusOK).
+		WithJSONBody(map[string]string{"message": "success"}).
+		WithRequestCheck(func(t *testing.T, r *http.Request) {
+			testutils.AssertRequestHeader(t, r, "X-Test-Header", "test-value")
+		}).
+		Build(t)
 
 	client := NewClient()
 	config := NewRequestConfig().
 		WithHeader("X-Test-Header", "test-value")
 
-	resp, err := client.GetWithConfig(server.URL, config)
+	resp, err := client.GetWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 	assert.True(t, resp.IsSuccess())
@@ -149,73 +146,69 @@ func TestClient_GetWithConfig(t *testing.T) {
 
 // TestClient_PostWithConfig 测试 POST 请求（新版 API）
 func TestClient_PostWithConfig(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPost, r.Method)
-
-		var body map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&body)
-		assert.Equal(t, "test", body["key"])
-
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(`{"id": 123}`))
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithMethodCheck(http.MethodPost).
+		WithStatus(http.StatusCreated).
+		WithJSONBody(map[string]int{"id": 123}).
+		WithRequestCheck(func(t *testing.T, r *http.Request) {
+			var body map[string]interface{}
+			testutils.ReadRequestBody(t, r, &body)
+			assert.Equal(t, "test", body["key"])
+		}).
+		Build(t)
 
 	client := NewClient()
 	config := NewRequestConfig().
 		WithBody(map[string]string{"key": "test"})
 
-	resp, err := client.PostWithConfig(server.URL, config)
+	resp, err := client.PostWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusCreated, resp.Status)
 }
 
 // TestClient_PutWithConfig 测试 PUT 请求（新版 API）
 func TestClient_PutWithConfig(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPut, r.Method)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"updated": true}`))
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithMethodCheck(http.MethodPut).
+		WithStatus(http.StatusOK).
+		WithJSONBody(map[string]bool{"updated": true}).
+		Build(t)
 
 	client := NewClient()
 	config := NewRequestConfig().
 		WithBody(map[string]string{"key": "value"})
 
-	resp, err := client.PutWithConfig(server.URL, config)
+	resp, err := client.PutWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 }
 
 // TestClient_DeleteWithConfig 测试 DELETE 请求（新版 API）
 func TestClient_DeleteWithConfig(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodDelete, r.Method)
-		w.WriteHeader(http.StatusNoContent)
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithMethodCheck(http.MethodDelete).
+		WithStatus(http.StatusNoContent).
+		Build(t)
 
 	client := NewClient()
-	resp, err := client.DeleteWithConfig(server.URL, nil)
+	resp, err := client.DeleteWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusNoContent, resp.Status)
 }
 
 // TestClient_PatchWithConfig 测试 PATCH 请求（新版 API）
 func TestClient_PatchWithConfig(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, http.MethodPatch, r.Method)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"patched": true}`))
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithMethodCheck(http.MethodPatch).
+		WithStatus(http.StatusOK).
+		WithJSONBody(map[string]bool{"patched": true}).
+		Build(t)
 
 	client := NewClient()
 	config := NewRequestConfig().
 		WithBody(map[string]string{"key": "value"})
 
-	resp, err := client.PatchWithConfig(server.URL, config)
+	resp, err := client.PatchWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 }
@@ -224,36 +217,37 @@ func TestClient_PatchWithConfig(t *testing.T) {
 
 // TestClient_SetAuth 测试设置认证 Token
 func TestClient_SetAuth(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		auth := r.Header.Get("Authorization")
-		assert.Equal(t, "Bearer test-token", auth)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithStatus(http.StatusOK).
+		WithRequestCheck(func(t *testing.T, r *http.Request) {
+			testutils.AssertRequestHeader(t, r, "Authorization", "Bearer test-token")
+		}).
+		Build(t)
 
 	client := NewClient()
 	client.SetAuth("test-token")
 
-	resp, err := client.Get(server.URL)
+	resp, err := client.Get(server.URL())
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
 
 // TestClient_SetBasicAuth 测试设置 Basic Auth
 func TestClient_SetBasicAuth(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, password, ok := r.BasicAuth()
-		assert.True(t, ok)
-		assert.Equal(t, "user", username)
-		assert.Equal(t, "pass", password)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithStatus(http.StatusOK).
+		WithRequestCheck(func(t *testing.T, r *http.Request) {
+			username, password, ok := r.BasicAuth()
+			assert.True(t, ok)
+			assert.Equal(t, "user", username)
+			assert.Equal(t, "pass", password)
+		}).
+		Build(t)
 
 	client := NewClient()
 	client.SetBasicAuth("user", "pass")
 
-	resp, err := client.Get(server.URL)
+	resp, err := client.Get(server.URL())
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode())
 }
@@ -272,14 +266,13 @@ func TestClient_SetProxy(t *testing.T) {
 
 // TestClient_Stream 测试流式请求
 func TestClient_Stream(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("streaming data"))
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithStatus(http.StatusOK).
+		WithStringBody("streaming data").
+		Build(t)
 
 	client := NewClient()
-	stream, err := client.Stream(MethodGet, server.URL, nil)
+	stream, err := client.Stream(MethodGet, server.URL(), nil)
 	require.NoError(t, err)
 	defer stream.Close()
 
@@ -301,15 +294,14 @@ func TestClient_Stream_AllMethods(t *testing.T) {
 
 	for _, method := range methods {
 		t.Run(string(method), func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, string(method), r.Method)
-				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("stream data"))
-			}))
-			defer server.Close()
+			server := testutils.NewHTTPTestServer().
+				WithMethodCheck(string(method)).
+				WithStatus(http.StatusOK).
+				WithStringBody("stream data").
+				Build(t)
 
 			client := NewClient()
-			stream, err := client.Stream(method, server.URL, nil)
+			stream, err := client.Stream(method, server.URL(), nil)
 			require.NoError(t, err)
 			defer stream.Close()
 
@@ -330,22 +322,23 @@ func TestClient_Stream_AllMethods(t *testing.T) {
 
 // TestClient_PostMultipart 测试 Multipart 请求
 func TestClient_PostMultipart(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// resty 使用 SetFileReader 时会使用 multipart/form-data
-		err := r.ParseMultipartForm(10 << 20) // 10MB
-		require.NoError(t, err)
+	server := testutils.NewHTTPTestServer().
+		WithHandler(func(w http.ResponseWriter, r *http.Request) {
+			// resty 使用 SetFileReader 时会使用 multipart/form-data
+			err := r.ParseMultipartForm(10 << 20) // 10MB
+			require.NoError(t, err)
 
-		// 检查是否有文件上传
-		file, header, err := r.FormFile("test-field")
-		if err == nil {
-			defer file.Close()
-			assert.Equal(t, "test.txt", header.Filename)
-		}
+			// 检查是否有文件上传
+			file, header, err := r.FormFile("test-field")
+			if err == nil {
+				defer file.Close()
+				assert.Equal(t, "test.txt", header.Filename)
+			}
 
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"message": "uploaded"}`))
-	}))
-	defer server.Close()
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "uploaded"}`))
+		}).
+		Build(t)
 
 	client := NewClient()
 	// 对于普通字段，使用 SetFormData（resty 会自动处理）
@@ -357,7 +350,7 @@ func TestClient_PostMultipart(t *testing.T) {
 			Reader:    strings.NewReader("test-value"),
 		})
 
-	resp, err := client.PostMultipart(server.URL, config)
+	resp, err := client.PostMultipart(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 }
@@ -365,26 +358,27 @@ func TestClient_PostMultipart(t *testing.T) {
 // TestClient_PostMultipart_File 测试 Multipart 文件上传
 func TestClient_PostMultipart_File(t *testing.T) {
 	fileContent := "test file content"
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Contains(t, r.Header.Get("Content-Type"), "multipart/form-data")
+	server := testutils.NewHTTPTestServer().
+		WithHandler(func(w http.ResponseWriter, r *http.Request) {
+			assert.Contains(t, r.Header.Get("Content-Type"), "multipart/form-data")
 
-		err := r.ParseMultipartForm(10 << 20)
-		require.NoError(t, err)
+			err := r.ParseMultipartForm(10 << 20)
+			require.NoError(t, err)
 
-		file, header, err := r.FormFile("file")
-		require.NoError(t, err)
-		defer file.Close()
+			file, header, err := r.FormFile("file")
+			require.NoError(t, err)
+			defer file.Close()
 
-		assert.Equal(t, "test.txt", header.Filename)
+			assert.Equal(t, "test.txt", header.Filename)
 
-		buf := make([]byte, len(fileContent))
-		file.Read(buf)
-		assert.Equal(t, fileContent, string(buf))
+			buf := make([]byte, len(fileContent))
+			file.Read(buf)
+			assert.Equal(t, fileContent, string(buf))
 
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"message": "file uploaded"}`))
-	}))
-	defer server.Close()
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"message": "file uploaded"}`))
+		}).
+		Build(t)
 
 	client := NewClient()
 	config := NewMultipartRequestConfig().
@@ -394,7 +388,7 @@ func TestClient_PostMultipart_File(t *testing.T) {
 			Reader:    strings.NewReader(fileContent),
 		})
 
-	resp, err := client.PostMultipart(server.URL, config)
+	resp, err := client.PostMultipart(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 }
@@ -429,14 +423,13 @@ func TestClient_StatusCodes(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(tc.statusCode)
-				w.Write([]byte(`{"message": "test"}`))
-			}))
-			defer server.Close()
+			server := testutils.NewHTTPTestServer().
+				WithStatus(tc.statusCode).
+				WithJSONBody(map[string]string{"message": "test"}).
+				Build(t)
 
 			client := NewClient()
-			resp, err := client.GetWithConfig(server.URL, nil)
+			resp, err := client.GetWithConfig(server.URL(), nil)
 			require.NoError(t, err)
 			assert.Equal(t, tc.statusCode, resp.Status)
 			assert.Equal(t, tc.isSuccess, resp.IsSuccess())
@@ -450,19 +443,20 @@ func TestClient_StatusCodes(t *testing.T) {
 // TestRetry_ServerError 测试服务器错误重试
 func TestRetry_ServerError(t *testing.T) {
 	retryCount := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		retryCount++
-		if retryCount < 3 {
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message": "success"}`))
-		}
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithHandler(func(w http.ResponseWriter, r *http.Request) {
+			retryCount++
+			if retryCount < 3 {
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"message": "success"}`))
+			}
+		}).
+		Build(t)
 
 	client := NewClient()
-	resp, err := client.GetWithConfig(server.URL, nil)
+	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 	assert.GreaterOrEqual(t, retryCount, 3) // 应该至少重试了 3 次
@@ -471,20 +465,21 @@ func TestRetry_ServerError(t *testing.T) {
 // TestRetry_429TooManyRequests 测试 429 状态码重试
 func TestRetry_429TooManyRequests(t *testing.T) {
 	retryCount := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		retryCount++
-		if retryCount < 2 {
-			w.Header().Set("Retry-After", "1")
-			w.WriteHeader(http.StatusTooManyRequests)
-		} else {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message": "success"}`))
-		}
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithHandler(func(w http.ResponseWriter, r *http.Request) {
+			retryCount++
+			if retryCount < 2 {
+				w.Header().Set("Retry-After", "1")
+				w.WriteHeader(http.StatusTooManyRequests)
+			} else {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"message": "success"}`))
+			}
+		}).
+		Build(t)
 
 	client := NewClient()
-	resp, err := client.GetWithConfig(server.URL, nil)
+	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 	assert.GreaterOrEqual(t, retryCount, 2)
@@ -493,16 +488,17 @@ func TestRetry_429TooManyRequests(t *testing.T) {
 // TestRetry_CustomConfig 测试自定义重试配置
 func TestRetry_CustomConfig(t *testing.T) {
 	retryCount := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		retryCount++
-		if retryCount < 2 {
-			w.WriteHeader(http.StatusInternalServerError)
-		} else {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message": "success"}`))
-		}
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithHandler(func(w http.ResponseWriter, r *http.Request) {
+			retryCount++
+			if retryCount < 2 {
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"message": "success"}`))
+			}
+		}).
+		Build(t)
 
 	client := NewClient()
 	retryConfig := NewRetryConfig().
@@ -510,7 +506,7 @@ func TestRetry_CustomConfig(t *testing.T) {
 		WithRetryWaitTime(100 * time.Millisecond)
 	config := NewRequestConfig().WithRetry(retryConfig)
 
-	resp, err := client.GetWithConfig(server.URL, config)
+	resp, err := client.GetWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 	assert.GreaterOrEqual(t, retryCount, 2)
@@ -519,17 +515,18 @@ func TestRetry_CustomConfig(t *testing.T) {
 // TestRetry_DisableRetry 测试禁用重试
 func TestRetry_DisableRetry(t *testing.T) {
 	retryCount := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		retryCount++
-		w.WriteHeader(http.StatusInternalServerError)
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithHandler(func(w http.ResponseWriter, r *http.Request) {
+			retryCount++
+			w.WriteHeader(http.StatusInternalServerError)
+		}).
+		Build(t)
 
 	client := NewClient()
 	retryConfig := NewRetryConfig().DisableRetry()
 	config := NewRequestConfig().WithRetry(retryConfig)
 
-	resp, err := client.GetWithConfig(server.URL, config)
+	resp, err := client.GetWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusInternalServerError, resp.Status)
 	assert.Equal(t, 1, retryCount) // 不应该重试
@@ -538,16 +535,17 @@ func TestRetry_DisableRetry(t *testing.T) {
 // TestRetry_CustomCondition 测试自定义重试条件
 func TestRetry_CustomCondition(t *testing.T) {
 	retryCount := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		retryCount++
-		if retryCount < 2 {
-			w.WriteHeader(http.StatusBadRequest) // 通常 4xx 不重试
-		} else {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"message": "success"}`))
-		}
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithHandler(func(w http.ResponseWriter, r *http.Request) {
+			retryCount++
+			if retryCount < 2 {
+				w.WriteHeader(http.StatusBadRequest) // 通常 4xx 不重试
+			} else {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"message": "success"}`))
+			}
+		}).
+		Build(t)
 
 	client := NewClient()
 	// 自定义重试条件：即使是 400 也重试
@@ -559,7 +557,7 @@ func TestRetry_CustomCondition(t *testing.T) {
 		})
 	config := NewRequestConfig().WithRetry(retryConfig)
 
-	resp, err := client.GetWithConfig(server.URL, config)
+	resp, err := client.GetWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 	assert.GreaterOrEqual(t, retryCount, 2)
@@ -568,14 +566,15 @@ func TestRetry_CustomCondition(t *testing.T) {
 // TestRetry_NoRetryOn4xx 测试 4xx 错误不重试
 func TestRetry_NoRetryOn4xx(t *testing.T) {
 	retryCount := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		retryCount++
-		w.WriteHeader(http.StatusBadRequest)
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithHandler(func(w http.ResponseWriter, r *http.Request) {
+			retryCount++
+			w.WriteHeader(http.StatusBadRequest)
+		}).
+		Build(t)
 
 	client := NewClient()
-	resp, err := client.GetWithConfig(server.URL, nil)
+	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusBadRequest, resp.Status)
 	assert.Equal(t, 1, retryCount) // 4xx 不应该重试
@@ -603,13 +602,12 @@ func TestDefaultRetryCondition(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var resp *resty.Response
 			if tc.status > 0 {
-				server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(tc.status)
-				}))
-				defer server.Close()
+				server := testutils.NewHTTPTestServer().
+					WithStatus(tc.status).
+					Build(t)
 
 				client := NewClient()
-				resp, _ = client.Get(server.URL)
+				resp, _ = client.Get(server.URL())
 			}
 
 			result := DefaultRetryCondition(resp, tc.err)

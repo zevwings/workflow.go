@@ -23,6 +23,17 @@
 - **prompt_placeholder_analysis.md** - Prompt placeholder 分析
 - **survey_replacement_design.md** - Survey 替换设计
 
+### 测试分析文档
+
+这些文档记录了测试策略和需求分析：
+
+- **config-test-analysis.md** - Config 模块测试需求分析
+- **jira-api-test-necessity.md** - Jira API 模块测试必要性分析
+- **jira-test-analysis.md** - Jira 模块测试用例分析
+- **module-test-analysis.md** - 模块测试需求分析
+
+**注意**：过程性分析文档（如测试覆盖率分析、测试简化分析等）已完成目标并已删除，仅保留具有持续参考价值的测试策略文档。
+
 ## 状态说明
 
 ⚠️ **注意**：这些文档是历史归档，记录了项目开发过程中的技术决策过程。

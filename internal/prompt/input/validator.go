@@ -15,7 +15,7 @@ func ValidateRegex(pattern string, errorMsg string) Validator {
 	return func(value string) error {
 		if !re.MatchString(value) {
 			if errorMsg != "" {
-				return fmt.Errorf(errorMsg)
+				return fmt.Errorf("%s", errorMsg)
 			}
 			return fmt.Errorf("输入格式不正确，必须匹配: %s", pattern)
 		}

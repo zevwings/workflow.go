@@ -70,6 +70,7 @@
 | **参考文档** | [测试工具指南](./references/tools.md) | testify、go-cmp、httptest |
 | | [测试环境工具指南](./references/environments.md) | 测试环境隔离、临时目录管理 |
 | | [测试辅助工具指南](./references/helpers.md) | 测试辅助函数、测试数据生成 |
+| | [testify/suite 使用指南](./references/testify-suite.md) | Suite 模式、共享 setup/teardown、测试组织 |
 | | [Mock测试指南](./references/mock-server.md) | HTTP Mock、接口Mock、测试替身 |
 | | [被忽略测试规范](./references/ignored-tests.md) | 文档格式、测试类型模板、最佳实践 |
 | | [覆盖率测试指南](./references/coverage.md) | 覆盖率工具、报告生成、提升技巧 |

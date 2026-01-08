@@ -1,26 +1,28 @@
+//go:build test
+
 package http
 
 import (
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zevwings/workflow/internal/testutils"
 )
 
 // ==================== RequestConfig 测试 ====================
 
 // TestRequestConfig_WithQuery 测试查询参数配置
 func TestRequestConfig_WithQuery(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "value1", r.URL.Query().Get("key1"))
-		assert.Equal(t, "value2", r.URL.Query().Get("key2"))
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithStatus(http.StatusOK).
+		WithRequestCheck(func(t *testing.T, r *http.Request) {
+			testutils.AssertRequestQuery(t, r, "key1", "value1")
+			testutils.AssertRequestQuery(t, r, "key2", "value2")
+		}).
+		Build(t)
 
 	client := NewClient()
 	config := NewRequestConfig().
@@ -29,19 +31,20 @@ func TestRequestConfig_WithQuery(t *testing.T) {
 			"key2": "value2",
 		})
 
-	resp, err := client.GetWithConfig(server.URL, config)
+	resp, err := client.GetWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 }
 
 // TestRequestConfig_WithHeaders 测试多个 Headers 配置
 func TestRequestConfig_WithHeaders(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "value1", r.Header.Get("X-Header-1"))
-		assert.Equal(t, "value2", r.Header.Get("X-Header-2"))
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithStatus(http.StatusOK).
+		WithRequestCheck(func(t *testing.T, r *http.Request) {
+			testutils.AssertRequestHeader(t, r, "X-Header-1", "value1")
+			testutils.AssertRequestHeader(t, r, "X-Header-2", "value2")
+		}).
+		Build(t)
 
 	client := NewClient()
 	config := NewRequestConfig().
@@ -50,27 +53,28 @@ func TestRequestConfig_WithHeaders(t *testing.T) {
 			"X-Header-2": "value2",
 		})
 
-	resp, err := client.GetWithConfig(server.URL, config)
+	resp, err := client.GetWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 }
 
 // TestRequestConfig_WithAuth 测试通过配置设置 Basic Auth
 func TestRequestConfig_WithAuth(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, password, ok := r.BasicAuth()
-		assert.True(t, ok)
-		assert.Equal(t, "testuser", username)
-		assert.Equal(t, "testpass", password)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithStatus(http.StatusOK).
+		WithRequestCheck(func(t *testing.T, r *http.Request) {
+			username, password, ok := r.BasicAuth()
+			assert.True(t, ok)
+			assert.Equal(t, "testuser", username)
+			assert.Equal(t, "testpass", password)
+		}).
+		Build(t)
 
 	client := NewClient()
 	config := NewRequestConfig().
 		WithAuth(NewAuthorization("testuser", "testpass"))
 
-	resp, err := client.GetWithConfig(server.URL, config)
+	resp, err := client.GetWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 }
@@ -82,14 +86,15 @@ func TestRequestConfig_WithBody_JSON(t *testing.T) {
 		Value int    `json:"value"`
 	}
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body RequestBody
-		json.NewDecoder(r.Body).Decode(&body)
-		assert.Equal(t, "test", body.Name)
-		assert.Equal(t, 123, body.Value)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithStatus(http.StatusOK).
+		WithRequestCheck(func(t *testing.T, r *http.Request) {
+			var body RequestBody
+			testutils.ReadRequestBody(t, r, &body)
+			assert.Equal(t, "test", body.Name)
+			assert.Equal(t, 123, body.Value)
+		}).
+		Build(t)
 
 	client := NewClient()
 	config := NewRequestConfig().
@@ -98,7 +103,7 @@ func TestRequestConfig_WithBody_JSON(t *testing.T) {
 			Value: 123,
 		})
 
-	resp, err := client.PostWithConfig(server.URL, config)
+	resp, err := client.PostWithConfig(server.URL(), config)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 }
@@ -129,14 +134,13 @@ func TestRequestConfig_DefaultValues(t *testing.T) {
 
 // TestRequestConfig_NilConfig 测试 nil 配置
 func TestRequestConfig_NilConfig(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"message": "success"}`))
-	}))
-	defer server.Close()
+	server := testutils.NewHTTPTestServer().
+		WithStatus(http.StatusOK).
+		WithJSONBody(map[string]string{"message": "success"}).
+		Build(t)
 
 	client := NewClient()
-	resp, err := client.GetWithConfig(server.URL, nil)
+	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
 }
@@ -167,17 +171,18 @@ func TestRequestConfig_QueryParams(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				for k, v := range tc.expected {
-					assert.Equal(t, v, r.URL.Query().Get(k))
-				}
-				w.WriteHeader(http.StatusOK)
-			}))
-			defer server.Close()
+			server := testutils.NewHTTPTestServer().
+				WithStatus(http.StatusOK).
+				WithRequestCheck(func(t *testing.T, r *http.Request) {
+					for k, v := range tc.expected {
+						testutils.AssertRequestQuery(t, r, k, v)
+					}
+				}).
+				Build(t)
 
 			client := NewClient()
 			config := NewRequestConfig().WithQuery(tc.query)
-			resp, err := client.GetWithConfig(server.URL, config)
+			resp, err := client.GetWithConfig(server.URL(), config)
 			require.NoError(t, err)
 			assert.Equal(t, http.StatusOK, resp.Status)
 		})

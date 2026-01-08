@@ -60,7 +60,10 @@ func FormatError(err error) string {
 		if ghErr.Message != "" {
 			return fmt.Sprintf("%s: %s", ghErr.Message, ghErr.DocumentationURL)
 		}
-		return fmt.Sprintf("GitHub API error: %s", ghErr.Response.Status)
+		if ghErr.Response != nil {
+			return fmt.Sprintf("GitHub API error: %s", ghErr.Response.Status)
+		}
+		return "GitHub API error"
 	}
 
 	return err.Error()

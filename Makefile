@@ -45,6 +45,11 @@ test-coverage:
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "覆盖率报告已生成: coverage.html"
 
+# 运行跨包 / E2E 集成测试（test/integration）
+test-integration:
+	@echo "运行跨包 / E2E 集成测试..."
+	@go test -tags=integration -v ./test/integration/...
+
 # 格式化代码
 fmt:
 	@echo "格式化代码..."
