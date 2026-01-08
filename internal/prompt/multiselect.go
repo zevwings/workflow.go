@@ -14,12 +14,12 @@ func AskMultiSelect(message string, options []string, defaultSelected []int) ([]
 func multiselectFunc(message string, options []string, defaultSelected []int) ([]int, error) {
 	// 构建配置
 	config := multiselect.Config{
-		FormatPrompt: formatPrompt,
+		FormatPrompt: formatTitle,
 		FormatAnswer: formatAnswer,
 		FormatHint:   formatHint,
 	}
 
-	return multiselect.MultiSelect(message, options, defaultSelected, config)
+	return multiselect.MultiSelectDefault(message, options, defaultSelected, config)
 }
 
 // MultiSelectBuilder MultiSelect 的链式构建器

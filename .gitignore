@@ -13,7 +13,7 @@ workflow
 # Output of the go coverage tool
 *.out
 coverage.html
-
+*.tmp
 # Dependency directories
 vendor/
 

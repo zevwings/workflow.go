@@ -14,12 +14,12 @@ func AskSelect(message string, options []string, defaultIndex int) (int, error) 
 func selectFunc(message string, options []string, defaultIndex int) (int, error) {
 	// 构建配置
 	config := selectpkg.Config{
-		FormatPrompt: formatPrompt,
+		FormatPrompt: formatTitle,
 		FormatAnswer: formatAnswer,
 		FormatHint:   formatHint,
 	}
 
-	return selectpkg.Select(message, options, defaultIndex, config)
+	return selectpkg.SelectDefault(message, options, defaultIndex, config)
 }
 
 // SelectBuilder Select 的链式构建器

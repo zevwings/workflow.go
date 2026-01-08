@@ -14,7 +14,7 @@ type Validator = input.Validator
 // placeholder 参数用于显示占位符文本（仅在非密码模式下有效）
 func inputFunc(message string, defaultValue string, placeholder string, isPassword bool, validator Validator) (string, error) {
 	// 格式化提示消息（类似 huh 的 Title，单独显示）
-	promptMsg := formatPrompt(message)
+	promptMsg := formatTitle(message)
 
 	// 参考 huh + bubbletea 的样式：
 	// 1. Title（提示信息）单独显示一行，并在其后显示默认值
@@ -93,16 +93,16 @@ func inputFunc(message string, defaultValue string, placeholder string, isPasswo
 
 		if isPassword {
 			// 密码模式：使用通用编辑内核，但通过 echo 函数以 * 方式显示输入内容
-			value, err = input.ReadLineCore(promptText, validator, func(b []byte) string {
+			value, err = input.ReadLineCoreDefault(promptText, validator, func(b []byte) string {
 				return strings.Repeat("*", len(b))
 			}, formatError)
 		} else {
 			// 普通输入模式：如果有 placeholder，使用字符级输入；否则也使用字符级输入（支持光标移动）
 			if placeholder != "" {
-				value, err = input.ReadWithPlaceholder(promptText, placeholder, effectiveValidator, config)
+				value, err = input.ReadWithPlaceholderDefault(promptText, placeholder, effectiveValidator, config)
 			} else {
 				// 字符级输入（支持光标移动，类似 ReadWithPlaceholder 但没有 placeholder）
-				value, err = input.ReadLineCore(promptText, effectiveValidator, func(b []byte) string {
+				value, err = input.ReadLineCoreDefault(promptText, effectiveValidator, func(b []byte) string {
 					return string(b)
 				}, formatError)
 			}
@@ -187,9 +187,9 @@ func inputFunc(message string, defaultValue string, placeholder string, isPasswo
 		fmt.Print("\r")     // 回到行首
 		fmt.Print("\033[K") // 清除到行尾
 
-		// 在同一行显示：formatPrompt(message) + " " + formatAnswer(displayValue)
+		// 在同一行显示：formatTitle(message) + " " + formatAnswer(displayValue)
 		// 注意：使用原始的 message，不包含默认值
-		formattedPrompt := formatPrompt(message)
+		formattedPrompt := formatTitle(message)
 
 		// 对于密码模式，显示星号而不是实际值
 		var displayValue string

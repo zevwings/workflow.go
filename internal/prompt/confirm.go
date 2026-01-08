@@ -14,11 +14,12 @@ func AskConfirm(message string, defaultYes bool) (bool, error) {
 func confirmFunc(message string, defaultYes bool) (bool, error) {
 	// 构建配置
 	config := confirm.Config{
-		FormatPrompt: formatPrompt,
+		FormatPrompt: formatTitle,
 		FormatAnswer: formatAnswer,
+		FormatHint:   formatHint, // 使用 HintStyle 格式化 【y/N】 提示
 	}
 
-	return confirm.Confirm(message, defaultYes, config)
+	return confirm.ConfirmDefault(message, defaultYes, config)
 }
 
 // ConfirmBuilder Confirm 的链式构建器

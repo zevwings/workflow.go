@@ -20,14 +20,14 @@ func NewMessage(verbose bool) *Message {
 // Info 输出信息
 func (m *Message) Info(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
-	formatted := formatMessage("ℹ ", msg, GetTheme().InfoStyle)
+	formatted := formatMessage("ℹ", msg, GetTheme().InfoStyle)
 	fmt.Println(formatted)
 }
 
 // Success 输出成功信息
 func (m *Message) Success(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
-	formatted := formatMessage("✓ ", msg, GetTheme().SuccessStyle)
+	formatted := formatMessage("✓", msg, GetTheme().SuccessStyle)
 	fmt.Println(formatted)
 }
 
@@ -35,9 +35,9 @@ func (m *Message) Success(format string, args ...interface{}) {
 func (m *Message) Warning(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	t := GetTheme()
-	prefix := "⚠ "
+	prefix := "⚠"
 	if t.PrefixWarn != "" {
-		prefix = t.PrefixWarn + " "
+		prefix = t.PrefixWarn
 	}
 	formatted := formatMessage(prefix, msg, t.WarnStyle)
 	fmt.Println(formatted)
@@ -47,9 +47,9 @@ func (m *Message) Warning(format string, args ...interface{}) {
 func (m *Message) Error(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
 	t := GetTheme()
-	prefix := "✗ "
+	prefix := "✗"
 	if t.PrefixError != "" {
-		prefix = t.PrefixError + " "
+		prefix = t.PrefixError
 	}
 	formatted := formatMessage(prefix, msg, t.ErrorStyle)
 	fmt.Println(formatted)
@@ -65,7 +65,7 @@ func (m *Message) Fatal(format string, args ...interface{}) {
 func (m *Message) Debug(format string, args ...interface{}) {
 	if m.verbose {
 		msg := fmt.Sprintf(format, args...)
-		formatted := formatMessage("DEBUG: ", msg, GetTheme().DebugStyle)
+		formatted := formatMessage("DEBUG:", msg, GetTheme().DebugStyle)
 		fmt.Println(formatted)
 	}
 }
@@ -83,7 +83,13 @@ func (m *Message) Println(format string, args ...interface{}) {
 // formatMessage 格式化消息（使用主题样式）
 func formatMessage(prefix, message string, style lipgloss.Style) string {
 	t := GetTheme()
-	text := prefix + message
+	// 拼接前缀和消息，确保前缀和消息之间有一个空格
+	var text string
+	if prefix != "" && message != "" {
+		text = prefix + " " + message
+	} else {
+		text = prefix + message
+	}
 	if !t.EnableColor {
 		return text
 	}

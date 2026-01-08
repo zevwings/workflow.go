@@ -15,7 +15,7 @@ type Theme struct {
 	WarnStyle    lipgloss.Style
 	ErrorStyle   lipgloss.Style
 	DebugStyle   lipgloss.Style // 调试信息样式
-	PromptStyle  lipgloss.Style
+	TitleStyle   lipgloss.Style
 	AnswerStyle  lipgloss.Style
 	HintStyle    lipgloss.Style // 提示信息样式（如操作说明）
 	BorderStyle  lipgloss.Style // 表格边框样式
@@ -51,11 +51,11 @@ var (
 		DebugStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("129")). // Magenta
 			Bold(false),
-		PromptStyle: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("51")). // HiCyan
+		TitleStyle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("15")). // HiWhite
 			Bold(false),
 		AnswerStyle: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("46")). // HiGreen
+			Foreground(lipgloss.Color("51")). // HiCyan
 			Bold(false),
 		HintStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("240")). // HiBlack (gray)
@@ -98,13 +98,13 @@ func GetTheme() Theme {
 	return currentTheme
 }
 
-// formatPrompt 格式化提示消息
-func formatPrompt(message string) string {
+// formatTitle 格式化标题消息
+func formatTitle(message string) string {
 	t := GetTheme()
 	if !t.EnableColor {
 		return message
 	}
-	return t.PromptStyle.Render(message)
+	return t.TitleStyle.Render(message)
 }
 
 // formatAnswer 格式化答案显示

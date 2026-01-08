@@ -88,7 +88,7 @@ func TestSetTheme_GetTheme_ThreadSafe(t *testing.T) {
 	require.NotNil(t, finalTheme)
 }
 
-func TestFormatPrompt_EnableColor(t *testing.T) {
+func TestFormatTitle_EnableColor(t *testing.T) {
 	// 保存原始主题
 	originalTheme := GetTheme()
 	defer SetTheme(originalTheme)
@@ -98,7 +98,7 @@ func TestFormatPrompt_EnableColor(t *testing.T) {
 	theme.EnableColor = true
 	SetTheme(theme)
 
-	result := formatPrompt("test message")
+	result := formatTitle("test message")
 	require.Contains(t, result, "test message")
 	// 注意：在非TTY环境下，lipgloss可能不会添加ANSI代码
 	// 所以只检查内容存在即可
@@ -107,7 +107,7 @@ func TestFormatPrompt_EnableColor(t *testing.T) {
 	theme.EnableColor = false
 	SetTheme(theme)
 
-	result = formatPrompt("test message")
+	result = formatTitle("test message")
 	require.Equal(t, "test message", result)
 }
 
@@ -205,7 +205,7 @@ func TestFormatFunctions_WithCustomTheme(t *testing.T) {
 	// 创建自定义主题
 	customTheme := Theme{
 		EnableColor: true,
-		PromptStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("red")),
+		TitleStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("red")),
 		AnswerStyle: lipgloss.NewStyle().Foreground(lipgloss.Color("green")),
 		ErrorStyle:  lipgloss.NewStyle().Foreground(lipgloss.Color("yellow")),
 		HintStyle:   lipgloss.NewStyle().Foreground(lipgloss.Color("blue")),
@@ -213,8 +213,8 @@ func TestFormatFunctions_WithCustomTheme(t *testing.T) {
 	SetTheme(customTheme)
 
 	// 测试所有格式化函数都使用自定义主题
-	promptResult := formatPrompt("prompt")
-	require.Contains(t, promptResult, "prompt")
+	titleResult := formatTitle("title")
+	require.Contains(t, titleResult, "title")
 
 	answerResult := formatAnswer("answer")
 	require.Contains(t, answerResult, "answer")

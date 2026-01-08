@@ -209,7 +209,7 @@ func (t *Table) renderRow(row []string, colWidths []int, isHeader bool, borderSt
 
 		// 表头样式（在对齐后应用，这样不会影响宽度计算）
 		if isHeader && t.theme.EnableColor {
-			cell = t.theme.PromptStyle.Render(cell)
+			cell = t.theme.TitleStyle.Render(cell)
 		}
 
 		cells = append(cells, cell)
