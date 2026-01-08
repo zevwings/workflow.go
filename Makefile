@@ -36,12 +36,12 @@ clean:
 # 运行测试
 test:
 	@echo "运行测试..."
-	@go test -v ./...
+	@go test -tags=test -v ./...
 
 # 运行测试并生成覆盖率报告
 test-coverage:
 	@echo "运行测试并生成覆盖率报告..."
-	@go test -v -coverprofile=coverage.out ./...
+	@go test -tags=test -v -coverprofile=coverage.out ./...
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo "覆盖率报告已生成: coverage.html"
 

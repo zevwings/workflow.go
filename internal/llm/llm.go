@@ -39,7 +39,6 @@ import (
 	"github.com/zevwings/workflow/internal/llm/branch"
 	"github.com/zevwings/workflow/internal/llm/client"
 	"github.com/zevwings/workflow/internal/llm/pr"
-	"github.com/zevwings/workflow/internal/llm/utils"
 )
 
 // ============================================================================
@@ -122,68 +121,6 @@ func Global(httpClient *http.Client, config *ProviderConfig) *LLMClient {
 //   - *LLMRequestParams: 使用默认值的请求参数
 func DefaultLLMRequestParams() *LLMRequestParams {
 	return client.DefaultLLMRequestParams()
-}
-
-// ============================================================================
-// 辅助函数重新导出
-// ============================================================================
-
-// ExtractJSONFromMarkdown 从 markdown 代码块中提取 JSON 字符串
-//
-// 支持以下格式：
-// - ```json\n{...}\n```
-// - ```\n{...}\n```
-// - 纯 JSON 字符串
-//
-// 参数:
-//   - response: 可能包含 markdown 代码块的响应字符串
-//
-// 返回:
-//   - string: 提取的 JSON 字符串（已去除 markdown 代码块包装）
-func ExtractJSONFromMarkdown(response string) string {
-	return utils.ExtractJSONFromMarkdown(response)
-}
-
-// FixJSONEscapes 修复 JSON 字符串中的转义问题
-//
-// LLM 生成的 JSON 可能包含未转义的反斜杠（特别是在 Windows 路径中），
-// 这会导致 JSON 解析失败。此函数尝试修复这些转义问题。
-//
-// 参数:
-//   - jsonStr: 需要修复的 JSON 字符串
-//
-// 返回:
-//   - string: 修复后的 JSON 字符串
-func FixJSONEscapes(jsonStr string) string {
-	return utils.FixJSONEscapes(jsonStr)
-}
-
-// ExtractAndFixJSON 从 markdown 代码块中提取并修复 JSON 字符串
-//
-// 这是 ExtractJSONFromMarkdown 的增强版本，会自动修复 JSON 字符串中的转义问题。
-//
-// 参数:
-//   - response: 可能包含 markdown 代码块的响应字符串
-//
-// 返回:
-//   - string: 提取并修复后的 JSON 字符串
-func ExtractAndFixJSON(response string) string {
-	return utils.ExtractAndFixJSON(response)
-}
-
-// TruncateDiff 安全截断 diff 内容
-//
-// 使用字符边界安全截取，避免在 UTF-8 字符中间截断。
-// 会在最后一个换行符处截断，以保持 diff 格式的完整性。
-//
-// 参数:
-//   - diff: 需要截断的 diff 内容
-//   - maxLength: 最大字符数（UTF-8 rune 计数）
-//
-// 返回:
-//   - string: 截断后的 diff 内容，如果超过长度会添加截断提示
-func TruncateDiff(diff string, maxLength int) string {
-	return utils.TruncateDiff(diff, maxLength)
 }
 
 // ============================================================================

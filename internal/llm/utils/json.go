@@ -25,22 +25,30 @@ func ExtractJSONFromMarkdown(response string) string {
 		// 移除 ```json 开头和 ``` 结尾
 		start := strings.Index(trimmed, "\n")
 		if start == -1 {
-			start = 0
+			// 没有换行，直接跳过 ```json 前缀
+			start = len("```json")
+		} else {
+			start++ // 跳过换行符
 		}
 		end := strings.LastIndex(trimmed, "```")
-		if end == -1 {
-			end = len(trimmed)
+		if end == -1 || end <= start {
+			// 没有找到结束标记，或者结束标记在开始位置之前，返回剩余部分
+			return strings.TrimSpace(trimmed[start:])
 		}
 		return strings.TrimSpace(trimmed[start:end])
 	} else if strings.HasPrefix(trimmed, "```") {
 		// 移除 ``` 开头和 ``` 结尾
 		start := strings.Index(trimmed, "\n")
 		if start == -1 {
-			start = 0
+			// 没有换行，直接跳过 ``` 前缀
+			start = len("```")
+		} else {
+			start++ // 跳过换行符
 		}
 		end := strings.LastIndex(trimmed, "```")
-		if end == -1 {
-			end = len(trimmed)
+		if end == -1 || end <= start {
+			// 没有找到结束标记，或者结束标记在开始位置之前，返回剩余部分
+			return strings.TrimSpace(trimmed[start:])
 		}
 		return strings.TrimSpace(trimmed[start:end])
 	}

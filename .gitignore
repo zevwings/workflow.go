@@ -45,3 +45,8 @@ build/
 # Completions
 completions/
 
+!.cursor/
+!.cursor/rules/
+!.cursor/rules/**
+
+.cursor/mcp.json

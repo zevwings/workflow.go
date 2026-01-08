@@ -172,13 +172,9 @@ func buildCreateUserPrompt(commitTitle string, existsBranches []string, gitDiff 
 	}
 
 	if gitDiff != "" && strings.TrimSpace(gitDiff) != "" {
-		// 限制 git diff 长度，避免超过 LLM token 限制
-		// create 主要用于生成标题和描述，不需要完整 diff
-		const maxDiffLength = 10000 // create 只需要了解主要变更
-		diffTrimmed := utils.TruncateDiff(gitDiff, maxDiffLength)
 		parts = append(parts, "")
 		parts = append(parts, "Git changes (for verification only):")
-		parts = append(parts, diffTrimmed)
+		parts = append(parts, gitDiff)
 	}
 
 	return strings.Join(parts, "\n")
@@ -301,11 +297,7 @@ func buildSummaryUserPrompt(prTitle, prDiff string) string {
 	parts := []string{fmt.Sprintf("PR Title: %s", prTitle)}
 
 	if prDiff != "" && strings.TrimSpace(prDiff) != "" {
-		// 限制 diff 长度，避免请求过大
-		// 对于总结，我们需要更多的 diff 内容，但也要避免超过 token 限制
-		const maxDiffLength = 15000 // 增加长度，因为总结需要更多上下文
-		diffTrimmed := utils.TruncateDiff(prDiff, maxDiffLength)
-		parts = append(parts, fmt.Sprintf("PR Diff:\n%s", diffTrimmed))
+		parts = append(parts, fmt.Sprintf("PR Diff:\n%s", prDiff))
 	}
 
 	return strings.Join(parts, "\n\n")
@@ -435,12 +427,8 @@ func buildRewordUserPrompt(prDiff string, currentTitle *string) string {
 	}
 
 	if prDiff != "" && strings.TrimSpace(prDiff) != "" {
-		// 限制 diff 长度，避免超过 LLM token 限制
-		// reword 只需要了解主要变更，不需要完整 diff
-		const maxDiffLength = 12000 // reword 需要比 summary 少一些上下文
-		diffTrimmed := utils.TruncateDiff(prDiff, maxDiffLength)
 		parts = append(parts, "PR Diff (for verification only):")
-		parts = append(parts, diffTrimmed)
+		parts = append(parts, prDiff)
 	}
 
 	return strings.Join(parts, "\n")
@@ -531,10 +519,7 @@ func SummarizeFileChange(filePath, fileDiff string, lang *client.SupportedLangua
 
 // buildFileSummaryUserPrompt 生成单个文件修改总结的 user prompt
 func buildFileSummaryUserPrompt(filePath, fileDiff string) string {
-	// 限制单个文件的 diff 长度，避免超过 LLM token 限制
-	const maxFileDiffLength = 8000 // 单个文件的总结不需要太多上下文
-	diffTrimmed := utils.TruncateDiff(fileDiff, maxFileDiffLength)
-	return fmt.Sprintf("File path: %s\n\nFile diff:\n%s", filePath, diffTrimmed)
+	return fmt.Sprintf("File path: %s\n\nFile diff:\n%s", filePath, fileDiff)
 }
 
 // cleanFileChangeSummaryResponse 清理文件修改总结响应

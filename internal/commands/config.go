@@ -56,7 +56,7 @@ func newConfigShowCmd() *cobra.Command {
 				return fmt.Errorf("读取配置文件失败: %w", err)
 			}
 
-			out.Println(string(data))
+			out.Println("%s", string(data))
 			return nil
 		},
 	}

@@ -156,3 +156,45 @@ func (m *GlobalManager) GetGitHubConfig() *GitHubConfig {
 
 	return cfg
 }
+
+// GetGlobalConfig 获取完整的全局配置
+//
+// 从 viper 中读取完整的全局配置。
+//
+// 返回:
+//   - *GlobalConfig: 全局配置结构
+func (m *GlobalManager) GetGlobalConfig() *GlobalConfig {
+	cfg := &GlobalConfig{}
+
+	// 读取用户配置
+	cfg.User.Name = m.GetString("user.name")
+	cfg.User.Email = m.GetString("user.email")
+
+	// 读取日志配置
+	cfg.Log.Level = m.GetString("log.level")
+	if cfg.Log.Level == "" {
+		cfg.Log.Level = "info"
+	}
+
+	// 读取 GitHub 配置
+	cfg.GitHub = *m.GetGitHubConfig()
+
+	// 读取 Jira 配置
+	cfg.Jira.URL = m.GetString("jira.url")
+	cfg.Jira.Username = m.GetString("jira.username")
+	cfg.Jira.Token = m.GetString("jira.token")
+
+	// 读取 LLM 配置
+	cfg.LLM = *m.GetLLMConfig()
+
+	// 读取代理配置
+	if enabled := m.Get("proxy.enabled"); enabled != nil {
+		if enabledBool, ok := enabled.(bool); ok {
+			cfg.Proxy.Enabled = enabledBool
+		}
+	}
+	cfg.Proxy.HTTP = m.GetString("proxy.http")
+	cfg.Proxy.HTTPS = m.GetString("proxy.https")
+
+	return cfg
+}

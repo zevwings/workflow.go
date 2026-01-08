@@ -317,6 +317,8 @@ func (c *Client) Stream(method HttpMethod, url string, config *RequestConfig) (i
 
 	req := c.client.R()
 	req = config.applyToRequest(req)
+	// 设置不自动解析响应，以便支持流式读取
+	req.SetDoNotParseResponse(true)
 
 	var resp *resty.Response
 	var err error
