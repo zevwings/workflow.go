@@ -1,6 +1,6 @@
 # Binaries
 bin/
-workflow
+/workflow
 *.exe
 *.exe~
 *.dll
@@ -23,6 +23,15 @@ go.work
 # IDE
 .idea/
 .vscode/
+!.vscode/
+!.vscode/settings.json  # 允许提交项目特定的 VSCode 设置
+
+!.cursor/
+!.cursor/rules/
+!.cursor/rules/**
+
+.cursor/mcp.json
+
 *.swp
 *.swo
 *~
@@ -44,12 +53,5 @@ build/
 
 # Completions
 completions/
-
-!.cursor/
-!.cursor/rules/
-!.cursor/rules/**
-
-.cursor/mcp.json
-
 
 docs/analysis/
