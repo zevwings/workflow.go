@@ -268,4 +268,3 @@ func (e *errorTerminal) ResetFormat() {
 		e.MockTerminal.ResetFormat()
 	}
 }
-

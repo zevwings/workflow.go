@@ -88,5 +88,3 @@ func TestSelect_InvalidDefaultIndex(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, index)
 }
-
-

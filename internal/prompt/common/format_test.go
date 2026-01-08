@@ -51,4 +51,3 @@ func TestFormatResult_FormatAnswerNil(t *testing.T) {
 	// 确保没有格式化标记
 	assert.NotContains(t, output, "[格式化]", "不应该包含格式化标记")
 }
-

@@ -64,13 +64,9 @@ func init() {
 	rootCmd.AddCommand(commands.NewVersionCmd(version, buildDate, gitCommit))
 	rootCmd.AddCommand(commands.NewConfigCmd())
 	rootCmd.AddCommand(commands.NewCheckCmd())
-	// 添加分离的演示命令
-	rootCmd.AddCommand(commands.NewDemoInputCmd())
-	rootCmd.AddCommand(commands.NewDemoConfirmCmd())
-	rootCmd.AddCommand(commands.NewDemoSelectCmd())
-	rootCmd.AddCommand(commands.NewDemoMultiSelectCmd())
-	rootCmd.AddCommand(commands.NewDemoTableCmd())
-	rootCmd.AddCommand(commands.NewDemoMessageCmd())
+	// 添加演示命令
+	rootCmd.AddCommand(commands.NewDemoCmd())
+	rootCmd.AddCommand(commands.NewDemoFormCmd())
 
 	// 设置版本模板
 	rootCmd.SetVersionTemplate(fmt.Sprintf("workflow version %s\nBuild Date: %s\nGit Commit: %s\n", version, buildDate, gitCommit))

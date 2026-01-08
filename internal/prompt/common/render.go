@@ -36,8 +36,9 @@ func RenderOptions(
 		// 渲染选项的通用逻辑
 		renderOptions := func() error {
 			currentIndex := getCurrentIndex()
+
+			// 渲染所有选项行
 			for i := 0; i < optionsCount; i++ {
-				terminal.MoveToStart()
 				line, isHighlighted := formatLine(i, currentIndex)
 				if isHighlighted {
 					highlightedLine := config.FormatAnswer(line)
@@ -45,17 +46,16 @@ func RenderOptions(
 				} else {
 					terminal.Print(line)
 				}
-				terminal.ClearLine()
-				terminal.Println("")
+				// 重置格式，确保每行独立，避免格式影响后续行
+				terminal.ResetFormat()
+				terminal.Print("\r\n")
 			}
 
 			// 空行
-			terminal.MoveToStart()
 			terminal.Println("")
 
 			// 显示提示信息
 			hintMsg := config.FormatHint(hintText)
-			terminal.MoveToStart()
 			terminal.Print(hintMsg)
 			terminal.Print("\r\n")
 
@@ -64,14 +64,19 @@ func RenderOptions(
 		}
 
 		if !isFirst {
-			// 重新渲染：使用 ReRender 包装
-			return renderer.ReRender(func(bool) error {
-				return renderOptions()
-			})
+			// 重新渲染：先恢复光标位置并清除内容
+			terminal.RestoreCursor()
+			// 重置所有 ANSI 格式，避免之前的格式影响新内容
+			terminal.ResetFormat()
+			// 移动到行首，确保清除操作从行首开始
+			terminal.MoveToStart()
+			// 清除从光标到屏幕底部的所有内容
+			terminal.ClearToEnd()
+			// 然后渲染新内容
+			return renderOptions()
 		}
 
 		// 首次渲染：直接渲染
 		return renderOptions()
 	}
 }
-

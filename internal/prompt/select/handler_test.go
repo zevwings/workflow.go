@@ -105,4 +105,3 @@ func TestSelectHandler_ParseNumericInput(t *testing.T) {
 	result = handler.ParseNumericInput(10)
 	assert.Equal(t, 0, result) // 返回默认值
 }
-

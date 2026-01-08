@@ -87,4 +87,3 @@ func TestInteractiveRenderer_GetTerminal(t *testing.T) {
 	terminal := renderer.GetTerminal()
 	assert.Equal(t, mockTerminal, terminal, "应该返回相同的终端实例")
 }
-

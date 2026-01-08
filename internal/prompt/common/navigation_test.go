@@ -11,11 +11,11 @@ import (
 // TestNavigationHandler_ProcessArrowKey_Up 测试向上导航
 func TestNavigationHandler_ProcessArrowKey_Up(t *testing.T) {
 	testCases := []struct {
-		name           string
-		itemCount      int
-		currentIndex   int
-		expectedIndex  int
-		shouldRender   bool
+		name          string
+		itemCount     int
+		currentIndex  int
+		expectedIndex int
+		shouldRender  bool
 	}{
 		{"从中间向上", 5, 3, 2, true},
 		{"从顶部向上（非循环）", 5, 0, 0, false},
@@ -37,11 +37,11 @@ func TestNavigationHandler_ProcessArrowKey_Up(t *testing.T) {
 // TestNavigationHandler_ProcessArrowKey_Down 测试向下导航
 func TestNavigationHandler_ProcessArrowKey_Down(t *testing.T) {
 	testCases := []struct {
-		name           string
-		itemCount      int
-		currentIndex   int
-		expectedIndex  int
-		shouldRender   bool
+		name          string
+		itemCount     int
+		currentIndex  int
+		expectedIndex int
+		shouldRender  bool
 	}{
 		{"从中间向下", 5, 2, 3, true},
 		{"从底部向下（非循环）", 5, 4, 4, false},
@@ -139,4 +139,3 @@ func TestNavigationHandler_ValidateIndex_EmptyItems(t *testing.T) {
 	validIndex = handler.ValidateIndex(5)
 	assert.Equal(t, 0, validIndex)
 }
-

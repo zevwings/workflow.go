@@ -160,4 +160,3 @@ func TestMultiSelectHandler_ParseCommaSeparatedInput(t *testing.T) {
 	result = handler.ParseCommaSeparatedInput("")
 	assert.Equal(t, []int{}, result)
 }
-

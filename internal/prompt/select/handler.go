@@ -55,4 +55,3 @@ func (h *SelectHandler) ParseNumericInput(input int) int {
 	}
 	return input - 1
 }
-

@@ -35,4 +35,3 @@ func TestHandleCancel_Output(t *testing.T) {
 	assert.Contains(t, output, "\033[J", "应该包含清除到末尾控制码")
 	assert.Contains(t, output, "\n", "应该包含换行符")
 }
-
