@@ -10,6 +10,7 @@ import (
 type FormBuilder struct {
 	fields    []FormField
 	validator FormValidator
+	title     string // 表单标题（用于显示在分割线中）
 }
 
 // NewFormBuilder 创建新的表单构建器
@@ -104,6 +105,17 @@ func (b *FormBuilder) Condition(condition Condition) *FormBuilder {
 func (b *FormBuilder) Validate(validator FormValidator) *FormBuilder {
 	b.validator = validator
 	return b
+}
+
+// SetTitle 设置表单标题（用于显示在分割线中）
+func (b *FormBuilder) SetTitle(title string) *FormBuilder {
+	b.title = title
+	return b
+}
+
+// GetTitle 获取表单标题（内部使用）
+func (b *FormBuilder) GetTitle() string {
+	return b.title
 }
 
 // Run 执行表单并返回结果
