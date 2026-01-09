@@ -8,6 +8,7 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
 // AddRemote 添加远程仓库
@@ -166,3 +167,19 @@ func ExtractRepoName(url string) (string, error) {
 	return "", fmt.Errorf("failed to extract repo name from URL: %s", url)
 }
 
+// NewGitHubTokenAuth 创建 GitHub token 认证
+//
+// 用于 GitHub 仓库的 HTTPS 认证。
+// GitHub 使用 "token" 作为用户名，Personal Access Token 作为密码。
+//
+// 参数:
+//   - token: GitHub Personal Access Token
+//
+// 返回:
+//   - transport.AuthMethod: 认证方法
+func NewGitHubTokenAuth(token string) transport.AuthMethod {
+	return &http.BasicAuth{
+		Username: "token", // GitHub 使用 "token" 作为用户名
+		Password: token,
+	}
+}

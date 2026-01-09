@@ -48,7 +48,7 @@ type GitRepo interface {
 //
 // 管理仓库级别的配置：
 //   - 项目公共配置：.workflow/config.toml（项目根目录，提交到 Git）
-//   - 项目私有配置：$XDG_CONFIG_HOME/workflow/config/repository.toml（遵循 XDG 规范，不提交）
+//   - 项目私有配置：$XDG_CONFIG_HOME/Workflow/config/repository.toml（遵循 XDG 规范，不提交）
 //
 // 配置字段可以直接访问，例如：
 //   - manager.TemplateConfig.Commit
@@ -503,7 +503,7 @@ func extractRepoNameFromURL(url string) string {
 
 // PrivateRepoConfig 私有仓库配置结构
 //
-// 用于解析 $XDG_CONFIG_HOME/workflow/config/repository.toml 文件。
+// 用于解析 $XDG_CONFIG_HOME/Workflow/config/repository.toml 文件。
 // 格式：
 //
 //	[${repo_id}.branch]

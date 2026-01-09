@@ -20,7 +20,7 @@ var (
 // GlobalManager 全局配置管理器
 //
 // 管理用户级别的全局配置：遵循 XDG Base Directory Specification
-// 配置文件位置：$XDG_CONFIG_HOME/workflow/config.toml（默认：~/.config/workflow/config.toml）
+// 配置文件位置：$XDG_CONFIG_HOME/Workflow/config.toml（默认：~/.config/Workflow/config.toml）
 // 包含：用户信息、认证配置（GitHub、Jira）、工具配置（LLM、Proxy、Log）
 //
 // 配置字段可以直接访问，例如：
@@ -192,6 +192,44 @@ func (m *GlobalManager) GetGitHubConfig() *GitHubConfig {
 		return &GitHubConfig{}
 	}
 	return &m.Config.GitHub
+}
+
+// GetCurrentGitHubAccount 获取当前 GitHub 账号
+//
+// 从 GlobalManager 中获取当前选中的 GitHub 账号。
+//
+// 参数:
+//   - manager: 全局配置管理器
+//
+// 返回:
+//   - *GitHubAccount: 当前 GitHub 账号，如果未找到则返回 nil
+//   - error: 如果获取失败，返回错误
+func (m *GlobalManager) GetCurrentGitHubAccount() (*GitHubAccount, error) {
+	if m == nil || m.Config == nil {
+		return nil, fmt.Errorf("配置管理器未初始化")
+	}
+
+	githubConfig := m.GetGitHubConfig()
+	if githubConfig == nil {
+		return nil, fmt.Errorf("GitHub 配置未找到")
+	}
+
+	// 如果没有当前账号标识，返回第一个账号
+	if githubConfig.Current == "" {
+		if len(githubConfig.Accounts) > 0 {
+			return &githubConfig.Accounts[0], nil
+		}
+		return nil, fmt.Errorf("未找到 GitHub 账号配置")
+	}
+
+	// 查找当前账号
+	for _, account := range githubConfig.Accounts {
+		if account.Name == githubConfig.Current {
+			return &account, nil
+		}
+	}
+
+	return nil, fmt.Errorf("未找到当前 GitHub 账号: %s", githubConfig.Current)
 }
 
 // GetJiraConfig 获取 Jira 配置

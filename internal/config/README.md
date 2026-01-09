@@ -28,8 +28,8 @@ internal/config/
 
 ### 核心文件
 
-- **`global_manager.go`**：全局配置管理器，管理用户级别的全局配置（遵循 XDG 规范：`$XDG_CONFIG_HOME/workflow/config.toml`，默认 `~/.config/workflow/config.toml`），包含用户信息、认证配置（GitHub、Jira）、工具配置（LLM、Proxy、Log）。采用单例模式，提供直接字段访问和便捷方法。
-- **`repo_manager.go`**：仓库配置管理器，管理仓库级别的配置，包括项目公共配置（`.workflow/config.toml`）和项目私有配置（遵循 XDG 规范：`$XDG_CONFIG_HOME/workflow/config/repository.toml`）。采用单例模式，通过依赖注入解耦 Git 模块依赖。
+- **`global_manager.go`**：全局配置管理器，管理用户级别的全局配置（遵循 XDG 规范：`$XDG_CONFIG_HOME/Workflow/config.toml`，默认 `~/.config/Workflow/config.toml`），包含用户信息、认证配置（GitHub、Jira）、工具配置（LLM、Proxy、Log）。采用单例模式，提供直接字段访问和便捷方法。
+- **`repo_manager.go`**：仓库配置管理器，管理仓库级别的配置，包括项目公共配置（`.workflow/config.toml`）和项目私有配置（遵循 XDG 规范：`$XDG_CONFIG_HOME/Workflow/config/repository.toml`）。采用单例模式，通过依赖注入解耦 Git 模块依赖。
 - **`types.go`**：定义 `GlobalConfig` 和 `RepoConfig` 结构体，统一所有子配置模块。
 - **`helpers.go`**：提供通用的配置保存辅助函数 `SaveConfigToFile`。
 - **`paths.go`**：提供 XDG Base Directory Specification 路径工具函数，包括 `ConfigDir()`、`DataDir()`、`StateDir()`、`CacheDir()` 等。
@@ -179,10 +179,10 @@ codes := config.GetSupportedLanguageCodes()
 
 ### 路径工具函数
 
-- `ConfigDir()` - 获取配置目录（`$XDG_CONFIG_HOME/workflow`）
-- `DataDir()` - 获取数据目录（`$XDG_DATA_HOME/workflow`）
-- `StateDir()` - 获取状态目录（`$XDG_STATE_HOME/workflow`）
-- `CacheDir()` - 获取缓存目录（`$XDG_CACHE_HOME/workflow`）
+- `ConfigDir()` - 获取配置目录（`$XDG_CONFIG_HOME/Workflow`）
+- `DataDir()` - 获取数据目录（`$XDG_DATA_HOME/Workflow`）
+- `StateDir()` - 获取状态目录（`$XDG_STATE_HOME/Workflow`）
+- `CacheDir()` - 获取缓存目录（`$XDG_CACHE_HOME/Workflow`）
 
 这些函数遵循 XDG Base Directory Specification，支持 Unix、Windows、macOS 等平台。
 

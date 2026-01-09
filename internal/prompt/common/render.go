@@ -33,48 +33,31 @@ func RenderOptions(
 	config PromptConfig,
 ) io.RenderCallback {
 	return func(isFirst bool) error {
-		// 渲染选项的通用逻辑
-		renderOptions := func() error {
-			currentIndex := getCurrentIndex()
+		currentIndex := getCurrentIndex()
 
-			// 渲染所有选项行
-			for i := 0; i < optionsCount; i++ {
-				line, isHighlighted := formatLine(i, currentIndex)
-				if isHighlighted {
-					highlightedLine := config.FormatAnswer(line)
-					terminal.Print(highlightedLine)
-				} else {
-					terminal.Print(line)
-				}
-				// 重置格式，确保每行独立，避免格式影响后续行
-				terminal.ResetFormat()
-				terminal.Print("\r\n")
+		// 渲染所有选项行
+		for i := 0; i < optionsCount; i++ {
+			line, isHighlighted := formatLine(i, currentIndex)
+			if isHighlighted {
+				highlightedLine := config.FormatAnswer(line)
+				terminal.Print(highlightedLine)
+			} else {
+				terminal.Print(line)
 			}
-
-			// 空行
-			terminal.Println("")
-
-			// 显示提示信息
-			hintMsg := config.FormatHint(hintText)
-			terminal.Print(hintMsg)
-			terminal.Print("\r\n")
-
-			terminal.HideCursor()
-			return nil
-		}
-
-		if !isFirst {
-			// 重新渲染：先恢复光标位置并清除内容
-			terminal.RestoreCursor()
-			// 重置所有 ANSI 格式，避免之前的格式影响新内容
+			// 重置格式，确保每行独立，避免格式影响后续行
 			terminal.ResetFormat()
-			// 清除从光标到屏幕底部的所有内容（不需要 MoveToStart，因为 RestoreCursor 已经恢复到正确位置）
-			terminal.ClearToEnd()
-			// 然后渲染新内容
-			return renderOptions()
+			terminal.Print("\r\n")
 		}
 
-		// 首次渲染：直接渲染
-		return renderOptions()
+		// 空行
+		terminal.Println("")
+
+		// 显示提示信息
+		hintMsg := config.FormatHint(hintText)
+		terminal.Print(hintMsg)
+		terminal.Print("\r\n")
+
+		terminal.HideCursor()
+		return nil
 	}
 }

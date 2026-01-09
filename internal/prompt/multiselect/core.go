@@ -88,7 +88,8 @@ func MultiSelect(cfg MultiSelectConfig) ([]int, error) {
 					return true
 				},
 				func() {
-					renderMultiSelect(false)
+					// 使用渲染器的 ReRender 方法确保正确清除之前的内容
+					renderer.ReRender(renderMultiSelect)
 				},
 			)
 		},

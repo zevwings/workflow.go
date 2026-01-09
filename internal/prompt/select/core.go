@@ -81,7 +81,8 @@ func Select(cfg SelectConfig) (int, error) {
 				},
 				nil, // select 不需要处理空格键
 				func() {
-					renderSelect(false)
+					// 使用渲染器的 ReRender 方法确保正确清除之前的内容
+					renderer.ReRender(renderSelect)
 				},
 			)
 		},

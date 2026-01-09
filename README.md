@@ -52,8 +52,7 @@ workflow check
 
 ### 配置管理
 
-- `workflow config show` - 查看当前配置
-- `workflow config validate [CONFIG_PATH] [--fix] [--strict]` - 验证配置文件
+- `workflow config show` - 查看当前配置并验证配置有效性
 - `workflow config export <OUTPUT> [--section SECTION] [--no-secrets] [--toml|--json|--yaml]` - 导出配置
 - `workflow config import <INPUT> [--overwrite] [--section SECTION] [--dry-run]` - 导入配置
 

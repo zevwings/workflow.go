@@ -37,11 +37,8 @@ go build -o bin/workflow ./cmd/workflow
 # 初始化配置
 ./bin/workflow setup
 
-# 查看配置
+# 查看配置并验证
 ./bin/workflow config show
-
-# 验证配置
-./bin/workflow config validate
 
 # 检查环境
 ./bin/workflow check
