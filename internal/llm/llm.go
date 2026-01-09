@@ -148,13 +148,13 @@ type BranchLLMClient = branch.BranchLLMClient
 //   - error: 如果配置无效或创建失败，返回错误
 func global(provider LLMConfigProvider) (LLMClient, error) {
 	if provider == nil {
-		return nil, fmt.Errorf("LLMConfigProvider 不能为 nil")
+		return nil, fmt.Errorf("llm.global: LLMConfigProvider cannot be nil")
 	}
 
 	// 从接口获取提供商配置
 	providerConfig, err := provider.GetProviderConfig()
 	if err != nil {
-		return nil, fmt.Errorf("获取 LLM provider 配置失败: %w", err)
+		return nil, fmt.Errorf("llm.global: failed to get LLM provider configuration: %w", err)
 	}
 
 	// 创建全局 LLM 客户端单例（自动使用 http.Global()）
@@ -208,19 +208,19 @@ func global(provider LLMConfigProvider) (LLMClient, error) {
 //	prClient := llm.NewPullRequestLLMClient(provider)
 func NewPullRequestLLMClient(provider LLMConfigProvider) *PullRequestLLMClient {
 	if provider == nil {
-		panic(fmt.Errorf("默认语言（英文）配置不可用"))
+		panic(fmt.Errorf("llm.NewPullRequestLLMClient: LLMConfigProvider cannot be nil"))
 	}
 
 	// 创建 LLM 客户端
 	llmClient, err := global(provider)
 	if err != nil {
-		panic(fmt.Errorf("默认语言（英文）配置不可用"))
+		panic(fmt.Errorf("llm.NewPullRequestLLMClient: failed to create LLM client: %w", err))
 	}
 
 	// 获取语言配置
 	lang, err := provider.GetLanguage()
 	if err != nil {
-		panic(fmt.Sprintf("获取语言配置失败: %v", err))
+		panic(fmt.Errorf("llm.NewPullRequestLLMClient: failed to get language configuration: %w", err))
 	}
 
 	// 使用 PR 包中的单例函数
@@ -266,13 +266,13 @@ func NewPullRequestLLMClient(provider LLMConfigProvider) *PullRequestLLMClient {
 //	branchClient := llm.NewBranchLLMClient(provider)
 func NewBranchLLMClient(provider LLMConfigProvider) *BranchLLMClient {
 	if provider == nil {
-		panic(fmt.Errorf("默认语言（英文）配置不可用"))
+		panic(fmt.Errorf("llm.NewBranchLLMClient: LLMConfigProvider cannot be nil"))
 	}
 
 	// 创建 LLM 客户端
 	llmClient, err := global(provider)
 	if err != nil {
-		panic(fmt.Errorf("默认语言（英文）配置不可用"))
+		panic(fmt.Errorf("llm.NewBranchLLMClient: failed to create LLM client: %w", err))
 	}
 
 	// 使用分支包中的单例函数

@@ -36,7 +36,7 @@ type PullRequestLLMClient struct {
 //   - *PullRequestLLMClient: PR LLM 客户端实例
 func newPullRequestLLMClient(llmClient client.LLMClient, lang *client.SupportedLanguage) *PullRequestLLMClient {
 	if llmClient == nil {
-		panic("pr.newPullRequestLLMClient: llmClient 不能为 nil")
+		panic(fmt.Errorf("pr.newPullRequestLLMClient: llmClient cannot be nil"))
 	}
 	return &PullRequestLLMClient{
 		llmClient: llmClient,
@@ -67,7 +67,7 @@ func newPullRequestLLMClient(llmClient client.LLMClient, lang *client.SupportedL
 //   - 统一管理：所有 PR LLM 调用使用同一个客户端实例
 func Global(llmClient client.LLMClient, lang *client.SupportedLanguage) *PullRequestLLMClient {
 	if llmClient == nil {
-		panic("pr.Global: llmClient 不能为 nil")
+		panic(fmt.Errorf("pr.Global: llmClient cannot be nil"))
 	}
 	prOnce.Do(func() {
 		globalPRClient = newPullRequestLLMClient(llmClient, lang)

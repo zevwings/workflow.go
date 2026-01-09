@@ -93,7 +93,7 @@ type llmClient struct {
 //   - LLMClient: LLM 客户端实例
 func newClient(config *ProviderConfig) LLMClient {
 	if config == nil {
-		panic("llm/client.newClient: config 不能为 nil")
+		panic(fmt.Errorf("llm/client.newClient: config cannot be nil"))
 	}
 	return &llmClient{
 		httpClient: http.Global(),
@@ -127,7 +127,7 @@ func newClient(config *ProviderConfig) LLMClient {
 //   - 封装性：返回接口类型，隐藏实现细节，防止外部直接访问内部结构
 func Global(config *ProviderConfig) LLMClient {
 	if config == nil {
-		panic("llm/client.Global: config 不能为 nil")
+		panic(fmt.Errorf("llm/client.Global: config cannot be nil"))
 	}
 	globalOnce.Do(func() {
 		globalClient = newClient(config).(*llmClient)

@@ -81,7 +81,7 @@ func (p *llmConfigProvider) GetLanguage() (*llm.SupportedLanguage, error) {
 func getLLMConfig() *config.LLMConfig {
 	manager, err := config.NewGlobalManager()
 	if err != nil {
-		panic(fmt.Sprintf("初始化全局配置管理器失败: %v", err))
+		panic(fmt.Errorf("adapter/llm.getLLMConfig: failed to initialize global config manager: %w", err))
 	}
 	return manager.GetLLMConfig()
 }

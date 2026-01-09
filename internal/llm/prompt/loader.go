@@ -18,10 +18,11 @@ var templatesFS embed.FS
 //   - error: 如果读取失败，返回错误
 //
 // 示例:
-//   prompt, err := LoadTemplate("translate.md")
-//   if err != nil {
-//       log.Fatal(err)
-//   }
+//
+//	prompt, err := LoadTemplate("translate.md")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
 func LoadTemplate(name string) (string, error) {
 	// 注意：路径是相对于 embed 指令中指定的路径
 	// 如果使用 templates/*.md，则读取时需要包含 templates/ 前缀
@@ -44,11 +45,12 @@ func LoadTemplate(name string) (string, error) {
 //   - string: 模板内容
 //
 // 示例:
-//   var translatePrompt = MustLoadTemplate("translate.md")
+//
+//	var translatePrompt = MustLoadTemplate("translate.md")
 func MustLoadTemplate(name string) string {
 	prompt, err := LoadTemplate(name)
 	if err != nil {
-		panic(fmt.Sprintf("无法加载必需的模板文件 %s: %v", name, err))
+		panic(fmt.Errorf("prompt.MustLoadTemplate: failed to load required template file %s: %w", name, err))
 	}
 	return prompt
 }
@@ -73,4 +75,3 @@ func ListTemplates() ([]string, error) {
 
 	return files, nil
 }
-

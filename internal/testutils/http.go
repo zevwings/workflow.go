@@ -4,6 +4,7 @@ package testutils
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -83,7 +84,7 @@ func (b *HTTPTestServerBuilder) WithJSONBody(data interface{}) *HTTPTestServerBu
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		// 在构建时无法处理错误，延迟到 Build 时处理
-		panic("JSON 序列化失败: " + err.Error())
+		panic(fmt.Errorf("JSON serialization failed: %w", err))
 	}
 	b.body = jsonData
 	b.contentType = "application/json"

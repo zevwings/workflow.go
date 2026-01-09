@@ -32,7 +32,7 @@ type BranchLLMClient struct {
 //   - *BranchLLMClient: 分支 LLM 客户端实例
 func newBranchLLMClient(llmClient client.LLMClient) *BranchLLMClient {
 	if llmClient == nil {
-		panic("branch.newBranchLLMClient: llmClient 不能为 nil")
+		panic(fmt.Errorf("branch.newBranchLLMClient: llmClient cannot be nil"))
 	}
 	return &BranchLLMClient{
 		llmClient: llmClient,
@@ -61,7 +61,7 @@ func newBranchLLMClient(llmClient client.LLMClient) *BranchLLMClient {
 //   - 统一管理：所有分支 LLM 调用使用同一个客户端实例
 func Global(llmClient client.LLMClient) *BranchLLMClient {
 	if llmClient == nil {
-		panic("branch.Global: llmClient 不能为 nil")
+		panic(fmt.Errorf("branch.Global: llmClient cannot be nil"))
 	}
 	branchOnce.Do(func() {
 		globalBranchClient = newBranchLLMClient(llmClient)
