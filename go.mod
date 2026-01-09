@@ -16,6 +16,7 @@ require (
 	github.com/spf13/viper v1.18.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/oauth2 v0.34.0
+  github.com/adrg/xdg v0.5.3
 	golang.org/x/term v0.20.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
@@ -24,7 +25,6 @@ require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
-	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
 	github.com/charmbracelet/x/ansi v0.9.3 // indirect

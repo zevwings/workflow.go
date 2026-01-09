@@ -37,7 +37,11 @@ func (s *SelectTestSuite) TestAskSelect_Basic() {
 				WithInput("")
 		},
 		func() (interface{}, error) {
-			return prompt.AskSelect("请选择", s.options, 0)
+			return prompt.AskSelect(prompt.SelectField{
+				Message:      "请选择",
+				Options:      s.options,
+				DefaultIndex: 0,
+			})
 		},
 	)
 	s.NoError(err)
@@ -55,7 +59,11 @@ func (s *SelectTestSuite) TestAskSelect_ArrowKeys() {
 				WithInput("")           // 确认
 		},
 		func() (interface{}, error) {
-			return prompt.AskSelect("请选择", options, 0)
+			return prompt.AskSelect(prompt.SelectField{
+				Message:      "请选择",
+				Options:      options,
+				DefaultIndex: 0,
+			})
 		},
 	)
 	s.NoError(err)
@@ -68,7 +76,11 @@ func (s *SelectTestSuite) TestAskSelect_DefaultIndex() {
 			return pt.WithInput("") // 空输入表示回车使用默认值
 		},
 		func() (interface{}, error) {
-			return prompt.AskSelect("请选择", s.options, 2)
+			return prompt.AskSelect(prompt.SelectField{
+				Message:      "请选择",
+				Options:      s.options,
+				DefaultIndex: 2,
+			})
 		},
 	)
 	s.NoError(err)
@@ -77,7 +89,11 @@ func (s *SelectTestSuite) TestAskSelect_DefaultIndex() {
 
 func (s *SelectTestSuite) TestAskSelect_EmptyOptions() {
 	options := []string{}
-	_, err := prompt.AskSelect("请选择", options, 0)
+	_, err := prompt.AskSelect(prompt.SelectField{
+		Message:      "请选择",
+		Options:      options,
+		DefaultIndex: 0,
+	})
 	s.Error(err)
 	s.Contains(err.Error(), "选项列表不能为空")
 }
@@ -88,7 +104,11 @@ func (s *SelectTestSuite) TestAskSelect_InvalidDefaultIndex() {
 			return pt.WithInput("") // 空输入表示回车使用默认值
 		},
 		func() (interface{}, error) {
-			return prompt.AskSelect("请选择", s.options, 10)
+			return prompt.AskSelect(prompt.SelectField{
+				Message:      "请选择",
+				Options:      s.options,
+				DefaultIndex: 10,
+			})
 		},
 	)
 	s.NoError(err)

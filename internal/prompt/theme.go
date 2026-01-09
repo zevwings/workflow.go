@@ -5,20 +5,23 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/zevwings/workflow/internal/prompt/common"
 )
 
 // Theme 表示交互式 UI 的主题配置（颜色、前缀、样式等）
 type Theme struct {
 	// 基础样式（使用 lipgloss.Style）
-	InfoStyle    lipgloss.Style
-	SuccessStyle lipgloss.Style // 成功信息样式
-	WarnStyle    lipgloss.Style
-	ErrorStyle   lipgloss.Style
-	DebugStyle   lipgloss.Style // 调试信息样式
-	TitleStyle   lipgloss.Style
-	AnswerStyle  lipgloss.Style
-	HintStyle    lipgloss.Style // 提示信息样式（如操作说明）
-	BorderStyle  lipgloss.Style // 表格边框样式
+	InfoStyle           lipgloss.Style
+	SuccessStyle        lipgloss.Style // 成功信息样式
+	WarnStyle           lipgloss.Style
+	ErrorStyle          lipgloss.Style
+	DebugStyle          lipgloss.Style // 调试信息样式
+	TitleStyle          lipgloss.Style
+	AnswerStyle         lipgloss.Style
+	HintStyle           lipgloss.Style // 提示信息样式（如操作说明）
+	BorderStyle         lipgloss.Style // 表格边框样式
+	QuestionPrefixStyle lipgloss.Style // 问题前缀样式（用于 "? "）
+	AnswerPrefixStyle   lipgloss.Style // 答案前缀样式（用于 "> "）
 
 	// 前缀符号
 	PrefixInfo  string // e.g. "INFO"
@@ -62,6 +65,12 @@ var (
 			Bold(false),
 		BorderStyle: lipgloss.NewStyle().
 			Foreground(lipgloss.Color("240")). // HiBlack (gray) - 表格边框颜色
+			Bold(false),
+		QuestionPrefixStyle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("226")). // HiYellow - 用于 "? " 前缀
+			Bold(false),
+		AnswerPrefixStyle: lipgloss.NewStyle().
+			Foreground(lipgloss.Color("46")). // HiGreen - 用于 "> " 前缀
 			Bold(false),
 
 		PrefixInfo:  "",
@@ -136,21 +145,33 @@ func formatHint(message string) string {
 	return t.HintStyle.Render(message)
 }
 
+// formatQuestionPrefix 格式化问题前缀 "? "（私有函数）
+func formatQuestionPrefix() string {
+	t := GetTheme()
+	if !t.EnableColor {
+		return "? "
+	}
+	return t.QuestionPrefixStyle.Render("? ")
+}
+
+// formatAnswerPrefix 格式化答案前缀 "> "（私有函数）
+func formatAnswerPrefix() string {
+	t := GetTheme()
+	if !t.EnableColor {
+		return "> "
+	}
+	return t.AnswerPrefixStyle.Render("> ")
+}
+
 // newDefaultConfig 创建默认的 PromptConfig（私有函数）
 // 用于 select、multiselect、confirm 等提示功能
 // 返回 common.PromptConfig，由于各模块的 Config 都是它的别名，可以直接使用
-func newDefaultConfig() struct {
-	FormatPrompt func(message string) string
-	FormatAnswer func(value string) string
-	FormatHint   func(message string) string
-} {
-	return struct {
-		FormatPrompt func(message string) string
-		FormatAnswer func(value string) string
-		FormatHint   func(message string) string
-	}{
-		FormatPrompt: formatTitle,
-		FormatAnswer: formatAnswer,
-		FormatHint:   formatHint,
+func newDefaultConfig() common.PromptConfig {
+	return common.PromptConfig{
+		FormatPrompt:         formatTitle,
+		FormatAnswer:         formatAnswer,
+		FormatHint:           formatHint,
+		FormatQuestionPrefix: formatQuestionPrefix,
+		FormatAnswerPrefix:   formatAnswerPrefix,
 	}
 }

@@ -38,7 +38,6 @@ type GlobalManager struct {
 	// 便捷字段：直接访问子配置（指向 Config 中的对应字段）
 	LLMConfig    *LLMConfig    // 指向 Config.LLM
 	GitHubConfig *GitHubConfig // 指向 Config.GitHub
-	UserConfig   *UserConfig   // 指向 Config.User
 	JiraConfig   *JiraConfig   // 指向 Config.Jira
 	LogConfig    *LogConfig    // 指向 Config.Log
 	ProxyConfig  *ProxyConfig  // 指向 Config.Proxy
@@ -69,14 +68,8 @@ func newGlobalManager() (*GlobalManager, error) {
 	v.AddConfigPath(configDir)
 	v.AddConfigPath(".")
 
-	// 设置默认值
-	v.SetDefault("log.level", "info")
-
-	config := &GlobalConfig{
-		Log: LogConfig{
-			Level: "info", // 默认值
-		},
-	}
+	// 初始化 Config 为零值（不设置默认值）
+	config := &GlobalConfig{}
 
 	manager := &GlobalManager{
 		viper:  v,
@@ -87,7 +80,6 @@ func newGlobalManager() (*GlobalManager, error) {
 	// 初始化便捷字段，指向 Config 中的对应字段
 	manager.LLMConfig = &config.LLM
 	manager.GitHubConfig = &config.GitHub
-	manager.UserConfig = &config.User
 	manager.JiraConfig = &config.Jira
 	manager.LogConfig = &config.Log
 	manager.ProxyConfig = &config.Proxy
@@ -98,27 +90,30 @@ func newGlobalManager() (*GlobalManager, error) {
 // Load 加载配置文件
 //
 // 从配置文件加载配置到内存，并更新 Config 字段。
-// 如果配置文件不存在，会创建默认配置文件。
+// 如果配置文件不存在，返回 ConfigFileNotFoundError，并保持 Config 为零值。
 func (m *GlobalManager) Load() error {
 	logger := logging.GetLogger()
 	logger.Infof("Loading config from: %s", m.path)
 
+	// 先检查文件是否存在
+	if _, err := os.Stat(m.path); os.IsNotExist(err) {
+		logger.Debugf("Config file not found: %s", m.path)
+		// 设置 Config 为零值
+		m.Config = &GlobalConfig{}
+		// 更新便捷字段的指针（指向零值 Config）
+		m.LLMConfig = &m.Config.LLM
+		m.GitHubConfig = &m.Config.GitHub
+		m.JiraConfig = &m.Config.Jira
+		m.LogConfig = &m.Config.Log
+		m.ProxyConfig = &m.Config.Proxy
+		// 返回 viper.ConfigFileNotFoundError 类型的错误
+		return viper.ConfigFileNotFoundError{}
+	}
+
+	// 文件存在，尝试读取
 	if err := m.viper.ReadInConfig(); err != nil {
-		// 配置文件不存在时，创建默认配置
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			logger.Infof("Creating default config file: %s", m.path)
-			if err := m.SaveDefault(); err != nil {
-				return err
-			}
-			// 重新读取刚创建的配置文件
-			if err := m.viper.ReadInConfig(); err != nil {
-				logger.WithError(err).Error("Failed to read newly created config file")
-				return fmt.Errorf("读取配置文件失败: %w", err)
-			}
-		} else {
-			logger.WithError(err).Error("Config operation failed")
-			return fmt.Errorf("读取配置文件失败: %w", err)
-		}
+		logger.WithError(err).Error("Config operation failed")
+		return fmt.Errorf("读取配置文件失败: %w", err)
 	}
 
 	// 从 viper 加载配置到 Config 字段
@@ -127,7 +122,6 @@ func (m *GlobalManager) Load() error {
 	// 更新便捷字段的指针（确保指向最新的 Config）
 	m.LLMConfig = &m.Config.LLM
 	m.GitHubConfig = &m.Config.GitHub
-	m.UserConfig = &m.Config.User
 	m.JiraConfig = &m.Config.Jira
 	m.LogConfig = &m.Config.Log
 	m.ProxyConfig = &m.Config.Proxy
@@ -198,20 +192,6 @@ func (m *GlobalManager) GetGitHubConfig() *GitHubConfig {
 		return &GitHubConfig{}
 	}
 	return &m.Config.GitHub
-}
-
-// GetUserConfig 获取用户配置
-//
-// 返回 Config 字段中的用户配置的引用。
-// 可以直接使用 manager.Config.User 或 manager.UserConfig 访问，此方法保留以保持向后兼容。
-//
-// 返回:
-//   - *UserConfig: 用户配置结构（指向 Config.User）
-func (m *GlobalManager) GetUserConfig() *UserConfig {
-	if m.Config == nil {
-		return &UserConfig{}
-	}
-	return &m.Config.User
 }
 
 // GetJiraConfig 获取 Jira 配置
@@ -303,15 +283,9 @@ func NewGlobalManager() (*GlobalManager, error) {
 func (m *GlobalManager) getGlobalConfig() *GlobalConfig {
 	cfg := &GlobalConfig{}
 
-	// 读取用户配置
-	cfg.User.Name = m.viper.GetString("user.name")
-	cfg.User.Email = m.viper.GetString("user.email")
-
 	// 读取日志配置
 	cfg.Log.Level = m.viper.GetString("log.level")
-	if cfg.Log.Level == "" {
-		cfg.Log.Level = "info"
-	}
+	// 如果没有读取到值，保持零值（空字符串）
 
 	// 读取 GitHub 配置
 	cfg.GitHub.Current = m.viper.GetString("github.current")
@@ -324,10 +298,13 @@ func (m *GlobalManager) getGlobalConfig() *GlobalConfig {
 					if name, ok := accMap["name"].(string); ok {
 						account.Name = name
 					}
-					if token, ok := accMap["token"].(string); ok {
-						account.Token = token
+					if email, ok := accMap["email"].(string); ok {
+						account.Email = email
 					}
-					if account.Name != "" || account.Token != "" {
+					if apiToken, ok := accMap["api_token"].(string); ok {
+						account.APIToken = apiToken
+					}
+					if account.Name != "" || account.APIToken != "" {
 						cfg.GitHub.Accounts = append(cfg.GitHub.Accounts, account)
 					}
 				}
@@ -336,9 +313,9 @@ func (m *GlobalManager) getGlobalConfig() *GlobalConfig {
 	}
 
 	// 读取 Jira 配置
-	cfg.Jira.URL = m.viper.GetString("jira.url")
-	cfg.Jira.Username = m.viper.GetString("jira.username")
-	cfg.Jira.Token = m.viper.GetString("jira.token")
+	cfg.Jira.Email = m.viper.GetString("jira.email")
+	cfg.Jira.APIToken = m.viper.GetString("jira.api_token")
+	cfg.Jira.ServiceAddress = m.viper.GetString("jira.service_address")
 
 	// 读取 LLM 配置
 	cfg.LLM.Provider = m.viper.GetString("llm.provider")

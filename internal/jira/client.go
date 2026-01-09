@@ -12,12 +12,12 @@ import (
 //
 // 包含 Jira 客户端所需的所有配置信息。
 type Config struct {
-	// URL Jira 服务器 URL（如 "https://your-domain.atlassian.net"）
-	URL string
-	// Username 用户名（Email 地址）
-	Username string
-	// Token API Token
-	Token string
+	// ServiceAddress Jira 服务器地址（如 "https://your-domain.atlassian.net"）
+	ServiceAddress string
+	// Email 用户邮箱地址
+	Email string
+	// APIToken API Token
+	APIToken string
 }
 
 // Client Jira 客户端封装
@@ -46,28 +46,28 @@ func NewClient(config *Config) (*Client, error) {
 		return nil, fmt.Errorf("config 不能为 nil")
 	}
 
-	if config.URL == "" || config.Username == "" || config.Token == "" {
+	if config.ServiceAddress == "" || config.Email == "" || config.APIToken == "" {
 		logger.Error("Jira configuration is incomplete")
-		return nil, fmt.Errorf("Jira 配置不完整，请设置 URL、Username 和 Token")
+		return nil, fmt.Errorf("Jira 配置不完整，请设置 ServiceAddress、Email 和 APIToken")
 	}
 
 	// 记录客户端创建开始
-	logger.WithField("url", config.URL).Info("Creating Jira client")
+	logger.WithField("url", config.ServiceAddress).Info("Creating Jira client")
 
 	// 创建 Jira 客户端（使用 Basic Auth）
 	tp := cloud.BasicAuthTransport{
-		Username: config.Username,
-		APIToken: config.Token,
+		Username: config.Email,
+		APIToken: config.APIToken,
 	}
 
-	jiraClient, err := cloud.NewClient(config.URL, tp.Client())
+	jiraClient, err := cloud.NewClient(config.ServiceAddress, tp.Client())
 	if err != nil {
-		logger.WithError(err).WithField("url", config.URL).Error("Failed to create Jira client")
+		logger.WithError(err).WithField("url", config.ServiceAddress).Error("Failed to create Jira client")
 		return nil, fmt.Errorf("创建 Jira 客户端失败: %w", err)
 	}
 
 	// 记录客户端创建成功
-	logger.WithField("url", config.URL).Info("Jira client created successfully")
+	logger.WithField("url", config.ServiceAddress).Info("Jira client created successfully")
 
 	return &Client{
 		jira: jiraClient,

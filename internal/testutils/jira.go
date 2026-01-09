@@ -41,9 +41,9 @@ func NewJiraTestClient(t *testing.T, handler http.HandlerFunc) (*jira.JiraClient
 
 	// 创建配置
 	config := &jira.Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	// 创建客户端
@@ -82,9 +82,9 @@ func NewJiraTestClientWithCreds(t *testing.T, username, token string, handler ht
 
 	// 创建配置
 	config := &jira.Config{
-		URL:      server.URL,
-		Username: username,
-		Token:    token,
+		ServiceAddress: server.URL,
+		Email:          username,
+		APIToken:       token,
 	}
 
 	// 创建客户端

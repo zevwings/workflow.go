@@ -11,12 +11,12 @@ import (
 type MultiSelectHandler struct {
 	options         []string
 	defaultSelected []int
-	config          Config
+	config          common.PromptConfig
 	navigator       *common.NavigationHandler
 }
 
 // NewMultiSelectHandler 创建多选处理器
-func NewMultiSelectHandler(options []string, defaultSelected []int, config Config) *MultiSelectHandler {
+func NewMultiSelectHandler(options []string, defaultSelected []int, config common.PromptConfig) *MultiSelectHandler {
 	return &MultiSelectHandler{
 		options:         options,
 		defaultSelected: defaultSelected,

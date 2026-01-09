@@ -1,19 +1,43 @@
 package prompt
 
 import (
+	"github.com/zevwings/workflow/internal/prompt/common"
+	"github.com/zevwings/workflow/internal/prompt/io"
 	"github.com/zevwings/workflow/internal/prompt/multiselect"
 )
 
-// AskMultiSelect 函数式调用 MultiSelect（保持向后兼容）
-// 使用方式：prompt.AskMultiSelect("消息", options, []int{0, 2})
-func AskMultiSelect(message string, options []string, defaultSelected []int) ([]int, error) {
-	return multiselectFunc(message, options, defaultSelected)
+// MultiSelectField 多选字段配置
+type MultiSelectField struct {
+	// Message 提示消息
+	Message string
+	// Options 选项列表
+	Options []string
+	// DefaultSelected 默认选中的索引列表
+	DefaultSelected []int
+	// ResultTitle 选择完成后显示的 title（可选）
+	// 如果设置，将优先于全局的 FormatResultTitle 使用
+	ResultTitle string
 }
 
-// multiselectFunc 统一的多选函数（私有函数）
-func multiselectFunc(message string, options []string, defaultSelected []int) ([]int, error) {
+// AskMultiSelect 使用配置结构体的多选函数
+func AskMultiSelect(field MultiSelectField) ([]int, error) {
 	config := newDefaultConfig()
-	return multiselect.MultiSelectDefault(message, options, defaultSelected, config)
+	// 如果提供了 ResultTitle，设置 FormatResultTitle
+	if field.ResultTitle != "" {
+		titleStr := field.ResultTitle
+		config.FormatResultTitle = func(originalMessage string, resultValue string) string {
+			return titleStr
+		}
+	}
+	return multiselect.MultiSelect(multiselect.MultiSelectConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  field.Message,
+			Config:   config,
+			Terminal: io.NewStdTerminal(),
+		},
+		Options:         field.Options,
+		DefaultSelected: field.DefaultSelected,
+	})
 }
 
 // MultiSelectBuilder MultiSelect 的链式构建器
@@ -51,5 +75,9 @@ func (b *MultiSelectBuilder) Default(indices []int) *MultiSelectBuilder {
 
 // Run 执行多选并返回结果（返回选中的索引列表）
 func (b *MultiSelectBuilder) Run() ([]int, error) {
-	return multiselectFunc(b.GetMessage(), b.options, b.defaultSelected)
+	return AskMultiSelect(MultiSelectField{
+		Message:         b.GetMessage(),
+		Options:         b.options,
+		DefaultSelected: b.defaultSelected,
+	})
 }

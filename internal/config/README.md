@@ -134,7 +134,6 @@ codes := config.GetSupportedLanguageCodes()
 - `GetConfigPath()` - 获取配置文件路径
 - `GetLLMConfig()` - 获取 LLM 配置（向后兼容）
 - `GetGitHubConfig()` - 获取 GitHub 配置（向后兼容）
-- `GetUserConfig()` - 获取用户配置（向后兼容）
 - `GetJiraConfig()` - 获取 Jira 配置（向后兼容）
 - `GetLogConfig()` - 获取日志配置（向后兼容）
 - `GetProxyConfig()` - 获取代理配置（向后兼容）
@@ -143,7 +142,6 @@ codes := config.GetSupportedLanguageCodes()
 - `Config *GlobalConfig` - 完整配置
 - `LLMConfig *LLMConfig` - LLM 配置
 - `GitHubConfig *GitHubConfig` - GitHub 配置
-- `UserConfig *UserConfig` - 用户配置
 - `JiraConfig *JiraConfig` - Jira 配置
 - `LogConfig *LogConfig` - 日志配置
 - `ProxyConfig *ProxyConfig` - 代理配置

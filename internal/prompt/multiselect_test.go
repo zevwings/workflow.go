@@ -46,7 +46,11 @@ func (s *MultiSelectTestSuite) TestAskMultiSelect_Basic() {
 				WithInput("")                     // 确认
 		},
 		func() (interface{}, error) {
-			return prompt.AskMultiSelect("请选择", s.options, []int{})
+			return prompt.AskMultiSelect(prompt.MultiSelectField{
+				Message:         "请选择",
+				Options:         s.options,
+				DefaultSelected: []int{},
+			})
 		},
 	)
 	s.NoError(err)
@@ -59,7 +63,11 @@ func (s *MultiSelectTestSuite) TestAskMultiSelect_DefaultSelected() {
 			return pt.WithInput("") // 空输入表示回车使用默认值
 		},
 		func() (interface{}, error) {
-			return prompt.AskMultiSelect("请选择", s.options, []int{0, 2})
+			return prompt.AskMultiSelect(prompt.MultiSelectField{
+				Message:         "请选择",
+				Options:         s.options,
+				DefaultSelected: []int{0, 2},
+			})
 		},
 	)
 	s.NoError(err)
@@ -82,7 +90,11 @@ func (s *MultiSelectTestSuite) TestAskMultiSelect_ToggleSelection() {
 				WithInput("")                     // 确认
 		},
 		func() (interface{}, error) {
-			return prompt.AskMultiSelect("请选择", s.options, []int{})
+			return prompt.AskMultiSelect(prompt.MultiSelectField{
+				Message:         "请选择",
+				Options:         s.options,
+				DefaultSelected: []int{},
+			})
 		},
 	)
 	s.NoError(err)
@@ -95,7 +107,11 @@ func (s *MultiSelectTestSuite) TestAskMultiSelect_EmptySelection() {
 			return pt.WithInput("") // 空输入表示不选择任何选项，直接回车
 		},
 		func() (interface{}, error) {
-			return prompt.AskMultiSelect("请选择", s.options, []int{})
+			return prompt.AskMultiSelect(prompt.MultiSelectField{
+				Message:         "请选择",
+				Options:         s.options,
+				DefaultSelected: []int{},
+			})
 		},
 	)
 	s.NoError(err)
@@ -111,7 +127,11 @@ func (s *MultiSelectTestSuite) TestAskMultiSelect_EmptySelection() {
 
 func (s *MultiSelectTestSuite) TestAskMultiSelect_EmptyOptions() {
 	options := []string{}
-	_, err := prompt.AskMultiSelect("请选择", options, []int{})
+	_, err := prompt.AskMultiSelect(prompt.MultiSelectField{
+		Message:         "请选择",
+		Options:         options,
+		DefaultSelected: []int{},
+	})
 	s.Error(err)
 	s.Contains(err.Error(), "选项列表不能为空")
 }
@@ -122,7 +142,11 @@ func (s *MultiSelectTestSuite) TestAskMultiSelect_InvalidDefaultIndices() {
 			return pt.WithInput("") // 空输入表示回车使用默认值
 		},
 		func() (interface{}, error) {
-			return prompt.AskMultiSelect("请选择", s.options, []int{0, 10, 2})
+			return prompt.AskMultiSelect(prompt.MultiSelectField{
+				Message:         "请选择",
+				Options:         s.options,
+				DefaultSelected: []int{0, 10, 2},
+			})
 		},
 	)
 	s.NoError(err)

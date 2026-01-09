@@ -6,7 +6,6 @@ package config
 // 用于全局配置：遵循 XDG Base Directory Specification
 // 配置文件位置：$XDG_CONFIG_HOME/workflow/config.toml（默认：~/.config/workflow/config.toml）
 type GlobalConfig struct {
-	User   UserConfig   `toml:"user,omitempty"`
 	Jira   JiraConfig   `toml:"jira,omitempty"`
 	GitHub GitHubConfig `toml:"github,omitempty"`
 	Log    LogConfig    `toml:"log,omitempty"`

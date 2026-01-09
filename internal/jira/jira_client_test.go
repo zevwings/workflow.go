@@ -18,9 +18,9 @@ func TestNewJiraClient(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -44,25 +44,25 @@ func TestNewJiraClient_InvalidConfig(t *testing.T) {
 		{
 			name: "empty URL",
 			config: &Config{
-				URL:      "",
-				Username: "test@example.com",
-				Token:    "test-token",
+				ServiceAddress: "",
+				Email:          "test@example.com",
+				APIToken:       "test-token",
 			},
 		},
 		{
 			name: "empty username",
 			config: &Config{
-				URL:      "https://test.atlassian.net",
-				Username: "",
-				Token:    "test-token",
+				ServiceAddress: "https://test.atlassian.net",
+				Email:          "",
+				APIToken:       "test-token",
 			},
 		},
 		{
 			name: "empty token",
 			config: &Config{
-				URL:      "https://test.atlassian.net",
-				Username: "test@example.com",
-				Token:    "",
+				ServiceAddress: "https://test.atlassian.net",
+				Email:          "test@example.com",
+				APIToken:       "",
 			},
 		},
 	}
@@ -83,9 +83,9 @@ func TestJiraClient_GetUserInfo(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -105,9 +105,9 @@ func TestJiraClient_GetTicketInfo(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -181,9 +181,9 @@ func TestJiraClient_GetAttachments(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -202,9 +202,9 @@ func TestJiraClient_MoveTicket(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -256,9 +256,9 @@ func TestJiraClient_AssignTicket(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -315,9 +315,9 @@ func TestJiraClient_AddComment(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -383,9 +383,9 @@ func TestJiraClient_GetComments(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -404,9 +404,9 @@ func TestJiraClient_GetTransitions(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -444,9 +444,9 @@ func TestJiraClient_GetChangelog(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -464,9 +464,9 @@ func TestJiraClient_GetProject(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -485,9 +485,9 @@ func TestJiraClient_GetProjectStatuses(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -506,9 +506,9 @@ func TestJiraClient_FindUsers(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)
@@ -527,9 +527,9 @@ func TestJiraClient_Getters(t *testing.T) {
 	defer server.Close()
 
 	config := &Config{
-		URL:      server.URL,
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: server.URL,
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewJiraClient(config)

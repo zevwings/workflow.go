@@ -14,24 +14,32 @@ import (
 
 // FormExecutor 表单执行器
 type FormExecutor struct {
-	config     common.PromptConfig
-	formConfig FormConfig
+	config common.PromptConfig
 }
 
-// NewFormExecutor 创建新的表单执行器
-// formConfig 通过 SetFormConfig 设置，由 prompt 包在初始化时调用
-var globalFormConfig FormConfig
+// 全局配置（由 prompt 包在初始化时设置）
+var globalPromptConfig common.PromptConfig
+var globalInputProvider InputProvider
 
-// SetFormConfig 设置全局 Form 配置（由 prompt 包调用）
-func SetFormConfig(config FormConfig) {
-	globalFormConfig = config
+// SetPromptConfig 设置全局 Prompt 配置（由 prompt 包调用）
+func SetPromptConfig(config common.PromptConfig) {
+	globalPromptConfig = config
+}
+
+// SetInputProvider 设置全局 InputProvider（由 prompt 包调用）
+func SetInputProvider(provider InputProvider) {
+	globalInputProvider = provider
+}
+
+// GetPromptConfig 获取全局 Prompt 配置（用于访问 FormatResultTitle 等）
+func GetPromptConfig() common.PromptConfig {
+	return globalPromptConfig
 }
 
 // NewFormExecutor 创建新的表单执行器
 func NewFormExecutor() *FormExecutor {
 	return &FormExecutor{
-		config:     newDefaultConfig(globalFormConfig),
-		formConfig: globalFormConfig,
+		config: globalPromptConfig,
 	}
 }
 
@@ -110,11 +118,18 @@ func (e *FormExecutor) executeConfirm(field FormField) (bool, error) {
 	if !ok {
 		defaultValue = false
 	}
-	return confirm.ConfirmDefault(field.Prompt, defaultValue, e.config)
+	config := e.buildConfigWithResultTitle(field.ResultTitle)
+	return confirm.Confirm(confirm.ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  field.Prompt,
+			Config:   config,
+			Terminal: io.NewStdTerminal(),
+		},
+		DefaultYes: defaultValue,
+	})
 }
 
 // executeInput 执行输入字段
-// 使用 formConfig 中的 AskInputFunc 来保持格式一致
 func (e *FormExecutor) executeInput(field FormField) (string, error) {
 	defaultValue := ""
 	if field.DefaultValue != nil {
@@ -122,33 +137,66 @@ func (e *FormExecutor) executeInput(field FormField) (string, error) {
 			defaultValue = str
 		}
 	}
-	// 使用 formConfig 中的函数，保持格式一致
-	if e.formConfig.AskInputFunc != nil {
-		return e.formConfig.AskInputFunc(field.Prompt, defaultValue, field.Validator)
+	config := e.buildConfigWithResultTitle(field.ResultTitle)
+	if globalInputProvider == nil {
+		return "", fmt.Errorf("InputProvider 未设置，请确保 prompt 包已正确初始化")
 	}
-	// 如果没有设置，返回错误
-	return "", fmt.Errorf("AskInputFunc 未设置，请确保 prompt 包已正确初始化")
+	return globalInputProvider.AskInput(InputField{
+		Message:      field.Prompt,
+		DefaultValue: defaultValue,
+		Validator:    field.Validator,
+		ResultTitle:  "", // 使用 Config 中的 FormatResultTitle
+		Config:       &config,
+	})
 }
 
 // executePassword 执行密码字段
-// 使用 formConfig 中的 AskPasswordFunc 来保持格式一致
 func (e *FormExecutor) executePassword(field FormField) (string, error) {
-	// 使用 formConfig 中的函数，保持格式一致
-	if e.formConfig.AskPasswordFunc != nil {
-		return e.formConfig.AskPasswordFunc(field.Prompt, field.Validator)
+	defaultValue := ""
+	if field.DefaultValue != nil {
+		if str, ok := field.DefaultValue.(string); ok {
+			defaultValue = str
+		}
 	}
-	// 如果没有设置，返回错误
-	return "", fmt.Errorf("AskPasswordFunc 未设置，请确保 prompt 包已正确初始化")
+	config := e.buildConfigWithResultTitle(field.ResultTitle)
+	if globalInputProvider == nil {
+		return "", fmt.Errorf("InputProvider 未设置，请确保 prompt 包已正确初始化")
+	}
+	return globalInputProvider.AskPassword(PasswordField{
+		Message:      field.Prompt,
+		DefaultValue: defaultValue,
+		Validator:    field.Validator,
+		ResultTitle:  "", // 使用 Config 中的 FormatResultTitle
+		Config:       &config,
+	})
 }
 
 // executeSelect 执行单选字段
 func (e *FormExecutor) executeSelect(field FormField) (int, error) {
-	return selectpkg.SelectDefault(field.Prompt, field.Options, field.DefaultIndex, e.config)
+	config := e.buildConfigWithResultTitle(field.ResultTitle)
+	return selectpkg.Select(selectpkg.SelectConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  field.Prompt,
+			Config:   config,
+			Terminal: io.NewStdTerminal(),
+		},
+		Options:      field.Options,
+		DefaultIndex: field.DefaultIndex,
+	})
 }
 
 // executeMultiSelect 执行多选字段
 func (e *FormExecutor) executeMultiSelect(field FormField) ([]int, error) {
-	return multiselectpkg.MultiSelectDefault(field.Prompt, field.Options, field.DefaultSelected, e.config)
+	config := e.buildConfigWithResultTitle(field.ResultTitle)
+	return multiselectpkg.MultiSelect(multiselectpkg.MultiSelectConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  field.Prompt,
+			Config:   config,
+			Terminal: io.NewStdTerminal(),
+		},
+		Options:         field.Options,
+		DefaultSelected: field.DefaultSelected,
+	})
 }
 
 // executeForm 执行嵌套表单字段
@@ -159,13 +207,12 @@ func (e *FormExecutor) executeForm(field FormField, level int) (*FormResult, err
 	return e.executeWithLevel(field.NestedForm, level+1)
 }
 
-// newDefaultConfig 创建默认配置（使用 formConfig 中的格式化函数）
-func newDefaultConfig(formConfig FormConfig) common.PromptConfig {
-	return common.PromptConfig{
-		FormatPrompt: formConfig.FormatPrompt,
-		FormatAnswer: formConfig.FormatAnswer,
-		FormatHint:   formConfig.FormatHint,
-	}
+// 注意：newDefaultConfig 已移除，直接使用 globalPromptConfig
+
+// buildConfigWithResultTitle 构建带 ResultTitle 的配置
+// 如果 resultTitle 为空，返回原始配置；否则创建新配置并设置 FormatResultTitle
+func (e *FormExecutor) buildConfigWithResultTitle(resultTitle string) common.PromptConfig {
+	return common.WithResultTitle(e.config, resultTitle)
 }
 
 // printSeparator 打印分割线

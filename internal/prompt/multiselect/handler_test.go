@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/zevwings/workflow/internal/prompt/common"
 	"github.com/zevwings/workflow/internal/testutils"
 )
 
 func TestMultiSelectHandler_ValidateAndCleanDefaults(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	options := []string{"A", "B", "C", "D"}
 	// 包含无效索引：-1 (无效), 10 (超出范围), 1 (有效)
@@ -26,7 +27,7 @@ func TestMultiSelectHandler_ValidateAndCleanDefaults(t *testing.T) {
 }
 
 func TestMultiSelectHandler_GetInitialCurrentIndex(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	options := []string{"A", "B", "C"}
 
@@ -44,7 +45,7 @@ func TestMultiSelectHandler_GetInitialCurrentIndex(t *testing.T) {
 }
 
 func TestMultiSelectHandler_ProcessArrowKey(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	options := []string{"A", "B", "C"}
 	handler := NewMultiSelectHandler(options, []int{}, cfg)
@@ -71,7 +72,7 @@ func TestMultiSelectHandler_ProcessArrowKey(t *testing.T) {
 }
 
 func TestMultiSelectHandler_ToggleSelection(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	options := []string{"A", "B", "C"}
 	handler := NewMultiSelectHandler(options, []int{}, cfg)
@@ -88,7 +89,7 @@ func TestMultiSelectHandler_ToggleSelection(t *testing.T) {
 }
 
 func TestMultiSelectHandler_FormatOptionLine(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	options := []string{"A", "B", "C"}
 	handler := NewMultiSelectHandler(options, []int{}, cfg)
@@ -118,10 +119,14 @@ func TestMultiSelectHandler_FormatOptionLine(t *testing.T) {
 }
 
 func TestMultiSelectHandler_FormatSelectedOptions(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return "[" + v + "]" },
-		FormatHint:   func(msg string) string { return msg },
+	cfg := common.PromptConfig{
+		FormatPrompt:        func(msg string) string { return msg },
+		FormatAnswer:        func(v string) string { return "[" + v + "]" },
+		FormatError:         nil,
+		FormatHint:          func(msg string) string { return msg },
+		FormatQuestionPrefix: nil,
+		FormatAnswerPrefix:   nil,
+		FormatResultTitle:   nil,
 	}
 
 	options := []string{"A", "B", "C"}
@@ -139,7 +144,7 @@ func TestMultiSelectHandler_FormatSelectedOptions(t *testing.T) {
 }
 
 func TestMultiSelectHandler_ParseCommaSeparatedInput(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	options := []string{"A", "B", "C", "D"}
 	handler := NewMultiSelectHandler(options, []int{}, cfg)

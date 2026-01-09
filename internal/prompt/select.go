@@ -1,19 +1,43 @@
 package prompt
 
 import (
+	"github.com/zevwings/workflow/internal/prompt/common"
+	"github.com/zevwings/workflow/internal/prompt/io"
 	selectpkg "github.com/zevwings/workflow/internal/prompt/select"
 )
 
-// AskSelect 函数式调用 Select（保持向后兼容）
-// 使用方式：prompt.AskSelect("消息", options, defaultIndex)
-func AskSelect(message string, options []string, defaultIndex int) (int, error) {
-	return selectFunc(message, options, defaultIndex)
+// SelectField 单选字段配置
+type SelectField struct {
+	// Message 提示消息
+	Message string
+	// Options 选项列表
+	Options []string
+	// DefaultIndex 默认选中的索引
+	DefaultIndex int
+	// ResultTitle 选择完成后显示的 title（可选）
+	// 如果设置，将优先于全局的 FormatResultTitle 使用
+	ResultTitle string
 }
 
-// selectFunc 统一的选择函数（私有函数）
-func selectFunc(message string, options []string, defaultIndex int) (int, error) {
+// AskSelect 使用配置结构体的选择函数
+func AskSelect(field SelectField) (int, error) {
 	config := newDefaultConfig()
-	return selectpkg.SelectDefault(message, options, defaultIndex, config)
+	// 如果提供了 ResultTitle，设置 FormatResultTitle
+	if field.ResultTitle != "" {
+		titleStr := field.ResultTitle
+		config.FormatResultTitle = func(originalMessage string, resultValue string) string {
+			return titleStr
+		}
+	}
+	return selectpkg.Select(selectpkg.SelectConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  field.Message,
+			Config:   config,
+			Terminal: io.NewStdTerminal(),
+		},
+		Options:      field.Options,
+		DefaultIndex: field.DefaultIndex,
+	})
 }
 
 // SelectBuilder Select 的链式构建器
@@ -51,5 +75,9 @@ func (b *SelectBuilder) Default(index int) *SelectBuilder {
 
 // Run 执行选择并返回结果（返回选中的索引）
 func (b *SelectBuilder) Run() (int, error) {
-	return selectFunc(b.GetMessage(), b.options, b.defaultIndex)
+	return AskSelect(SelectField{
+		Message:      b.GetMessage(),
+		Options:      b.options,
+		DefaultIndex: b.defaultIndex,
+	})
 }

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -63,58 +64,87 @@ func TestNewGlobalManager_CreatesDirectory(t *testing.T) {
 func TestGlobalManager_Load_FileExists(t *testing.T) {
 	// Arrange: 设置测试环境并创建配置文件
 	tempDir := t.TempDir()
-	t.Setenv("HOME", tempDir)
-
-	configDir := filepath.Join(tempDir, ".workflow")
+	configDir := filepath.Join(tempDir, ".config", "workflow")
 	configPath := filepath.Join(configDir, "config.toml")
 	require.NoError(t, os.MkdirAll(configDir, 0755))
 
 	// 创建测试配置文件
 	configContent := `[log]
 level = "debug"
-
-[user]
-name = "Test User"
-email = "test@example.com"
 `
 	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644))
 
-	// 创建管理器
-	manager, err := NewGlobalManager()
-	require.NoError(t, err)
+	// 创建管理器（使用临时路径）
+	manager := &GlobalManager{
+		viper:  viper.New(),
+		path:   configPath,
+		Config: &GlobalConfig{},
+	}
+	manager.viper.SetConfigName("config")
+	manager.viper.SetConfigType("toml")
+	manager.viper.AddConfigPath(configDir)
+
+	// 初始化便捷字段
+	manager.LLMConfig = &manager.Config.LLM
+	manager.GitHubConfig = &manager.Config.GitHub
+	manager.JiraConfig = &manager.Config.Jira
+	manager.LogConfig = &manager.Config.Log
+	manager.ProxyConfig = &manager.Config.Proxy
 
 	// Act: 加载配置
-	err = manager.Load()
+	err := manager.Load()
 
 	// Assert: 验证配置已加载
 	assert.NoError(t, err)
 	assert.Equal(t, "debug", manager.LogConfig.Level)
-	assert.Equal(t, "Test User", manager.UserConfig.Name)
-	assert.Equal(t, "test@example.com", manager.UserConfig.Email)
 }
 
 func TestGlobalManager_Load_FileNotExists(t *testing.T) {
 	// Arrange: 设置测试环境，但不创建配置文件
 	tempDir := t.TempDir()
-	t.Setenv("HOME", tempDir)
+	configDir := filepath.Join(tempDir, ".config", "workflow")
 
-	// 创建管理器
-	manager, err := NewGlobalManager()
-	require.NoError(t, err)
+	// 创建配置目录（但不创建配置文件）
+	require.NoError(t, os.MkdirAll(configDir, 0755))
+
+	configPath := filepath.Join(configDir, "config.toml")
+
+	// 确保配置文件不存在
+	_, err := os.Stat(configPath)
+	assert.Error(t, err, "配置文件应该不存在")
+
+	// 创建管理器（使用临时路径）
+	manager := &GlobalManager{
+		viper:  viper.New(),
+		path:   configPath,
+		Config: &GlobalConfig{},
+	}
+	manager.viper.SetConfigName("config")
+	manager.viper.SetConfigType("toml")
+	manager.viper.AddConfigPath(configDir)
+
+	// 初始化便捷字段
+	manager.LLMConfig = &manager.Config.LLM
+	manager.GitHubConfig = &manager.Config.GitHub
+	manager.JiraConfig = &manager.Config.Jira
+	manager.LogConfig = &manager.Config.Log
+	manager.ProxyConfig = &manager.Config.Proxy
 
 	// Act: 加载配置（文件不存在）
 	err = manager.Load()
 
-	// Assert: 应该创建默认配置
-	assert.NoError(t, err)
+	// Assert: 应该返回 ConfigFileNotFoundError，不创建默认配置
+	assert.Error(t, err)
+	_, ok := err.(viper.ConfigFileNotFoundError)
+	assert.True(t, ok, "应该返回 ConfigFileNotFoundError，实际错误: %v", err)
 
-	// 验证默认配置文件已创建
-	configPath := manager.GetConfigPath()
+	// 验证配置文件未创建
 	_, err = os.Stat(configPath)
-	assert.NoError(t, err, "默认配置文件应该已创建")
+	assert.Error(t, err, "配置文件不应该被创建")
 
-	// 验证默认值
-	assert.Equal(t, "info", manager.LogConfig.Level)
+	// 验证 Config 为零值
+	assert.NotNil(t, manager.Config)
+	assert.Equal(t, "", manager.LogConfig.Level, "Log.Level 应该保持零值（空字符串）")
 }
 
 // ==================== Save 和 SaveDefault 测试 ====================
@@ -132,10 +162,6 @@ func TestGlobalManager_Save(t *testing.T) {
 		Log: LogConfig{
 			Level: "debug",
 		},
-		User: UserConfig{
-			Name:  "Test User",
-			Email: "test@example.com",
-		},
 	}
 	err = manager.Save()
 
@@ -151,8 +177,6 @@ func TestGlobalManager_Save(t *testing.T) {
 	err = manager.Load()
 	require.NoError(t, err)
 	assert.Equal(t, "debug", manager.LogConfig.Level)
-	assert.Equal(t, "Test User", manager.UserConfig.Name)
-	assert.Equal(t, "test@example.com", manager.UserConfig.Email)
 }
 
 func TestGlobalManager_SaveDefault(t *testing.T) {
@@ -197,17 +221,12 @@ func TestGlobalManager_DirectFieldAccess(t *testing.T) {
 	// Act & Assert: 测试直接访问配置字段
 	// 修改配置字段
 	manager.LogConfig.Level = "debug"
-	manager.UserConfig.Name = "Test User"
-	manager.UserConfig.Email = "test@example.com"
 
 	// 验证修改
 	assert.Equal(t, "debug", manager.LogConfig.Level)
-	assert.Equal(t, "Test User", manager.UserConfig.Name)
-	assert.Equal(t, "test@example.com", manager.UserConfig.Email)
 
 	// 验证通过 Config 字段也能访问
 	assert.Equal(t, "debug", manager.Config.Log.Level)
-	assert.Equal(t, "Test User", manager.Config.User.Name)
 }
 
 // ==================== GetLLMConfig 测试 ====================
@@ -282,9 +301,7 @@ func TestGlobalManager_GetLLMConfig_Empty(t *testing.T) {
 func TestGlobalManager_GetGitHubConfig(t *testing.T) {
 	// Arrange: 设置测试环境并创建配置文件
 	tempDir := t.TempDir()
-	t.Setenv("HOME", tempDir)
-
-	configDir := filepath.Join(tempDir, ".workflow")
+	configDir := filepath.Join(tempDir, ".config", "workflow")
 	configPath := filepath.Join(configDir, "config.toml")
 	require.NoError(t, os.MkdirAll(configDir, 0755))
 
@@ -293,16 +310,31 @@ current = "account1"
 
 [[github.accounts]]
 name = "account1"
-token = "token1"
+api_token = "token1"
 
 [[github.accounts]]
 name = "account2"
-token = "token2"
+api_token = "token2"
 `
 	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644))
 
-	manager, err := NewGlobalManager()
-	require.NoError(t, err)
+	// 创建管理器（使用临时路径）
+	manager := &GlobalManager{
+		viper:  viper.New(),
+		path:   configPath,
+		Config: &GlobalConfig{},
+	}
+	manager.viper.SetConfigName("config")
+	manager.viper.SetConfigType("toml")
+	manager.viper.AddConfigPath(configDir)
+
+	// 初始化便捷字段
+	manager.LLMConfig = &manager.Config.LLM
+	manager.GitHubConfig = &manager.Config.GitHub
+	manager.JiraConfig = &manager.Config.Jira
+	manager.LogConfig = &manager.Config.Log
+	manager.ProxyConfig = &manager.Config.Proxy
+
 	require.NoError(t, manager.Load())
 
 	// Act: 获取 GitHub 配置
@@ -313,9 +345,9 @@ token = "token2"
 	assert.Equal(t, "account1", githubConfig.Current)
 	assert.Len(t, githubConfig.Accounts, 2)
 	assert.Equal(t, "account1", githubConfig.Accounts[0].Name)
-	assert.Equal(t, "token1", githubConfig.Accounts[0].Token)
+	assert.Equal(t, "token1", githubConfig.Accounts[0].APIToken)
 	assert.Equal(t, "account2", githubConfig.Accounts[1].Name)
-	assert.Equal(t, "token2", githubConfig.Accounts[1].Token)
+	assert.Equal(t, "token2", githubConfig.Accounts[1].APIToken)
 }
 
 func TestGlobalManager_GetGitHubConfig_Empty(t *testing.T) {
@@ -338,20 +370,33 @@ func TestGlobalManager_GetGitHubConfig_Empty(t *testing.T) {
 func TestGlobalManager_GetGitHubConfig_PartialAccount(t *testing.T) {
 	// Arrange: 设置测试环境并创建部分账号配置
 	tempDir := t.TempDir()
-	t.Setenv("HOME", tempDir)
-
-	configDir := filepath.Join(tempDir, ".workflow")
+	configDir := filepath.Join(tempDir, ".config", "workflow")
 	configPath := filepath.Join(configDir, "config.toml")
 	require.NoError(t, os.MkdirAll(configDir, 0755))
 
-	// 只设置 name，不设置 token
+	// 只设置 name，不设置 api_token
 	configContent := `[[github.accounts]]
 name = "account1"
 `
 	require.NoError(t, os.WriteFile(configPath, []byte(configContent), 0644))
 
-	manager, err := NewGlobalManager()
-	require.NoError(t, err)
+	// 创建管理器（使用临时路径）
+	manager := &GlobalManager{
+		viper:  viper.New(),
+		path:   configPath,
+		Config: &GlobalConfig{},
+	}
+	manager.viper.SetConfigName("config")
+	manager.viper.SetConfigType("toml")
+	manager.viper.AddConfigPath(configDir)
+
+	// 初始化便捷字段
+	manager.LLMConfig = &manager.Config.LLM
+	manager.GitHubConfig = &manager.Config.GitHub
+	manager.JiraConfig = &manager.Config.Jira
+	manager.LogConfig = &manager.Config.Log
+	manager.ProxyConfig = &manager.Config.Proxy
+
 	require.NoError(t, manager.Load())
 
 	// Act: 获取 GitHub 配置
@@ -361,7 +406,7 @@ name = "account1"
 	assert.NotNil(t, githubConfig)
 	assert.Len(t, githubConfig.Accounts, 1)
 	assert.Equal(t, "account1", githubConfig.Accounts[0].Name)
-	assert.Empty(t, githubConfig.Accounts[0].Token)
+	assert.Empty(t, githubConfig.Accounts[0].APIToken)
 }
 
 // ==================== Config 字段直接访问测试 ====================
@@ -375,11 +420,7 @@ func TestGlobalManager_ConfigField(t *testing.T) {
 	configPath := filepath.Join(configDir, "config.toml")
 	require.NoError(t, os.MkdirAll(configDir, 0755))
 
-	configContent := `[user]
-name = "Test User"
-email = "test@example.com"
-
-[log]
+	configContent := `[log]
 level = "debug"
 
 [github]
@@ -390,9 +431,9 @@ name = "account1"
 token = "token1"
 
 [jira]
-url = "https://jira.example.com"
-username = "user"
-token = "jira-token"
+service_address = "https://jira.example.com"
+email = "user@example.com"
+api_token = "jira-token"
 
 [llm]
 provider = "openai"
@@ -418,14 +459,12 @@ https = "https://proxy.example.com:8080"
 
 	// Assert: 验证所有配置
 	assert.NotNil(t, globalConfig)
-	assert.Equal(t, "Test User", globalConfig.User.Name)
-	assert.Equal(t, "test@example.com", globalConfig.User.Email)
 	assert.Equal(t, "debug", globalConfig.Log.Level)
 	assert.Equal(t, "account1", globalConfig.GitHub.Current)
 	assert.Len(t, globalConfig.GitHub.Accounts, 1)
-	assert.Equal(t, "https://jira.example.com", globalConfig.Jira.URL)
-	assert.Equal(t, "user", globalConfig.Jira.Username)
-	assert.Equal(t, "jira-token", globalConfig.Jira.Token)
+	assert.Equal(t, "https://jira.example.com", globalConfig.Jira.ServiceAddress)
+	assert.Equal(t, "user@example.com", globalConfig.Jira.Email)
+	assert.Equal(t, "jira-token", globalConfig.Jira.APIToken)
 	assert.Equal(t, "openai", globalConfig.LLM.Provider)
 	assert.True(t, globalConfig.Proxy.Enabled)
 	assert.Equal(t, "http://proxy.example.com:8080", globalConfig.Proxy.HTTP)

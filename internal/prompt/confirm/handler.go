@@ -3,17 +3,19 @@ package confirm
 import (
 	"fmt"
 	"strings"
+
+	"github.com/zevwings/workflow/internal/prompt/common"
 )
 
 // ConfirmHandler 处理确认逻辑（纯业务逻辑，无 I/O 操作）
 // 负责处理输入字符、格式化提示和答案
 type ConfirmHandler struct {
 	defaultYes bool
-	config     Config
+	config     common.PromptConfig
 }
 
 // NewConfirmHandler 创建确认处理器
-func NewConfirmHandler(defaultYes bool, config Config) *ConfirmHandler {
+func NewConfirmHandler(defaultYes bool, config common.PromptConfig) *ConfirmHandler {
 	return &ConfirmHandler{
 		defaultYes: defaultYes,
 		config:     config,
@@ -36,8 +38,11 @@ func (h *ConfirmHandler) ProcessInput(char byte) (result *bool, shouldContinue b
 		return nil, false, fmt.Errorf("用户取消输入")
 	}
 
-	// 转换为小写进行比较
-	charLower := strings.ToLower(string(char))[0]
+	// 转换为小写进行比较（只处理 ASCII 字符 'y' 和 'n'）
+	charLower := char
+	if char >= 'A' && char <= 'Z' {
+		charLower = char + ('a' - 'A')
+	}
 
 	// 处理 yes 输入：y 或 Y
 	if charLower == 'y' {
@@ -57,6 +62,7 @@ func (h *ConfirmHandler) ProcessInput(char byte) (result *bool, shouldContinue b
 
 // FormatPromptText 格式化提示文本
 // 根据 defaultYes 构建不同的提示（显示 【Y/n】 或 【y/N】）
+// 未输入时使用 "? " 前缀
 func (h *ConfirmHandler) FormatPromptText(message string) string {
 	promptMsg := h.config.FormatPrompt(message)
 	var hintText string
@@ -71,6 +77,7 @@ func (h *ConfirmHandler) FormatPromptText(message string) string {
 		hintText = h.config.FormatHint(hintText)
 	}
 
+	// 返回格式化的提示文本（不包含 "? " 前缀，前缀在调用处添加）
 	return fmt.Sprintf("%s %s ", promptMsg, hintText)
 }
 

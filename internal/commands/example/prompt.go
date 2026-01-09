@@ -58,7 +58,10 @@ func runDemo(cmd *cobra.Command, args []string) error {
 
 	// 2. Confirm 演示
 	msg.Info("=== 2. Confirm 确认对话框 ===")
-	confirm, err := prompt.AskConfirm("是否继续演示？", true)
+	confirm, err := prompt.AskConfirm(prompt.ConfirmField{
+		Message:    "是否继续演示？",
+		DefaultYes: true,
+	})
 	if err != nil {
 		return fmt.Errorf("确认失败: %w", err)
 	}

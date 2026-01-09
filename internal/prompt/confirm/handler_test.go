@@ -6,14 +6,18 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/zevwings/workflow/internal/prompt/common"
 )
 
 // ==================== ConfirmHandler 测试 ====================
 
 func TestConfirmHandler_ProcessInput_Enter(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
+	cfg := common.PromptConfig{
+		FormatPrompt:        func(msg string) string { return msg },
+		FormatAnswer:        func(v string) string { return v },
+		FormatHint:          nil,
+		FormatQuestionPrefix: nil,
+		FormatAnswerPrefix:   nil,
 	}
 
 	// 默认 yes，回车应返回 true
@@ -34,9 +38,12 @@ func TestConfirmHandler_ProcessInput_Enter(t *testing.T) {
 }
 
 func TestConfirmHandler_ProcessInput_Yes(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
+	cfg := common.PromptConfig{
+		FormatPrompt:        func(msg string) string { return msg },
+		FormatAnswer:        func(v string) string { return v },
+		FormatHint:          nil,
+		FormatQuestionPrefix: nil,
+		FormatAnswerPrefix:   nil,
 	}
 
 	handler := NewConfirmHandler(false, cfg)
@@ -57,9 +64,12 @@ func TestConfirmHandler_ProcessInput_Yes(t *testing.T) {
 }
 
 func TestConfirmHandler_ProcessInput_No(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
+	cfg := common.PromptConfig{
+		FormatPrompt:        func(msg string) string { return msg },
+		FormatAnswer:        func(v string) string { return v },
+		FormatHint:          nil,
+		FormatQuestionPrefix: nil,
+		FormatAnswerPrefix:   nil,
 	}
 
 	handler := NewConfirmHandler(true, cfg)
@@ -80,9 +90,12 @@ func TestConfirmHandler_ProcessInput_No(t *testing.T) {
 }
 
 func TestConfirmHandler_ProcessInput_CtrlC(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
+	cfg := common.PromptConfig{
+		FormatPrompt:        func(msg string) string { return msg },
+		FormatAnswer:        func(v string) string { return v },
+		FormatHint:          nil,
+		FormatQuestionPrefix: nil,
+		FormatAnswerPrefix:   nil,
 	}
 
 	handler := NewConfirmHandler(true, cfg)
@@ -94,9 +107,12 @@ func TestConfirmHandler_ProcessInput_CtrlC(t *testing.T) {
 }
 
 func TestConfirmHandler_ProcessInput_InvalidChar(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
+	cfg := common.PromptConfig{
+		FormatPrompt:        func(msg string) string { return msg },
+		FormatAnswer:        func(v string) string { return v },
+		FormatHint:          nil,
+		FormatQuestionPrefix: nil,
+		FormatAnswerPrefix:   nil,
 	}
 
 	handler := NewConfirmHandler(true, cfg)
@@ -114,9 +130,12 @@ func TestConfirmHandler_ProcessInput_InvalidChar(t *testing.T) {
 }
 
 func TestConfirmHandler_FormatPromptText(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return "[" + msg + "]" },
-		FormatAnswer: func(v string) string { return v },
+	cfg := common.PromptConfig{
+		FormatPrompt:        func(msg string) string { return "[" + msg + "]" },
+		FormatAnswer:        func(v string) string { return v },
+		FormatHint:          nil,
+		FormatQuestionPrefix: nil,
+		FormatAnswerPrefix:   nil,
 	}
 
 	// 默认 yes
@@ -133,9 +152,12 @@ func TestConfirmHandler_FormatPromptText(t *testing.T) {
 }
 
 func TestConfirmHandler_FormatAnswer(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return "[" + v + "]" },
+	cfg := common.PromptConfig{
+		FormatPrompt:        func(msg string) string { return msg },
+		FormatAnswer:        func(v string) string { return "[" + v + "]" },
+		FormatHint:          nil,
+		FormatQuestionPrefix: nil,
+		FormatAnswerPrefix:   nil,
 	}
 
 	handler := NewConfirmHandler(true, cfg)
@@ -148,9 +170,12 @@ func TestConfirmHandler_FormatAnswer(t *testing.T) {
 }
 
 func TestConfirmHandler_ProcessLineInput(t *testing.T) {
-	cfg := Config{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
+	cfg := common.PromptConfig{
+		FormatPrompt:        func(msg string) string { return msg },
+		FormatAnswer:        func(v string) string { return v },
+		FormatHint:          nil,
+		FormatQuestionPrefix: nil,
+		FormatAnswerPrefix:   nil,
 	}
 
 	handler := NewConfirmHandler(true, cfg)

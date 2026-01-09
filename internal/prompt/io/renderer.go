@@ -51,7 +51,9 @@ func (r *InteractiveRenderer) RenderWithPrompt(promptMsg string, renderFn Render
 func (r *InteractiveRenderer) ReRender(renderFn RenderCallback) error {
 	// 恢复光标位置并清除内容
 	r.terminal.RestoreCursor()
-	r.terminal.MoveToStart()
+	// 重置所有 ANSI 格式，避免之前的格式影响新内容
+	r.terminal.ResetFormat()
+	// 清除从光标到屏幕底部的内容（不需要 MoveToStart，因为 RestoreCursor 已经恢复到正确位置）
 	r.terminal.ClearToEnd()
 
 	// 执行渲染（非首次渲染）
@@ -62,4 +64,3 @@ func (r *InteractiveRenderer) ReRender(renderFn RenderCallback) error {
 func (r *InteractiveRenderer) GetTerminal() TerminalIO {
 	return r.terminal
 }
-

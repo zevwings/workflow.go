@@ -19,9 +19,9 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "valid config",
 			config: &Config{
-				URL:      "https://test.atlassian.net",
-				Username: "test@example.com",
-				Token:    "test-token",
+				ServiceAddress: "https://test.atlassian.net",
+				Email:          "test@example.com",
+				APIToken:       "test-token",
 			},
 			wantErr: false,
 		},
@@ -33,36 +33,36 @@ func TestNewClient(t *testing.T) {
 		{
 			name: "empty URL",
 			config: &Config{
-				URL:      "",
-				Username: "test@example.com",
-				Token:    "test-token",
+				ServiceAddress: "",
+				Email:          "test@example.com",
+				APIToken:       "test-token",
 			},
 			wantErr: true,
 		},
 		{
 			name: "empty username",
 			config: &Config{
-				URL:      "https://test.atlassian.net",
-				Username: "",
-				Token:    "test-token",
+				ServiceAddress: "https://test.atlassian.net",
+				Email:          "",
+				APIToken:       "test-token",
 			},
 			wantErr: true,
 		},
 		{
 			name: "empty token",
 			config: &Config{
-				URL:      "https://test.atlassian.net",
-				Username: "test@example.com",
-				Token:    "",
+				ServiceAddress: "https://test.atlassian.net",
+				Email:          "test@example.com",
+				APIToken:       "",
 			},
 			wantErr: true,
 		},
 		{
 			name: "invalid URL format",
 			config: &Config{
-				URL:      "not-a-url",
-				Username: "test@example.com",
-				Token:    "test-token",
+				ServiceAddress: "not-a-url",
+				Email:          "test@example.com",
+				APIToken:       "test-token",
 			},
 			wantErr: false, // URL 格式验证由 go-jira SDK 处理，这里只验证非空
 		},
@@ -96,9 +96,9 @@ func TestNewClient(t *testing.T) {
 
 func TestClient_WithContext(t *testing.T) {
 	config := &Config{
-		URL:      "https://test.atlassian.net",
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: "https://test.atlassian.net",
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewClient(config)
@@ -128,9 +128,9 @@ func TestClient_WithContext(t *testing.T) {
 
 func TestClient_GetJiraClient(t *testing.T) {
 	config := &Config{
-		URL:      "https://test.atlassian.net",
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: "https://test.atlassian.net",
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewClient(config)
@@ -146,9 +146,9 @@ func TestClient_GetJiraClient(t *testing.T) {
 
 func TestClient_GetContext(t *testing.T) {
 	config := &Config{
-		URL:      "https://test.atlassian.net",
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: "https://test.atlassian.net",
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewClient(config)
@@ -167,9 +167,9 @@ func TestClient_GetContext(t *testing.T) {
 
 func TestClient_ContextChain(t *testing.T) {
 	config := &Config{
-		URL:      "https://test.atlassian.net",
-		Username: "test@example.com",
-		Token:    "test-token",
+		ServiceAddress: "https://test.atlassian.net",
+		Email:          "test@example.com",
+		APIToken:       "test-token",
 	}
 
 	client, err := NewClient(config)
@@ -195,4 +195,3 @@ func TestClient_ContextChain(t *testing.T) {
 	assert.Equal(t, client.GetJiraClient(), client2.GetJiraClient())
 	assert.Equal(t, client.GetJiraClient(), client3.GetJiraClient())
 }
-

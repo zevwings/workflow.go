@@ -8,12 +8,12 @@ import (
 type SelectHandler struct {
 	options      []string
 	defaultIndex int
-	config       Config
+	config       common.PromptConfig
 	navigator    *common.NavigationHandler
 }
 
 // NewSelectHandler 创建选择处理器
-func NewSelectHandler(options []string, defaultIndex int, config Config) *SelectHandler {
+func NewSelectHandler(options []string, defaultIndex int, config common.PromptConfig) *SelectHandler {
 	return &SelectHandler{
 		options:      options,
 		defaultIndex: defaultIndex,

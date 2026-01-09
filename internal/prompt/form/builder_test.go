@@ -26,7 +26,11 @@ func TestFormBuilder_AddConfirm(t *testing.T) {
 	builder := NewFormBuilder()
 
 	// 添加确认字段
-	builder.AddConfirm("agree", "是否同意？", true)
+	builder.AddConfirm(ConfirmFormField{
+		Key:          "agree",
+		Prompt:       "是否同意？",
+		DefaultValue: true,
+	})
 
 	assert.Equal(t, 1, len(builder.fields))
 	field := builder.fields[0]
@@ -37,7 +41,11 @@ func TestFormBuilder_AddConfirm(t *testing.T) {
 	assert.Nil(t, field.Validator)
 
 	// 链式调用
-	builder.AddConfirm("confirm2", "确认2？", false)
+	builder.AddConfirm(ConfirmFormField{
+		Key:          "confirm2",
+		Prompt:       "确认2？",
+		DefaultValue: false,
+	})
 	assert.Equal(t, 2, len(builder.fields))
 }
 
@@ -47,7 +55,12 @@ func TestFormBuilder_AddInput(t *testing.T) {
 	builder := NewFormBuilder()
 
 	// 添加输入字段（无验证器）
-	builder.AddInput("name", "请输入姓名", "默认值", nil)
+	builder.AddInput(InputFormField{
+		Key:          "name",
+		Prompt:       "请输入姓名",
+		DefaultValue: "默认值",
+		Validator:    nil,
+	})
 
 	assert.Equal(t, 1, len(builder.fields))
 	field := builder.fields[0]
@@ -64,7 +77,12 @@ func TestFormBuilder_AddInput(t *testing.T) {
 		}
 		return nil
 	}
-	builder.AddInput("email", "请输入邮箱", "", validator)
+	builder.AddInput(InputFormField{
+		Key:          "email",
+		Prompt:       "请输入邮箱",
+		DefaultValue: "",
+		Validator:    validator,
+	})
 	assert.Equal(t, 2, len(builder.fields))
 	assert.NotNil(t, builder.fields[1].Validator)
 }
@@ -75,14 +93,19 @@ func TestFormBuilder_AddPassword(t *testing.T) {
 	builder := NewFormBuilder()
 
 	// 添加密码字段（无验证器）
-	builder.AddPassword("password", "请输入密码", nil)
+	builder.AddPassword(PasswordFormField{
+		Key:          "password",
+		Prompt:       "请输入密码",
+		DefaultValue: "",
+		Validator:    nil,
+	})
 
 	assert.Equal(t, 1, len(builder.fields))
 	field := builder.fields[0]
 	assert.Equal(t, "password", field.Key)
 	assert.Equal(t, FieldTypePassword, field.Type)
 	assert.Equal(t, "请输入密码", field.Prompt)
-	assert.Nil(t, field.DefaultValue)
+	assert.Equal(t, "", field.DefaultValue)
 	assert.Nil(t, field.Validator)
 
 	// 添加密码字段（有验证器）
@@ -92,7 +115,12 @@ func TestFormBuilder_AddPassword(t *testing.T) {
 		}
 		return nil
 	}
-	builder.AddPassword("password2", "请再次输入密码", validator)
+	builder.AddPassword(PasswordFormField{
+		Key:          "password2",
+		Prompt:       "请再次输入密码",
+		DefaultValue: "",
+		Validator:    validator,
+	})
 	assert.Equal(t, 2, len(builder.fields))
 	assert.NotNil(t, builder.fields[1].Validator)
 }
@@ -104,7 +132,12 @@ func TestFormBuilder_AddSelect(t *testing.T) {
 	options := []string{"选项1", "选项2", "选项3"}
 
 	// 添加单选字段
-	builder.AddSelect("choice", "请选择", options, 1)
+	builder.AddSelect(SelectFormField{
+		Key:          "choice",
+		Prompt:       "请选择",
+		Options:      options,
+		DefaultIndex: 1,
+	})
 
 	assert.Equal(t, 1, len(builder.fields))
 	field := builder.fields[0]
@@ -116,7 +149,12 @@ func TestFormBuilder_AddSelect(t *testing.T) {
 	assert.Nil(t, field.DefaultValue)
 
 	// 测试默认索引为 0
-	builder.AddSelect("choice2", "请选择2", options, 0)
+	builder.AddSelect(SelectFormField{
+		Key:          "choice2",
+		Prompt:       "请选择2",
+		Options:      options,
+		DefaultIndex: 0,
+	})
 	assert.Equal(t, 0, builder.fields[1].DefaultIndex)
 }
 
@@ -127,7 +165,12 @@ func TestFormBuilder_AddMultiSelect(t *testing.T) {
 	options := []string{"选项1", "选项2", "选项3"}
 
 	// 添加多选字段
-	builder.AddMultiSelect("multi", "请多选", options, []int{0, 2})
+	builder.AddMultiSelect(MultiSelectFormField{
+		Key:             "multi",
+		Prompt:          "请多选",
+		Options:         options,
+		DefaultSelected: []int{0, 2},
+	})
 
 	assert.Equal(t, 1, len(builder.fields))
 	field := builder.fields[0]
@@ -138,7 +181,12 @@ func TestFormBuilder_AddMultiSelect(t *testing.T) {
 	assert.Equal(t, []int{0, 2}, field.DefaultSelected)
 
 	// 测试空默认选择
-	builder.AddMultiSelect("multi2", "请多选2", options, nil)
+	builder.AddMultiSelect(MultiSelectFormField{
+		Key:             "multi2",
+		Prompt:          "请多选2",
+		Options:         options,
+		DefaultSelected: nil,
+	})
 	assert.Nil(t, builder.fields[1].DefaultSelected)
 }
 
@@ -147,10 +195,19 @@ func TestFormBuilder_AddMultiSelect(t *testing.T) {
 func TestFormBuilder_AddForm(t *testing.T) {
 	builder := NewFormBuilder()
 	nestedForm := NewFormBuilder()
-	nestedForm.AddInput("nested_name", "嵌套姓名", "", nil)
+	nestedForm.AddInput(InputFormField{
+		Key:          "nested_name",
+		Prompt:       "嵌套姓名",
+		DefaultValue: "",
+		Validator:    nil,
+	})
 
 	// 添加嵌套表单
-	builder.AddForm("user", "用户信息", nestedForm)
+	builder.AddForm(NestedFormField{
+		Key:        "user",
+		Prompt:     "用户信息",
+		NestedForm: nestedForm,
+	})
 
 	assert.Equal(t, 1, len(builder.fields))
 	field := builder.fields[0]
@@ -172,12 +229,16 @@ func TestFormBuilder_Condition(t *testing.T) {
 	})
 	assert.Equal(t, 0, len(builder.fields))
 
-	// 添加字段后设置条件
-	builder.AddConfirm("agree", "是否同意？", false)
+	// 添加字段后设置条件（通过配置）
 	condition := func(result *FormResult) bool {
 		return result.GetBool("agree")
 	}
-	builder.Condition(condition)
+	builder.AddConfirm(ConfirmFormField{
+		Key:          "agree",
+		Prompt:       "是否同意？",
+		DefaultValue: false,
+		Condition:    condition,
+	})
 
 	assert.Equal(t, 1, len(builder.fields))
 	assert.NotNil(t, builder.fields[0].Condition)
@@ -231,7 +292,12 @@ func TestFormBuilder_SetTitle(t *testing.T) {
 	assert.Equal(t, "用户注册表单", builder.GetTitle())
 
 	// 链式调用
-	builder.SetTitle("新标题").AddInput("name", "姓名", "", nil)
+	builder.SetTitle("新标题").AddInput(InputFormField{
+		Key:          "name",
+		Prompt:       "姓名",
+		DefaultValue: "",
+		Validator:    nil,
+	})
 	assert.Equal(t, "新标题", builder.GetTitle())
 }
 
@@ -246,8 +312,17 @@ func TestFormBuilder_GetFields(t *testing.T) {
 	assert.Equal(t, 0, len(fields))
 
 	// 添加字段后
-	builder.AddInput("name", "姓名", "", nil)
-	builder.AddConfirm("agree", "同意", true)
+	builder.AddInput(InputFormField{
+		Key:          "name",
+		Prompt:       "姓名",
+		DefaultValue: "",
+		Validator:    nil,
+	})
+	builder.AddConfirm(ConfirmFormField{
+		Key:          "agree",
+		Prompt:       "同意",
+		DefaultValue: true,
+	})
 
 	fields = builder.GetFields()
 	assert.Equal(t, 2, len(fields))
@@ -260,9 +335,23 @@ func TestFormBuilder_GetFields(t *testing.T) {
 func TestFormBuilder_Chaining(t *testing.T) {
 	builder := NewFormBuilder().
 		SetTitle("测试表单").
-		AddInput("name", "姓名", "", nil).
-		AddConfirm("agree", "同意", false).
-		AddSelect("choice", "选择", []string{"A", "B"}, 0).
+		AddInput(InputFormField{
+			Key:          "name",
+			Prompt:       "姓名",
+			DefaultValue: "",
+			Validator:    nil,
+		}).
+		AddConfirm(ConfirmFormField{
+			Key:          "agree",
+			Prompt:       "同意",
+			DefaultValue: false,
+		}).
+		AddSelect(SelectFormField{
+			Key:          "choice",
+			Prompt:       "选择",
+			Options:      []string{"A", "B"},
+			DefaultIndex: 0,
+		}).
 		Validate(func(result *FormResult) error {
 			return nil
 		})
@@ -275,12 +364,17 @@ func TestFormBuilder_Chaining(t *testing.T) {
 // ==================== Run 测试（需要 mock executor） ====================
 
 func TestFormBuilder_Run_WithValidator(t *testing.T) {
-	// 注意：Run 方法会调用 executor，需要设置 FormConfig
+	// 注意：Run 方法会调用 executor，需要设置 PromptConfig 和 InputProvider
 	// 这里只测试验证器逻辑，不测试完整的执行流程
 	// 完整的执行流程测试在 executor_test.go 中
 
 	builder := NewFormBuilder().
-		AddInput("name", "姓名", "默认", nil).
+		AddInput(InputFormField{
+			Key:          "name",
+			Prompt:       "姓名",
+			DefaultValue: "默认",
+			Validator:    nil,
+		}).
 		Validate(func(result *FormResult) error {
 			if result.GetString("name") == "" {
 				return errors.New("姓名不能为空")

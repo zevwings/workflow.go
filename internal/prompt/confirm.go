@@ -1,19 +1,40 @@
 package prompt
 
 import (
+	"github.com/zevwings/workflow/internal/prompt/common"
 	"github.com/zevwings/workflow/internal/prompt/confirm"
+	"github.com/zevwings/workflow/internal/prompt/io"
 )
 
-// AskConfirm 函数式调用 Confirm（保持向后兼容）
-// 使用方式：prompt.AskConfirm("消息", defaultYes)
-func AskConfirm(message string, defaultYes bool) (bool, error) {
-	return confirmFunc(message, defaultYes)
+// ConfirmField 确认字段配置
+type ConfirmField struct {
+	// Message 提示消息
+	Message string
+	// DefaultYes 默认值（true 表示默认 Yes）
+	DefaultYes bool
+	// ResultTitle 确认完成后显示的 title（可选）
+	// 如果设置，将优先于全局的 FormatResultTitle 使用
+	ResultTitle string
 }
 
-// confirmFunc 统一的确认函数（私有函数）
-func confirmFunc(message string, defaultYes bool) (bool, error) {
+// AskConfirm 使用配置结构体的确认函数
+func AskConfirm(field ConfirmField) (bool, error) {
 	config := newDefaultConfig()
-	return confirm.ConfirmDefault(message, defaultYes, config)
+	// 如果提供了 ResultTitle，设置 FormatResultTitle
+	if field.ResultTitle != "" {
+		titleStr := field.ResultTitle
+		config.FormatResultTitle = func(originalMessage string, resultValue string) string {
+			return titleStr
+		}
+	}
+	return confirm.Confirm(confirm.ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  field.Message,
+			Config:   config,
+			Terminal: io.NewStdTerminal(),
+		},
+		DefaultYes: field.DefaultYes,
+	})
 }
 
 // ConfirmBuilder Confirm 的链式构建器
@@ -44,5 +65,8 @@ func (b *ConfirmBuilder) Default(defaultYes bool) *ConfirmBuilder {
 
 // Run 执行确认并返回结果
 func (b *ConfirmBuilder) Run() (bool, error) {
-	return confirmFunc(b.GetMessage(), b.defaultYes)
+	return AskConfirm(ConfirmField{
+		Message:    b.GetMessage(),
+		DefaultYes: b.defaultYes,
+	})
 }

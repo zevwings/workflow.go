@@ -18,11 +18,14 @@ internal/prompt/
 ├── theme.go                 # 主题配置（157行）
 │
 ├── common/                   # 通用功能模块
-│   ├── config.go            # 提示功能通用配置（14行）
-│   ├── format.go            # 格式化函数（私有）
-│   ├── render.go            # 渲染功能（私有）
-│   ├── navigation.go        # 导航功能（键盘方向键处理）
-│   ├── input_handler.go     # 输入处理（键盘事件处理）
+│   ├── config.go            # 提示功能通用配置（PromptConfig、BasePromptConfig）
+│   ├── config_manager.go    # 配置管理器（ConfigManager，支持默认/全局/局部配置）
+│   ├── format.go            # 格式化函数（FormatResult、FormatResultWithTitle 等）
+│   ├── render.go            # 渲染功能（RenderOptions 等）
+│   ├── navigation.go        # 导航功能（NavigationHandler，键盘方向键处理）
+│   ├── input_handler.go     # 输入处理（HandleInteractiveInput，键盘事件处理）
+│   ├── fallback.go          # Fallback 机制（TypedFallbackHandler、ExecuteFallbackTyped）
+│   ├── select_helpers.go    # 选择辅助函数（ExecuteSelectFallback、ExecuteMultiSelectFallback）
 │   └── cancel.go            # 取消功能（Ctrl+C 处理）
 │
 ├── input/                    # 输入子模块
@@ -33,7 +36,8 @@ internal/prompt/
 │
 ├── confirm/                  # 确认子模块
 │   ├── core.go              # 确认核心逻辑
-│   └── handler.go          # 确认处理器（键盘事件处理）
+│   ├── handler.go          # 确认处理器（键盘事件处理）
+│   └── adapter.go          # Fallback 适配器（confirmFallbackAdapter）
 │
 ├── select/                   # 单选子模块
 │   ├── core.go              # 选择核心逻辑
@@ -79,19 +83,41 @@ internal/prompt/
 ```go
 import "github.com/zevwings/workflow/internal/prompt"
 
-// 基础输入
+// 基础输入 - 使用配置结构体
+value, err := prompt.AskInput(prompt.InputField{
+    Message:      "请输入您的姓名",
+    DefaultValue: "",
+    Validator:    nil,
+    ResultTitle:  "姓名",  // 可选
+})
+
+// 带默认值和验证的输入 - 使用配置结构体
+email, err := prompt.AskInput(prompt.InputField{
+    Message:      "请输入邮箱",
+    DefaultValue: "user@example.com",
+    Validator:    prompt.ValidateEmail(),
+    ResultTitle:  "邮箱",  // 可选
+})
+
+// 密码输入 - 使用配置结构体
+password, err := prompt.AskPassword(prompt.PasswordField{
+    Message:      "请输入密码",
+    DefaultValue: "",  // 空字符串表示无默认值
+    Validator:    prompt.ValidateMinLength(8),
+    ResultTitle:  "密码",  // 可选
+})
+
+// Builder 模式调用
 value, err := prompt.Input().
     Prompt("请输入您的姓名").
     Run()
 
-// 带默认值和验证的输入
 email, err := prompt.Input().
     Prompt("请输入邮箱").
     DefaultValue("user@example.com").
     Validate(prompt.ValidateEmail()).
     Run()
 
-// 密码输入
 password, err := prompt.Password().
     Prompt("请输入密码").
     Validate(prompt.ValidateMinLength(8)).
@@ -103,8 +129,12 @@ password, err := prompt.Password().
 ```go
 import "github.com/zevwings/workflow/internal/prompt"
 
-// 函数式调用
-confirmed, err := prompt.AskConfirm("是否继续？", true)
+// 使用配置结构体
+confirmed, err := prompt.AskConfirm(prompt.ConfirmField{
+    Message:     "是否继续？",
+    DefaultYes:  true,
+    ResultTitle: "继续",  // 可选
+})
 
 // Builder 模式调用
 confirmed, err := prompt.Confirm().
@@ -120,14 +150,30 @@ import "github.com/zevwings/workflow/internal/prompt"
 
 options := []string{"选项1", "选项2", "选项3"}
 
-// 单选
+// 单选 - 使用配置结构体
+index, err := prompt.AskSelect(prompt.SelectField{
+    Message:      "请选择一个选项",
+    Options:      options,
+    DefaultIndex: 0,
+    ResultTitle:  "选择的选项",  // 可选
+})
+
+// 单选 - Builder 模式调用
 index, err := prompt.Select().
     Prompt("请选择一个选项").
     Options(options).
     Default(0).
     Run()
 
-// 多选
+// 多选 - 使用配置结构体
+selected, err := prompt.AskMultiSelect(prompt.MultiSelectField{
+    Message:         "请选择多个选项",
+    Options:         options,
+    DefaultSelected: []int{0, 2},
+    ResultTitle:     "选择的选项",  // 可选
+})
+
+// 多选 - Builder 模式调用
 selected, err := prompt.MultiSelect().
     Prompt("请选择多个选项").
     Options(options).
@@ -138,14 +184,41 @@ selected, err := prompt.MultiSelect().
 ### 表单提示
 
 ```go
-import "github.com/zevwings/workflow/internal/prompt"
+import (
+    "github.com/zevwings/workflow/internal/prompt"
+    "github.com/zevwings/workflow/internal/prompt/form"
+)
 
 result, err := prompt.Form().
-    AddInput("name", "姓名", "", prompt.ValidateRequired()).
-    AddInput("email", "邮箱", "", prompt.ValidateEmail()).
-    AddPassword("password", "密码", prompt.ValidateMinLength(8)).
-    AddSelect("role", "角色", []string{"开发者", "测试"}, 0).
-    AddConfirm("agree", "同意协议", false).
+    AddInput(form.InputFormField{
+        Key:          "name",
+        Prompt:       "姓名",
+        DefaultValue: "",
+        Validator:    prompt.ValidateRequired(),
+    }).
+    AddInput(form.InputFormField{
+        Key:          "email",
+        Prompt:       "邮箱",
+        DefaultValue: "",
+        Validator:    prompt.ValidateEmail(),
+    }).
+    AddPassword(form.PasswordFormField{
+        Key:          "password",
+        Prompt:       "密码",
+        DefaultValue: "",
+        Validator:    prompt.ValidateMinLength(8),
+    }).
+    AddSelect(form.SelectFormField{
+        Key:          "role",
+        Prompt:       "角色",
+        Options:      []string{"开发者", "测试"},
+        DefaultIndex: 0,
+    }).
+    AddConfirm(form.ConfirmFormField{
+        Key:          "agree",
+        Prompt:       "同意协议",
+        DefaultValue: false,
+    }).
     Run()
 
 if err != nil {
@@ -157,6 +230,23 @@ email := result.GetString("email")
 roleIndex := result.GetInt("role")
 agree := result.GetBool("agree")
 ```
+
+### 表单结果标题格式化
+
+可以通过 `SetFormFormatResultTitle` 自定义表单字段完成后显示的 title 格式：
+
+```go
+// 使用内置的格式化函数
+prompt.SetFormFormatResultTitle(prompt.FormatResultTitleForForm)
+
+// 或自定义格式化函数
+prompt.SetFormFormatResultTitle(func(originalMessage string, resultValue string) string {
+    // 自定义逻辑
+    return "自定义标题: " + resultValue
+})
+```
+
+`FormatResultTitleForForm` 是一个辅助函数，可以将 "Please enter your X" 转换为 "Your X"。
 
 ### 消息输出
 
@@ -178,6 +268,7 @@ msg.Debug("这是调试信息") // 仅在 verbose 模式下显示
 import "github.com/zevwings/workflow/internal/prompt"
 import "time"
 
+// 基础使用
 spinner := prompt.NewSpinner("正在处理...")
 spinner.Start()
 defer spinner.Stop()
@@ -188,13 +279,30 @@ time.Sleep(2 * time.Second)
 // 停止并显示成功消息
 spinner.WithSuccess("处理完成")
 
-// 或使用 Do 方法
+// 使用 Do 方法
 spinner := prompt.NewSpinner("正在处理...")
 err := spinner.Do(func() error {
     // 执行操作
     return nil
 })
+
+// 使用选项自定义 Spinner
+spinner := prompt.NewSpinner(
+    "正在处理...",
+    prompt.WithSpinner([]string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"}),
+    prompt.WithInterval(50 * time.Millisecond),
+    prompt.WithSpinnerStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("blue"))),
+    prompt.WithMessageStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("gray"))),
+)
 ```
+
+**Spinner 选项**：
+- `WithSpinner(frames []string)` - 设置自定义 spinner 字符序列
+- `WithInterval(d time.Duration)` - 设置更新间隔
+- `WithStyle(style lipgloss.Style)` - 设置自定义样式（同时应用于 spinner 和文本）
+- `WithSpinnerStyle(style lipgloss.Style)` - 设置 spinner 字符的样式
+- `WithMessageStyle(style lipgloss.Style)` - 设置消息文本的样式
+- `WithWriter(w io.Writer)` - 设置输出流
 
 ### 表格显示
 
@@ -242,14 +350,146 @@ table.SetBorder(true).
 
 ### FormBuilder
 
-- `AddInput(key, prompt, defaultValue string, validator Validator)` - 添加输入字段
-- `AddPassword(key, prompt string, validator Validator)` - 添加密码字段
-- `AddConfirm(key, prompt string, defaultValue bool)` - 添加确认字段
-- `AddSelect(key, prompt string, options []string, defaultIndex int)` - 添加单选字段
-- `AddMultiSelect(key, prompt string, options []string, defaultSelected []int)` - 添加多选字段
-- `AddForm(key, prompt string, nestedForm *FormBuilder)` - 添加嵌套表单字段
-- `Condition(condition Condition)` - 为最后一个字段设置条件函数
+- `AddInput(config InputFormField)` - 添加输入字段
+- `AddPassword(config PasswordFormField)` - 添加密码字段
+- `AddConfirm(config ConfirmFormField)` - 添加确认字段
+- `AddSelect(config SelectFormField)` - 添加单选字段
+- `AddMultiSelect(config MultiSelectFormField)` - 添加多选字段
+- `AddForm(config NestedFormField)` - 添加嵌套表单字段
+- `Condition(condition Condition)` - 为最后一个字段设置条件函数（已废弃，建议在配置中设置）
 - `Validate(validator FormValidator)` - 设置表单级验证器
+
+### 配置结构体
+
+所有模块都支持使用配置结构体，提供更清晰的参数传递方式：
+
+#### ConfirmField - 确认字段配置
+
+```go
+type ConfirmField struct {
+    Message     string  // 提示消息
+    DefaultYes  bool    // 默认值（true 表示默认 Yes）
+    ResultTitle string  // 确认完成后显示的 title（可选）
+}
+```
+
+#### InputField - 输入字段配置
+
+```go
+type InputField struct {
+    Message      string                // 提示消息
+    DefaultValue string                // 默认值（可选）
+    Validator    Validator             // 验证器（可选）
+    ResultTitle  string                // 输入完成后显示的 title（可选）
+    Config       *common.PromptConfig  // 自定义配置（可选）
+}
+```
+
+#### PasswordField - 密码字段配置
+
+```go
+type PasswordField struct {
+    Message      string                // 提示消息
+    DefaultValue string                // 默认值（可选，空字符串表示无默认值）
+    Validator    Validator             // 验证器（可选）
+    ResultTitle  string                // 输入完成后显示的 title（可选）
+    Config       *common.PromptConfig  // 自定义配置（可选）
+}
+```
+
+#### SelectField - 单选字段配置
+
+```go
+type SelectField struct {
+    Message      string   // 提示消息
+    Options      []string // 选项列表
+    DefaultIndex int      // 默认选中的索引
+    ResultTitle  string   // 选择完成后显示的 title（可选）
+}
+```
+
+#### MultiSelectField - 多选字段配置
+
+```go
+type MultiSelectField struct {
+    Message         string // 提示消息
+    Options         []string // 选项列表
+    DefaultSelected []int  // 默认选中的索引列表
+    ResultTitle     string // 选择完成后显示的 title（可选）
+}
+```
+
+### 验证器
+
+prompt 模块提供了多种内置验证器：
+
+- `ValidateRegex(pattern string, errorMsg string)` - 基于正则表达式的验证器
+- `ValidateEmail()` - 验证邮箱格式
+- `ValidateURL()` - 验证 URL 格式
+- `ValidateRequired()` - 验证输入不能为空
+- `ValidateMinLength(minLen int)` - 验证最小长度
+- `ValidateMaxLength(maxLen int)` - 验证最大长度
+- `ValidateLength(minLen, maxLen int)` - 验证长度范围
+
+**使用示例**：
+```go
+// 邮箱验证
+email, err := prompt.Input().
+    Prompt("请输入邮箱").
+    Validate(prompt.ValidateEmail()).
+    Run()
+
+// 最小长度验证
+password, err := prompt.Password().
+    Prompt("请输入密码").
+    Validate(prompt.ValidateMinLength(8)).
+    Run()
+
+// 正则表达式验证
+code, err := prompt.Input().
+    Prompt("请输入验证码").
+    Validate(prompt.ValidateRegex(`^\d{6}$`, "验证码必须是6位数字")).
+    Run()
+```
+
+### 函数式 API
+
+所有模块都提供了函数式调用和配置结构体调用两种方式：
+
+#### 函数式 API
+
+- `AskConfirm(field ConfirmField)` - 确认提示
+- `AskInput(field InputField)` - 输入提示
+- `AskPassword(field PasswordField)` - 密码提示
+- `AskSelect(field SelectField)` - 单选提示
+- `AskMultiSelect(field MultiSelectField)` - 多选提示
+
+**优势**：
+- ✅ 参数清晰，通过字段名访问
+- ✅ 可选参数通过零值处理，无需传递
+- ✅ 类型安全
+- ✅ 易于扩展新字段
+
+### 表单相关函数
+
+- `SetFormFormatResultTitle(formatFunc)` - 设置 Form 的 FormatResultTitle 函数，用于自定义输入完成后显示的 title 格式
+- `FormatResultTitleForForm(originalMessage, resultValue)` - 为 Form 格式化完成后显示的 title 的辅助函数，将 "Please enter your X" 转换为 "Your X"
+
+所有字段类型都使用配置结构体：
+
+- `InputFormField` - 输入字段配置
+  - `Key string` - 字段键名
+  - `Prompt string` - 提示消息
+  - `DefaultValue string` - 默认值（可选）
+  - `Validator Validator` - 验证器（可选）
+  - `ResultTitle string` - 结果标题（可选）
+  - `Condition Condition` - 条件函数（可选）
+
+- `PasswordFormField` - 密码字段配置（字段同 InputFormField，DefaultValue 为空字符串表示无默认值）
+- `ConfirmFormField` - 确认字段配置（DefaultValue 为 bool 类型）
+- `SelectFormField` - 单选字段配置（包含 Options 和 DefaultIndex）
+- `MultiSelectFormField` - 多选字段配置（包含 Options 和 DefaultSelected）
+- `NestedFormField` - 嵌套表单配置（包含 NestedForm）
 - `Run()` - 执行表单并返回结果
 
 ### Message
@@ -271,6 +511,14 @@ table.SetBorder(true).
 - `WithInfo(message string)` - 停止并显示信息消息
 - `Do(fn func() error)` - 执行函数并显示加载状态
 
+**Spinner 选项函数**：
+- `WithSpinner(frames []string)` - 设置自定义 spinner 字符序列
+- `WithInterval(d time.Duration)` - 设置更新间隔
+- `WithStyle(style lipgloss.Style)` - 设置自定义样式（同时应用于 spinner 和文本）
+- `WithSpinnerStyle(style lipgloss.Style)` - 设置 spinner 字符的样式
+- `WithMessageStyle(style lipgloss.Style)` - 设置消息文本的样式
+- `WithWriter(w io.Writer)` - 设置输出流
+
 ### Table
 
 - `AddRow(row []string)` - 添加行
@@ -280,6 +528,110 @@ table.SetBorder(true).
 - `SetAlignment(align Alignment)` - 设置对齐方式
 - `Render()` - 渲染表格
 
+## 配置管理
+
+### PromptConfig
+
+`PromptConfig` 是提示功能的通用配置结构，包含各种格式化函数：
+
+```go
+type PromptConfig struct {
+    FormatPrompt         func(message string) string
+    FormatAnswer         func(value string) string
+    FormatError          func(message string) string
+    FormatHint           func(message string) string
+    FormatQuestionPrefix func() string
+    FormatAnswerPrefix   func() string
+    FormatResultTitle    func(originalMessage string, resultValue string) string
+}
+```
+
+### ConfigManager
+
+`ConfigManager` 提供统一的配置管理，支持三层配置优先级：
+
+1. **默认配置**（defaultConfig）：系统默认值
+2. **全局配置**（globalConfig）：用户设置的全局配置
+3. **局部配置**（localConfig）：每次调用时的局部配置
+
+优先级：`defaultConfig < globalConfig < localConfig`
+
+```go
+manager := common.NewConfigManager(defaultConfig)
+manager.SetGlobalConfig(globalConfig)
+finalConfig := manager.BuildConfig(localConfig)
+```
+
+### 配置合并
+
+- `MergeConfig()`：合并两个配置，override 中的非 nil 字段会覆盖 base
+- `FillDefaults()`：填充配置的默认值，如果 config 中的字段为 nil，则使用 defaultConfig 中对应的字段
+- `BuildConfigWithDefaults()`：构建配置（带默认值填充）
+- `BuildConfigWithResultTitle()`：构建配置并设置 ResultTitle
+
+## Fallback 机制
+
+### TypedFallbackHandler
+
+类型安全的 fallback 处理器接口（泛型版本），用于提供类型安全的 fallback 处理：
+
+```go
+type TypedFallbackHandler[T any] interface {
+    FormatPromptText(message string) string
+    FormatAnswer(result T) string
+    ProcessLineInput(input string) (T, error)
+    GetDefaultResult() T
+}
+```
+
+### ExecuteFallbackTyped
+
+执行 fallback 模式的通用框架（类型安全版本），使用泛型提供类型安全，避免类型断言：
+
+```go
+result, err := common.ExecuteFallbackTyped(
+    terminal,
+    message,
+    config,
+    handler,
+    options,
+)
+```
+
+### 选择功能的 Fallback
+
+- `ExecuteSelectFallback()`：执行选择 fallback 的通用框架
+- `ExecuteMultiSelectFallback()`：执行多选 fallback 的通用框架
+
+这些函数处理通用的 fallback 流程：格式化提示、显示选项列表、读取输入、解析输入、显示结果。
+
+## 通用辅助函数
+
+### 格式化函数（common/format.go）
+
+- `FormatPromptWithPrefix()`：格式化提示消息并添加前缀
+- `FormatResult()`：格式化并显示结果
+- `FormatResultWithTitle()`：格式化并显示结果（支持动态 title）
+- `FormatResultInline()`：格式化并显示结果（在同一行，用于 confirm 等场景）
+
+### 渲染函数（common/render.go）
+
+- `RenderOptions()`：渲染选项列表的通用函数，用于 select 和 multiselect
+
+### 导航处理（common/navigation.go）
+
+- `NavigationHandler`：导航处理器，提供通用的上下箭头键导航逻辑，支持边界处理
+
+### 输入处理（common/input_handler.go）
+
+- `HandleInteractiveInput()`：处理交互式输入的通用循环，用于 select、multiselect 等需要处理键盘输入的交互式提示
+
+### 选择辅助函数（common/select_helpers.go）
+
+- `SelectSetup` 和 `SetupInteractiveSelect()`：设置交互式选择的通用组件
+- `ExecuteSelectFallback()`：执行选择 fallback 的通用框架
+- `ExecuteMultiSelectFallback()`：执行多选 fallback 的通用框架
+
 ## 注意事项
 
 1. **终端原始模式**：某些功能（如选择提示）需要终端原始模式，如果设置失败会自动 fallback 到普通模式
@@ -287,6 +639,8 @@ table.SetBorder(true).
 3. **验证器**：输入验证支持实时验证和回车验证，验证失败会显示错误并允许重新输入
 4. **取消操作**：所有交互式提示都支持 Ctrl+C 取消，会正确处理终端状态恢复
 5. **非 TTY 环境**：在非 TTY 环境下，颜色会自动关闭，使用纯文本输出
+6. **配置优先级**：配置合并遵循 `defaultConfig < globalConfig < localConfig` 的优先级
+7. **Fallback 机制**：所有交互式提示都支持 fallback 到普通输入模式，确保在非交互式环境下的可用性
 
 ## 依赖
 

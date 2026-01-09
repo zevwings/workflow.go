@@ -8,7 +8,7 @@ type GitHubConfig struct {
 
 // GitHubAccount GitHub 账号
 type GitHubAccount struct {
-	Name  string `toml:"name"`
-	Token string `toml:"token"`
+	Name     string `toml:"name,omitempty"`
+	Email    string `toml:"email,omitempty"`
+	APIToken string `toml:"api_token,omitempty"`
 }
-

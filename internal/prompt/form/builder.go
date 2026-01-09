@@ -2,8 +2,6 @@ package form
 
 import (
 	"fmt"
-
-	"github.com/zevwings/workflow/internal/prompt/input"
 )
 
 // FormBuilder 表单构建器（链式 API）
@@ -21,70 +19,84 @@ func NewFormBuilder() *FormBuilder {
 }
 
 // AddConfirm 添加确认字段
-func (b *FormBuilder) AddConfirm(key, prompt string, defaultValue bool) *FormBuilder {
+func (b *FormBuilder) AddConfirm(config ConfirmFormField) *FormBuilder {
 	b.fields = append(b.fields, FormField{
-		Key:          key,
+		Key:          config.Key,
 		Type:         FieldTypeConfirm,
-		Prompt:       prompt,
-		DefaultValue: defaultValue,
+		Prompt:       config.Prompt,
+		DefaultValue: config.DefaultValue,
+		ResultTitle:  config.ResultTitle,
+		Condition:    config.Condition,
 	})
 	return b
 }
 
 // AddInput 添加输入字段
-func (b *FormBuilder) AddInput(key, prompt, defaultValue string, validator input.Validator) *FormBuilder {
+func (b *FormBuilder) AddInput(config InputFormField) *FormBuilder {
 	b.fields = append(b.fields, FormField{
-		Key:          key,
+		Key:          config.Key,
 		Type:         FieldTypeInput,
-		Prompt:       prompt,
-		DefaultValue: defaultValue,
-		Validator:    validator,
+		Prompt:       config.Prompt,
+		DefaultValue: config.DefaultValue,
+		Validator:    config.Validator,
+		ResultTitle:  config.ResultTitle,
+		Condition:    config.Condition,
 	})
 	return b
 }
 
 // AddPassword 添加密码字段
-func (b *FormBuilder) AddPassword(key, prompt string, validator input.Validator) *FormBuilder {
+// DefaultValue 为空字符串表示无默认值
+func (b *FormBuilder) AddPassword(config PasswordFormField) *FormBuilder {
 	b.fields = append(b.fields, FormField{
-		Key:       key,
-		Type:      FieldTypePassword,
-		Prompt:    prompt,
-		Validator: validator,
+		Key:          config.Key,
+		Type:         FieldTypePassword,
+		Prompt:       config.Prompt,
+		DefaultValue: config.DefaultValue,
+		Validator:    config.Validator,
+		ResultTitle:  config.ResultTitle,
+		Condition:    config.Condition,
 	})
 	return b
 }
 
 // AddSelect 添加单选字段
-func (b *FormBuilder) AddSelect(key, prompt string, options []string, defaultIndex int) *FormBuilder {
+func (b *FormBuilder) AddSelect(config SelectFormField) *FormBuilder {
 	b.fields = append(b.fields, FormField{
-		Key:          key,
+		Key:          config.Key,
 		Type:         FieldTypeSelect,
-		Prompt:       prompt,
-		Options:      options,
-		DefaultIndex: defaultIndex,
+		Prompt:       config.Prompt,
+		Options:      config.Options,
+		DefaultIndex: config.DefaultIndex,
+		ResultTitle:  config.ResultTitle,
+		Condition:    config.Condition,
 	})
 	return b
 }
 
 // AddMultiSelect 添加多选字段
-func (b *FormBuilder) AddMultiSelect(key, prompt string, options []string, defaultSelected []int) *FormBuilder {
+func (b *FormBuilder) AddMultiSelect(config MultiSelectFormField) *FormBuilder {
 	b.fields = append(b.fields, FormField{
-		Key:             key,
+		Key:             config.Key,
 		Type:            FieldTypeMultiSelect,
-		Prompt:          prompt,
-		Options:         options,
-		DefaultSelected: defaultSelected,
+		Prompt:          config.Prompt,
+		Options:         config.Options,
+		DefaultSelected: config.DefaultSelected,
+		ResultTitle:     config.ResultTitle,
+		Condition:       config.Condition,
 	})
 	return b
 }
 
 // AddForm 添加嵌套表单字段
-func (b *FormBuilder) AddForm(key, prompt string, nestedForm *FormBuilder) *FormBuilder {
+func (b *FormBuilder) AddForm(config NestedFormField) *FormBuilder {
 	b.fields = append(b.fields, FormField{
-		Key:        key,
-		Type:       FieldTypeForm,
-		Prompt:     prompt,
-		NestedForm: nestedForm,
+		Key:         config.Key,
+		Type:        FieldTypeForm,
+		Prompt:      config.Prompt,
+		NestedForm:  config.NestedForm,
+		ResultTitle: config.ResultTitle,
+		Condition:   config.Condition,
 	})
 	return b
 }

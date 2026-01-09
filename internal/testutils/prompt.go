@@ -12,6 +12,8 @@ import (
 	"github.com/creack/pty"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/zevwings/workflow/internal/prompt/common"
 )
 
 // TerminalTester 终端测试器接口
@@ -384,18 +386,52 @@ func RunPromptTest(t *testing.T, input string, fn func() (interface{}, error)) (
 //	cfg := testutils.NewDefaultPromptConfig()
 //	result, err := confirm.Confirm("消息", false, cfg, terminal)
 func NewDefaultPromptConfig() struct {
-	FormatPrompt func(message string) string
-	FormatAnswer func(value string) string
-	FormatHint   func(message string) string
+	FormatPrompt         func(message string) string
+	FormatAnswer         func(value string) string
+	FormatHint           func(message string) string
+	FormatQuestionPrefix func() string
+	FormatAnswerPrefix   func() string
+	FormatResultTitle    func(originalMessage string, resultValue string) string
 } {
 	return struct {
-		FormatPrompt func(message string) string
-		FormatAnswer func(value string) string
-		FormatHint   func(message string) string
+		FormatPrompt         func(message string) string
+		FormatAnswer         func(value string) string
+		FormatHint           func(message string) string
+		FormatQuestionPrefix func() string
+		FormatAnswerPrefix   func() string
+		FormatResultTitle    func(originalMessage string, resultValue string) string
 	}{
-		FormatPrompt: func(msg string) string { return msg },
-		FormatAnswer: func(v string) string { return v },
-		FormatHint:   func(msg string) string { return msg },
+		FormatPrompt:         func(msg string) string { return msg },
+		FormatAnswer:         func(v string) string { return v },
+		FormatHint:           func(msg string) string { return msg },
+		FormatQuestionPrefix: func() string { return "? " },
+		FormatAnswerPrefix:   func() string { return "> " },
+		FormatResultTitle:    func(originalMessage string, resultValue string) string { return originalMessage },
+	}
+}
+
+// NewPromptConfig 从 NewDefaultPromptConfig 创建 common.PromptConfig
+// 这是一个便捷函数，用于消除测试代码中的重复模式
+//
+// 使用示例：
+//
+//	cfg := testutils.NewPromptConfig()
+//	result, err := confirm.Confirm(ConfirmConfig{
+//	    BasePromptConfig: common.BasePromptConfig{
+//	        Config: cfg,
+//	        ...
+//	    },
+//	})
+func NewPromptConfig() common.PromptConfig {
+	cfg := NewDefaultPromptConfig()
+	return common.PromptConfig{
+		FormatPrompt:         cfg.FormatPrompt,
+		FormatAnswer:         cfg.FormatAnswer,
+		FormatError:          nil,
+		FormatHint:           cfg.FormatHint,
+		FormatQuestionPrefix: cfg.FormatQuestionPrefix,
+		FormatAnswerPrefix:   cfg.FormatAnswerPrefix,
+		FormatResultTitle:    cfg.FormatResultTitle,
 	}
 }
 

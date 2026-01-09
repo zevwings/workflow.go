@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/zevwings/workflow/internal/prompt"
+	"github.com/zevwings/workflow/internal/prompt/form"
 )
 
 // NewDemoFormCmd 创建一个演示 Form 模块功能的命令
@@ -39,12 +40,41 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 	msg.Info("=== 1. 基本流程 - 多层顺序执行 ===")
 	result1, err := prompt.Form().
 		SetTitle("用户注册表单").
-		AddConfirm("agree", "是否同意？", false).
-		AddInput("name", "请输入姓名", "", nil).
-		AddInput("email", "请输入邮箱", "", prompt.ValidateEmail()).
-		AddSelect("role", "请选择角色", []string{"Admin", "User"}, 0).
-		AddInput("department", "请输入部门", "", nil).
-		AddInput("remark", "请输入备注", "", nil).
+		AddConfirm(form.ConfirmFormField{
+			Key:          "agree",
+			Prompt:       "是否同意？",
+			DefaultValue: false,
+		}).
+		AddInput(form.InputFormField{
+			Key:         "name",
+			Prompt:      "请输入姓名",
+			DefaultValue: "",
+			Validator:   nil,
+		}).
+		AddInput(form.InputFormField{
+			Key:         "email",
+			Prompt:      "请输入邮箱",
+			DefaultValue: "",
+			Validator:   prompt.ValidateEmail(),
+		}).
+		AddSelect(form.SelectFormField{
+			Key:          "role",
+			Prompt:       "请选择角色",
+			Options:      []string{"Admin", "User"},
+			DefaultIndex: 0,
+		}).
+		AddInput(form.InputFormField{
+			Key:         "department",
+			Prompt:      "请输入部门",
+			DefaultValue: "",
+			Validator:   nil,
+		}).
+		AddInput(form.InputFormField{
+			Key:         "remark",
+			Prompt:      "请输入备注",
+			DefaultValue: "",
+			Validator:   nil,
+		}).
 		Run()
 	if err != nil {
 		return fmt.Errorf("表单执行失败: %w", err)
@@ -64,28 +94,74 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 	msg.Info("=== 2. 复杂流程 - 嵌套表单与条件字段组合 ===")
 	innerUserForm := prompt.Form().
 		SetTitle("用户信息").
-		AddInput("name", "姓名", "", prompt.ValidateRequired()).
-		AddInput("email", "邮箱", "", prompt.ValidateEmail()).
-		AddSelect("role", "角色", []string{"Admin", "User"}, 0)
+		AddInput(form.InputFormField{
+			Key:         "name",
+			Prompt:      "姓名",
+			DefaultValue: "",
+			Validator:   prompt.ValidateRequired(),
+		}).
+		AddInput(form.InputFormField{
+			Key:         "email",
+			Prompt:      "邮箱",
+			DefaultValue: "",
+			Validator:   prompt.ValidateEmail(),
+		}).
+		AddSelect(form.SelectFormField{
+			Key:          "role",
+			Prompt:       "角色",
+			Options:      []string{"Admin", "User"},
+			DefaultIndex: 0,
+		})
 
 	innerAddressForm := prompt.Form().
 		SetTitle("地址信息").
-		AddInput("city", "城市", "", nil).
-		AddInput("street", "街道", "", nil)
+		AddInput(form.InputFormField{
+			Key:         "city",
+			Prompt:      "城市",
+			DefaultValue: "",
+			Validator:   nil,
+		}).
+		AddInput(form.InputFormField{
+			Key:         "street",
+			Prompt:      "街道",
+			DefaultValue: "",
+			Validator:   nil,
+		})
 
 	result2, err := prompt.Form().
 		SetTitle("创建用户").
-		AddConfirm("createUser", "是否创建用户？", false).
-		AddForm("user", "用户信息", innerUserForm).
-		Condition(func(r *prompt.FormResult) bool {
-			return r.GetBool("createUser")
+		AddConfirm(form.ConfirmFormField{
+			Key:          "createUser",
+			Prompt:       "是否创建用户？",
+			DefaultValue: false,
 		}).
-		AddConfirm("hasAddress", "是否有地址？", false).
-		AddForm("address", "地址信息", innerAddressForm).
-		Condition(func(r *prompt.FormResult) bool {
-			return r.GetBool("hasAddress")
+		AddForm(form.NestedFormField{
+			Key:        "user",
+			Prompt:     "用户信息",
+			NestedForm: innerUserForm,
+			Condition: func(r *prompt.FormResult) bool {
+				return r.GetBool("createUser")
+			},
 		}).
-		AddMultiSelect("tags", "标签", []string{"VIP", "Premium", "Standard"}, []int{}).
+		AddConfirm(form.ConfirmFormField{
+			Key:          "hasAddress",
+			Prompt:       "是否有地址？",
+			DefaultValue: false,
+		}).
+		AddForm(form.NestedFormField{
+			Key:        "address",
+			Prompt:     "地址信息",
+			NestedForm: innerAddressForm,
+			Condition: func(r *prompt.FormResult) bool {
+				return r.GetBool("hasAddress")
+			},
+		}).
+		AddMultiSelect(form.MultiSelectFormField{
+			Key:             "tags",
+			Prompt:          "标签",
+			Options:         []string{"VIP", "Premium", "Standard"},
+			DefaultSelected: []int{},
+		}).
 		Run()
 	if err != nil {
 		return fmt.Errorf("表单执行失败: %w", err)

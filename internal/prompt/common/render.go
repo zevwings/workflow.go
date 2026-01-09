@@ -68,9 +68,7 @@ func RenderOptions(
 			terminal.RestoreCursor()
 			// 重置所有 ANSI 格式，避免之前的格式影响新内容
 			terminal.ResetFormat()
-			// 移动到行首，确保清除操作从行首开始
-			terminal.MoveToStart()
-			// 清除从光标到屏幕底部的所有内容
+			// 清除从光标到屏幕底部的所有内容（不需要 MoveToStart，因为 RestoreCursor 已经恢复到正确位置）
 			terminal.ClearToEnd()
 			// 然后渲染新内容
 			return renderOptions()

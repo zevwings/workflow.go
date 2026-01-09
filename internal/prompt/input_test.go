@@ -30,7 +30,10 @@ func (s *InputTestSuite) TestAskInput_Basic() {
 			return pt.WithInput("test@example.com")
 		},
 		func() (interface{}, error) {
-			return prompt.AskInput("请输入邮箱", "")
+			return prompt.AskInput(prompt.InputField{
+				Message:      "请输入邮箱",
+				DefaultValue: "",
+			})
 		},
 	)
 	s.NoError(err)
@@ -43,7 +46,10 @@ func (s *InputTestSuite) TestAskInput_WithDefaultValue() {
 			return pt.WithInput("") // 空输入表示回车使用默认值
 		},
 		func() (interface{}, error) {
-			return prompt.AskInput("请输入邮箱", "default@example.com")
+			return prompt.AskInput(prompt.InputField{
+				Message:      "请输入邮箱",
+				DefaultValue: "default@example.com",
+			})
 		},
 	)
 	s.NoError(err)
@@ -57,7 +63,11 @@ func (s *InputTestSuite) TestAskInput_WithValidator() {
 		},
 		func() (interface{}, error) {
 			validator := prompt.ValidateEmail()
-			return prompt.AskInput("请输入邮箱", "", validator)
+			return prompt.AskInput(prompt.InputField{
+				Message:      "请输入邮箱",
+				DefaultValue: "",
+				Validator:    validator,
+			})
 		},
 	)
 	s.NoError(err)
@@ -88,7 +98,10 @@ func (s *InputTestSuite) TestAskPassword_Input() {
 			return pt.WithInput("secret123")
 		},
 		func() (interface{}, error) {
-			return prompt.AskPassword("请输入密码")
+			return prompt.AskPassword(prompt.PasswordField{
+				Message:      "请输入密码",
+				DefaultValue: "",
+			})
 		},
 	)
 	s.NoError(err)
@@ -128,7 +141,11 @@ func (s *InputTestSuite) TestInput_Validator_Email() {
 				},
 				func() (interface{}, error) {
 					validator := prompt.ValidateEmail()
-					return prompt.AskInput("请输入邮箱", "", validator)
+					return prompt.AskInput(prompt.InputField{
+						Message:      "请输入邮箱",
+						DefaultValue: "",
+						Validator:    validator,
+					})
 				},
 			)
 			s.NoError(err)
@@ -144,7 +161,11 @@ func (s *InputTestSuite) TestInput_Validator_Required() {
 		},
 		func() (interface{}, error) {
 			validator := prompt.ValidateRequired()
-			return prompt.AskInput("请输入内容", "", validator)
+			return prompt.AskInput(prompt.InputField{
+				Message:      "请输入内容",
+				DefaultValue: "",
+				Validator:    validator,
+			})
 		},
 	)
 	s.NoError(err)
@@ -162,7 +183,11 @@ func (s *InputTestSuite) TestInput_Validator_MinLength() {
 		},
 		func() (interface{}, error) {
 			validator := prompt.ValidateMinLength(5)
-			return prompt.AskInput("请输入至少5个字符", "", validator)
+			return prompt.AskInput(prompt.InputField{
+				Message:      "请输入至少5个字符",
+				DefaultValue: "",
+				Validator:    validator,
+			})
 		},
 	)
 	s.NoError(err)
@@ -180,7 +205,11 @@ func (s *InputTestSuite) TestInput_Validator_MaxLength() {
 		},
 		func() (interface{}, error) {
 			validator := prompt.ValidateMaxLength(10)
-			return prompt.AskInput("请输入最多10个字符", "", validator)
+			return prompt.AskInput(prompt.InputField{
+				Message:      "请输入最多10个字符",
+				DefaultValue: "",
+				Validator:    validator,
+			})
 		},
 	)
 	s.NoError(err)
@@ -198,7 +227,11 @@ func (s *InputTestSuite) TestInput_Validator_Length() {
 		},
 		func() (interface{}, error) {
 			validator := prompt.ValidateLength(3, 10)
-			return prompt.AskInput("请输入3-10个字符", "", validator)
+			return prompt.AskInput(prompt.InputField{
+				Message:      "请输入3-10个字符",
+				DefaultValue: "",
+				Validator:    validator,
+			})
 		},
 	)
 	s.NoError(err)
@@ -216,7 +249,11 @@ func (s *InputTestSuite) TestInput_Validator_Regex() {
 		},
 		func() (interface{}, error) {
 			validator := prompt.ValidateRegex(`^[A-Z0-9]+$`, "只能包含大写字母和数字")
-			return prompt.AskInput("请输入大写字母和数字", "", validator)
+			return prompt.AskInput(prompt.InputField{
+				Message:      "请输入大写字母和数字",
+				DefaultValue: "",
+				Validator:    validator,
+			})
 		},
 	)
 	s.NoError(err)
@@ -234,7 +271,11 @@ func (s *InputTestSuite) TestInput_Validator_URL() {
 		},
 		func() (interface{}, error) {
 			validator := prompt.ValidateURL()
-			return prompt.AskInput("请输入URL", "", validator)
+			return prompt.AskInput(prompt.InputField{
+				Message:      "请输入URL",
+				DefaultValue: "",
+				Validator:    validator,
+			})
 		},
 	)
 	s.NoError(err)

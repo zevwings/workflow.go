@@ -6,17 +6,38 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/zevwings/workflow/internal/prompt/common"
 	"github.com/zevwings/workflow/internal/prompt/io"
 	"github.com/zevwings/workflow/internal/testutils"
 )
 
+// newConfirmConfig 创建 ConfirmConfig（测试辅助函数）
+// 用于简化测试代码中的配置创建
+func newConfirmConfig(message string, defaultYes bool, terminal io.TerminalIO) ConfirmConfig {
+	return ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  message,
+			Config:   testutils.NewPromptConfig(),
+			Terminal: terminal,
+		},
+		DefaultYes: defaultYes,
+	}
+}
+
 // ==================== Confirm 主函数测试（使用 MockTerminal） ====================
 
 func TestConfirm_WithMockTerminal_YesInput(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	mockTerminal := io.NewMockTerminal([]byte{'y'})
-	result, err := Confirm("是否继续？", false, cfg, mockTerminal)
+	result, err := Confirm(ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  "是否继续？",
+			Config:   cfg,
+			Terminal: mockTerminal,
+		},
+		DefaultYes: false,
+	})
 
 	assert.NoError(t, err)
 	assert.True(t, result)
@@ -25,10 +46,17 @@ func TestConfirm_WithMockTerminal_YesInput(t *testing.T) {
 }
 
 func TestConfirm_WithMockTerminal_NoInput(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	mockTerminal := io.NewMockTerminal([]byte{'n'})
-	result, err := Confirm("是否继续？", true, cfg, mockTerminal)
+	result, err := Confirm(ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  "是否继续？",
+			Config:   cfg,
+			Terminal: mockTerminal,
+		},
+		DefaultYes: true,
+	})
 
 	assert.NoError(t, err)
 	assert.False(t, result)
@@ -37,11 +65,18 @@ func TestConfirm_WithMockTerminal_NoInput(t *testing.T) {
 }
 
 func TestConfirm_WithMockTerminal_EnterKey(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	// 默认 yes，回车应返回 true
 	mockTerminal := io.NewMockTerminal([]byte{'\r'})
-	result, err := Confirm("是否继续？", true, cfg, mockTerminal)
+	result, err := Confirm(ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  "是否继续？",
+			Config:   cfg,
+			Terminal: mockTerminal,
+		},
+		DefaultYes: true,
+	})
 
 	assert.NoError(t, err)
 	assert.True(t, result)
@@ -49,7 +84,14 @@ func TestConfirm_WithMockTerminal_EnterKey(t *testing.T) {
 
 	// 默认 no，回车应返回 false
 	mockTerminal = io.NewMockTerminal([]byte{'\n'})
-	result, err = Confirm("是否继续？", false, cfg, mockTerminal)
+	result, err = Confirm(ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  "是否继续？",
+			Config:   cfg,
+			Terminal: mockTerminal,
+		},
+		DefaultYes: false,
+	})
 
 	assert.NoError(t, err)
 	assert.False(t, result)
@@ -57,10 +99,17 @@ func TestConfirm_WithMockTerminal_EnterKey(t *testing.T) {
 }
 
 func TestConfirm_WithMockTerminal_CtrlC(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	mockTerminal := io.NewMockTerminal([]byte{3}) // Ctrl+C
-	result, err := Confirm("是否继续？", true, cfg, mockTerminal)
+	result, err := Confirm(ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  "是否继续？",
+			Config:   cfg,
+			Terminal: mockTerminal,
+		},
+		DefaultYes: true,
+	})
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "用户取消输入")
@@ -71,21 +120,35 @@ func TestConfirm_WithMockTerminal_CtrlC(t *testing.T) {
 }
 
 func TestConfirm_WithMockTerminal_InvalidCharThenYes(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	// 先输入无效字符 'x'，然后输入 'y'
 	mockTerminal := io.NewMockTerminal([]byte{'x', 'y'})
-	result, err := Confirm("是否继续？", false, cfg, mockTerminal)
+	result, err := Confirm(ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  "是否继续？",
+			Config:   cfg,
+			Terminal: mockTerminal,
+		},
+		DefaultYes: false,
+	})
 
 	assert.NoError(t, err)
 	assert.True(t, result)
 }
 
 func TestConfirm_WithMockTerminal_TerminalControl(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	mockTerminal := io.NewMockTerminal([]byte{'y'})
-	_, err := Confirm("test", false, cfg, mockTerminal)
+	_, err := Confirm(ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  "test",
+			Config:   cfg,
+			Terminal: mockTerminal,
+		},
+		DefaultYes: false,
+	})
 
 	assert.NoError(t, err)
 	// 验证终端控制被调用
@@ -103,10 +166,18 @@ func TestConfirm_WithMockTerminal_TerminalControl(t *testing.T) {
 
 // Test_confirmFallback_DefaultYes_NoInput 验证在默认值为 true 且无有效输入时返回默认值
 func Test_confirmFallback_DefaultYes_NoInput(t *testing.T) {
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
 	mockTerminal := io.NewMockTerminalWithLines([]string{""})
-	result, err := confirmFallback("是否继续？", true, cfg, mockTerminal)
+	confirmCfg := ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  "是否继续？",
+			Config:   cfg,
+			Terminal: mockTerminal,
+		},
+		DefaultYes: true,
+	}
+	result, err := confirmFallback(confirmCfg)
 	assert.NoError(t, err)
 	assert.True(t, result)
 }
@@ -115,9 +186,17 @@ func Test_confirmFallback_DefaultYes_NoInput(t *testing.T) {
 func Test_confirmFallback_DefaultNo_InvalidInput(t *testing.T) {
 	mockTerminal := io.NewMockTerminalWithLines([]string{"invalid"})
 
-	cfg := Config(testutils.NewDefaultPromptConfig())
+	cfg := testutils.NewPromptConfig()
 
-	result, err := confirmFallback("是否继续？", false, cfg, mockTerminal)
+	confirmCfg := ConfirmConfig{
+		BasePromptConfig: common.BasePromptConfig{
+			Message:  "是否继续？",
+			Config:   cfg,
+			Terminal: mockTerminal,
+		},
+		DefaultYes: false,
+	}
+	result, err := confirmFallback(confirmCfg)
 	assert.NoError(t, err)
 	// 非法输入应回落到默认值 false
 	assert.False(t, result)
@@ -139,12 +218,25 @@ func Test_confirmFallback_YesInput(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockTerminal := io.NewMockTerminalWithLines([]string{tc.input})
 
-			cfg := Config{
-				FormatPrompt: func(msg string) string { return msg },
-				FormatAnswer: func(v string) string { return v },
+			cfg := common.PromptConfig{
+				FormatPrompt:         func(msg string) string { return msg },
+				FormatAnswer:         func(v string) string { return v },
+				FormatError:          nil,
+				FormatHint:           nil,
+				FormatQuestionPrefix: nil,
+				FormatAnswerPrefix:   nil,
+				FormatResultTitle:    nil,
 			}
 
-			result, err := confirmFallback("是否继续？", false, cfg, mockTerminal)
+			confirmCfg := ConfirmConfig{
+				BasePromptConfig: common.BasePromptConfig{
+					Message:  "是否继续？",
+					Config:   cfg,
+					Terminal: mockTerminal,
+				},
+				DefaultYes: false,
+			}
+			result, err := confirmFallback(confirmCfg)
 			assert.NoError(t, err)
 			assert.True(t, result)
 		})
@@ -167,12 +259,25 @@ func Test_confirmFallback_NoInput(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockTerminal := io.NewMockTerminalWithLines([]string{tc.input})
 
-			cfg := Config{
-				FormatPrompt: func(msg string) string { return msg },
-				FormatAnswer: func(v string) string { return v },
+			cfg := common.PromptConfig{
+				FormatPrompt:         func(msg string) string { return msg },
+				FormatAnswer:         func(v string) string { return v },
+				FormatError:          nil,
+				FormatHint:           nil,
+				FormatQuestionPrefix: nil,
+				FormatAnswerPrefix:   nil,
+				FormatResultTitle:    nil,
 			}
 
-			result, err := confirmFallback("是否继续？", true, cfg, mockTerminal)
+			confirmCfg := ConfirmConfig{
+				BasePromptConfig: common.BasePromptConfig{
+					Message:  "是否继续？",
+					Config:   cfg,
+					Terminal: mockTerminal,
+				},
+				DefaultYes: true,
+			}
+			result, err := confirmFallback(confirmCfg)
 			assert.NoError(t, err)
 			assert.False(t, result)
 		})
@@ -194,12 +299,25 @@ func Test_confirmFallback_EmptyInput(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			mockTerminal := io.NewMockTerminalWithLines([]string{""})
 
-			cfg := Config{
-				FormatPrompt: func(msg string) string { return msg },
-				FormatAnswer: func(v string) string { return v },
+			cfg := common.PromptConfig{
+				FormatPrompt:         func(msg string) string { return msg },
+				FormatAnswer:         func(v string) string { return v },
+				FormatError:          nil,
+				FormatHint:           nil,
+				FormatQuestionPrefix: nil,
+				FormatAnswerPrefix:   nil,
+				FormatResultTitle:    nil,
 			}
 
-			result, err := confirmFallback("是否继续？", tc.defaultYes, cfg, mockTerminal)
+			confirmCfg := ConfirmConfig{
+				BasePromptConfig: common.BasePromptConfig{
+					Message:  "是否继续？",
+					Config:   cfg,
+					Terminal: mockTerminal,
+				},
+				DefaultYes: tc.defaultYes,
+			}
+			result, err := confirmFallback(confirmCfg)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expected, result)
 		})

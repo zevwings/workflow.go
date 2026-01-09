@@ -27,9 +27,9 @@ func getIntegrationConfig(t *testing.T) *jira.Config {
 	}
 
 	return &jira.Config{
-		URL:      url,
-		Username: username,
-		Token:    token,
+		ServiceAddress: url,
+		Email:          username,
+		APIToken:       token,
 	}
 }
 
@@ -196,7 +196,7 @@ func TestJiraClient_FindUsers_Integration(t *testing.T) {
 	require.NoError(t, err)
 
 	// 搜索当前用户（应该能找到）
-	username := config.Username
+	username := config.Email
 	users, err := client.FindUsers(username)
 	require.NoError(t, err)
 	// 应该至少找到一个用户（当前用户）

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/zevwings/workflow/internal/prompt/common"
 )
 
 // ==================== ValidateAllRequired 测试 ====================
@@ -237,21 +238,21 @@ func containsHelper(s, substr string) bool {
 
 func TestFormBuilder_Validate_Integration(t *testing.T) {
 	// 保存原始配置
-	originalConfig := globalFormConfig
+	originalConfig := globalPromptConfig
+	originalProvider := globalInputProvider
 	defer func() {
-		globalFormConfig = originalConfig
+		globalPromptConfig = originalConfig
+		globalInputProvider = originalProvider
 	}()
 
 	// 设置测试配置
-	SetFormConfig(FormConfig{
+	SetPromptConfig(common.PromptConfig{
 		FormatPrompt: func(msg string) string { return msg },
 		FormatAnswer: func(v string) string { return v },
 		FormatError:  func(msg string) string { return msg },
 		FormatHint:   func(msg string) string { return msg },
-		AskInputFunc: func(message string, defaultValue string, validator interface{}) (string, error) {
-			return defaultValue, nil
-		},
 	})
+	SetInputProvider(&mockInputProvider{})
 
 	// 创建带验证器的表单
 	validator := func(result *FormResult) error {
@@ -262,7 +263,12 @@ func TestFormBuilder_Validate_Integration(t *testing.T) {
 	}
 
 	builder := NewFormBuilder().
-		AddInput("name", "姓名", "", nil).
+		AddInput(InputFormField{
+			Key:          "name",
+			Prompt:       "姓名",
+			DefaultValue: "",
+			Validator:    nil,
+		}).
 		Validate(validator)
 
 	// 执行表单（默认值为空，验证器应该失败）

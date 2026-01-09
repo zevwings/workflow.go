@@ -4,34 +4,39 @@ import (
 	"fmt"
 
 	"github.com/zevwings/workflow/internal/prompt/common"
-	"github.com/zevwings/workflow/internal/prompt/io"
 )
 
-// Config 选择功能配置（使用 common.PromptConfig 的别名，保持向后兼容）
-type Config = common.PromptConfig
 
-// Select 选择选项（使用 TerminalIO 接口）
-func Select(message string, options []string, defaultIndex int, config Config, terminal io.TerminalIO) (int, error) {
-	if len(options) == 0 {
+// SelectConfig 选择功能配置
+type SelectConfig struct {
+	common.BasePromptConfig
+	// Options 选项列表
+	Options []string
+	// DefaultIndex 默认选中的索引
+	DefaultIndex int
+}
+
+// Select 选择选项（使用配置结构体）
+func Select(cfg SelectConfig) (int, error) {
+	if len(cfg.Options) == 0 {
 		return -1, fmt.Errorf("选项列表不能为空")
 	}
 
-	handler := NewSelectHandler(options, defaultIndex, config)
+	handler := NewSelectHandler(cfg.Options, cfg.DefaultIndex, cfg.Config)
 
 	// 确保默认索引有效
 	currentIndex := handler.ValidateAndAdjustDefaultIndex()
 
-	// 格式化提示消息
-	promptMsg := config.FormatPrompt(message)
-
-	// 创建原始模式管理器、转义序列解析器和渲染器
-	rawModeMgr := io.NewRawModeManager(terminal)
-	parser := io.NewEscapeSequenceParser(terminal)
-	renderer := io.NewInteractiveRenderer(terminal)
+	// 设置交互式选择的通用组件
+	setup := common.SetupInteractiveSelect(cfg.BasePromptConfig)
+	promptMsg := setup.PromptMsg
+	promptMsgWithPrefix := setup.PromptMsgWithPrefix
+	rawModeMgr := setup.RawModeMgr
+	parser := setup.Parser
+	renderer := setup.Renderer
 
 	// 使用原始模式管理器执行交互逻辑
 	var result int
-	var resultErr error
 
 	err := rawModeMgr.WithRawModeAndFallback(
 		func() error {
@@ -44,31 +49,31 @@ func Select(message string, options []string, defaultIndex int, config Config, t
 				return currentIndex
 			}
 			renderSelect := common.RenderOptions(
-				terminal,
+				cfg.Terminal,
 				renderer,
-				len(options),
+				len(cfg.Options),
 				getCurrentIndex,
 				formatLine,
 				"使用 ↑/↓ 导航，回车确认",
-				config,
+				cfg.Config,
 			)
 
-			// 使用渲染器渲染提示和初始界面
-			if err := renderer.RenderWithPrompt(promptMsg, renderSelect); err != nil {
+			// 使用渲染器渲染提示和初始界面（未输入时使用 "? " 前缀）
+			if err := renderer.RenderWithPrompt(promptMsgWithPrefix, renderSelect); err != nil {
 				return err
 			}
 
 			// 使用通用输入处理函数
-			err := common.HandleInteractiveInput(
+			return common.HandleInteractiveInput(
 				parser,
-				terminal,
+				cfg.Terminal,
 				&currentIndex,
 				func(idx int, dir string) (int, bool) {
 					return handler.ProcessArrowKey(idx, dir)
 				},
 				func() (bool, error) {
 					selectedText := handler.FormatSelectedOption(currentIndex)
-					if err := common.FormatResultWithOptions(terminal, promptMsg, selectedText, nil, false); err != nil {
+					if err := common.FormatResultWithTitle(cfg.Terminal, promptMsg, selectedText, nil, false, cfg.Message, cfg.Config.FormatResultTitle, cfg.Config.FormatAnswerPrefix); err != nil {
 						return false, err
 					}
 					result = currentIndex
@@ -79,77 +84,62 @@ func Select(message string, options []string, defaultIndex int, config Config, t
 					renderSelect(false)
 				},
 			)
-			if err != nil {
-				resultErr = err
-				return err
-			}
-			return nil
 		},
 		func() error {
 			// Fallback: 如果无法设置原始模式，使用简单编号选择
-			selectedIndex, err := selectFallback(message, options, defaultIndex, config, terminal)
+			selectedIndex, err := selectFallback(cfg)
 			result = selectedIndex
 			return err
 		},
 	)
 
 	if err != nil {
-		return result, err
-	}
-
-	if resultErr != nil {
-		return -1, resultErr
+		// 如果 err 是取消错误，返回 -1 和错误
+		return -1, err
 	}
 
 	return result, nil
 }
 
-// SelectDefault 向后兼容的 Select 函数
-func SelectDefault(message string, options []string, defaultIndex int, config Config) (int, error) {
-	return Select(message, options, defaultIndex, config, io.NewStdTerminal())
-}
-
 // selectFallback 回退方案：如果无法设置原始模式，使用简单编号选择
-func selectFallback(message string, options []string, defaultIndex int, config Config, terminal io.TerminalIO) (int, error) {
-	handler := NewSelectHandler(options, defaultIndex, config)
+func selectFallback(cfg SelectConfig) (int, error) {
+	handler := NewSelectHandler(cfg.Options, cfg.DefaultIndex, cfg.Config)
+	defaultIndex := handler.ValidateAndAdjustDefaultIndex()
 
-	// 格式化提示消息
-	promptMsg := config.FormatPrompt(message)
-
-	// 显示选项列表
-	terminal.Println(promptMsg)
-	for i, option := range options {
-		marker := " "
-		if i == handler.ValidateAndAdjustDefaultIndex() {
-			marker = "*"
-		}
-		terminal.Print(fmt.Sprintf("  %s %d. %s\n", marker, i+1, option))
-	}
-
-	// 提示输入
-	terminal.Print(fmt.Sprintf("请选择 (1-%d): ", len(options)))
-
-	// 读取输入
-	inputLine, err := terminal.ReadLine()
-	if err != nil {
-		// 如果读取失败，返回默认值
-		return handler.ValidateAndAdjustDefaultIndex(), nil
-	}
-
-	// 解析输入
-	var input int
-	_, err = fmt.Sscanf(inputLine, "%d", &input)
-	if err != nil {
-		// 如果解析失败，返回默认值
-		return handler.ValidateAndAdjustDefaultIndex(), nil
-	}
-
-	// 验证输入范围
-	selectedIndex := handler.ParseNumericInput(input)
-
-	// 显示选择结果
-	selectedText := handler.FormatSelectedOption(selectedIndex)
-	terminal.Println("已选择: " + selectedText)
-
-	return selectedIndex, nil
+	// 使用通用的 fallback 框架
+	return common.ExecuteSelectFallback(
+		cfg.Terminal,
+		cfg.Message,
+		cfg.Config,
+		cfg.Options,
+		common.SelectFallbackOptions{
+			FormatOptionLine: func(index int, option string, isDefault bool) string {
+				marker := " "
+				if isDefault {
+					marker = "*"
+				}
+				return fmt.Sprintf("  %s %d. %s\n", marker, index+1, option)
+			},
+			GetDefaultIndex: func() int {
+				return defaultIndex
+			},
+			ParseInput: func(input string) (int, bool) {
+				var num int
+				_, err := fmt.Sscanf(input, "%d", &num)
+				if err != nil {
+					return 0, false
+				}
+				// 验证输入范围并转换为索引（用户输入是 1-based）
+				if num < 1 || num > len(cfg.Options) {
+					return 0, false
+				}
+				return num - 1, true
+			},
+			FormatSelectedOption: func(index int) string {
+				return handler.FormatSelectedOption(index)
+			},
+			InputPrompt:   fmt.Sprintf("请选择 (1-%d): ", len(cfg.Options)),
+			ResultPrefix:  "已选择: ",
+		},
+	)
 }

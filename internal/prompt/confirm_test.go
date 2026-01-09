@@ -29,7 +29,10 @@ func (s *ConfirmTestSuite) TestAskConfirm_Yes() {
 			return pt.WithInput("y")
 		},
 		func() (interface{}, error) {
-			return prompt.AskConfirm("是否继续？", false)
+			return prompt.AskConfirm(prompt.ConfirmField{
+				Message:    "是否继续？",
+				DefaultYes: false,
+			})
 		},
 	)
 	s.NoError(err)
@@ -42,7 +45,10 @@ func (s *ConfirmTestSuite) TestAskConfirm_No() {
 			return pt.WithInput("n")
 		},
 		func() (interface{}, error) {
-			return prompt.AskConfirm("是否继续？", true)
+			return prompt.AskConfirm(prompt.ConfirmField{
+				Message:    "是否继续？",
+				DefaultYes: true,
+			})
 		},
 	)
 	s.NoError(err)
@@ -55,7 +61,10 @@ func (s *ConfirmTestSuite) TestAskConfirm_DefaultYes() {
 			return pt.WithInput("") // 空输入表示回车使用默认值
 		},
 		func() (interface{}, error) {
-			return prompt.AskConfirm("是否继续？", true)
+			return prompt.AskConfirm(prompt.ConfirmField{
+				Message:    "是否继续？",
+				DefaultYes: true,
+			})
 		},
 	)
 	s.NoError(err)
@@ -68,7 +77,10 @@ func (s *ConfirmTestSuite) TestAskConfirm_DefaultNo() {
 			return pt.WithInput("") // 空输入表示回车使用默认值
 		},
 		func() (interface{}, error) {
-			return prompt.AskConfirm("是否继续？", false)
+			return prompt.AskConfirm(prompt.ConfirmField{
+				Message:    "是否继续？",
+				DefaultYes: false,
+			})
 		},
 	)
 	s.NoError(err)
@@ -81,7 +93,10 @@ func (s *ConfirmTestSuite) TestAskConfirm_UpperCase() {
 			return pt.WithInput("Y")
 		},
 		func() (interface{}, error) {
-			return prompt.AskConfirm("是否继续？", false)
+			return prompt.AskConfirm(prompt.ConfirmField{
+				Message:    "是否继续？",
+				DefaultYes: false,
+			})
 		},
 	)
 	s.NoError(err)

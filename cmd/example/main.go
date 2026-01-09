@@ -54,6 +54,10 @@ func main() {
 
 // initLogging 初始化日志系统
 func initLogging() {
+	// 如果 Logger 还未初始化，先初始化一个默认的
+	if logging.Logger == nil {
+		logging.Init("info", "text", nil)
+	}
 	// 使用全局 logger（此时模块 logger 还未初始化）
 	logger := logging.Logger
 	logger.Info("Initializing logging system")
