@@ -1,4 +1,6 @@
-package commands
+//go:build example
+
+package example
 
 import (
 	"fmt"
@@ -84,7 +86,12 @@ func runDemo(cmd *cobra.Command, args []string) error {
 	msg.Info("=== 4. Password 密码输入 ===")
 	password, err := prompt.Password().
 		Prompt("请输入密码（至少 6 个字符）").
-		Validate(prompt.ValidateMinLength(6)).
+		Validate(func(s string) error {
+			if len(s) < 6 {
+				return fmt.Errorf("长度至少需要 6 个字符")
+			}
+			return nil
+		}).
 		Run()
 	if err != nil {
 		return fmt.Errorf("输入失败: %w", err)
@@ -165,4 +172,3 @@ func maskPassword(password string) string {
 	}
 	return password[:2] + strings.Repeat("*", len(password)-2)
 }
-

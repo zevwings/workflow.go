@@ -1,4 +1,4 @@
-package commands
+package config
 
 import (
 	"github.com/zevwings/workflow/internal/config"
@@ -42,7 +42,7 @@ func (w *gitRepoWrapper) GetRemoteURL(name string) (string, error) {
 // NewRepoManagerWithDefaultGit 创建仓库配置管理器（便捷函数）
 //
 // 此函数使用默认的 git 模块实现，内部调用 config.NewRepoManager。
-// 将 Git 适配器的创建移到调用方（commands 层），避免 config 包依赖 git 包。
+// 将 Git 适配器的创建移到 adapter 层，避免 config 包依赖 git 包。
 //
 // 参数:
 //   - repoPath: 仓库根目录路径（如果为空，使用当前目录）

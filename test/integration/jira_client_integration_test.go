@@ -1,6 +1,6 @@
 //go:build integration
 
-package jira
+package integration
 
 import (
 	"os"
@@ -8,12 +8,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/zevwings/workflow/internal/jira"
 )
 
 // ==================== 集成测试环境设置 ====================
 
 // getIntegrationConfig 从环境变量获取 Jira 配置
-func getIntegrationConfig(t *testing.T) *Config {
+func getIntegrationConfig(t *testing.T) *jira.Config {
 	t.Helper()
 
 	url := os.Getenv("JIRA_URL")
@@ -24,7 +26,7 @@ func getIntegrationConfig(t *testing.T) *Config {
 		t.Skip("跳过集成测试：需要设置环境变量 JIRA_URL, JIRA_USERNAME, JIRA_API_TOKEN")
 	}
 
-	return &Config{
+	return &jira.Config{
 		URL:      url,
 		Username: username,
 		Token:    token,
@@ -36,7 +38,7 @@ func getIntegrationConfig(t *testing.T) *Config {
 func TestNewJiraClient_Integration(t *testing.T) {
 	config := getIntegrationConfig(t)
 
-	client, err := NewJiraClient(config)
+	client, err := jira.NewJiraClient(config)
 	require.NoError(t, err)
 	assert.NotNil(t, client)
 	assert.NotNil(t, client.GetClient())
@@ -50,7 +52,7 @@ func TestNewJiraClient_Integration(t *testing.T) {
 func TestJiraClient_GetUserInfo_Integration(t *testing.T) {
 	config := getIntegrationConfig(t)
 
-	client, err := NewJiraClient(config)
+	client, err := jira.NewJiraClient(config)
 	require.NoError(t, err)
 
 	user, err := client.GetUserInfo()
@@ -65,7 +67,7 @@ func TestJiraClient_GetUserInfo_Integration(t *testing.T) {
 func TestJiraClient_GetTicketInfo_Integration(t *testing.T) {
 	config := getIntegrationConfig(t)
 
-	client, err := NewJiraClient(config)
+	client, err := jira.NewJiraClient(config)
 	require.NoError(t, err)
 
 	// 注意：需要提供一个真实存在的 ticket key
@@ -87,7 +89,7 @@ func TestJiraClient_GetTicketInfo_Integration(t *testing.T) {
 func TestJiraClient_GetAttachments_Integration(t *testing.T) {
 	config := getIntegrationConfig(t)
 
-	client, err := NewJiraClient(config)
+	client, err := jira.NewJiraClient(config)
 	require.NoError(t, err)
 
 	testTicket := os.Getenv("JIRA_TEST_TICKET")
@@ -106,7 +108,7 @@ func TestJiraClient_GetAttachments_Integration(t *testing.T) {
 func TestJiraClient_GetTransitions_Integration(t *testing.T) {
 	config := getIntegrationConfig(t)
 
-	client, err := NewJiraClient(config)
+	client, err := jira.NewJiraClient(config)
 	require.NoError(t, err)
 
 	testTicket := os.Getenv("JIRA_TEST_TICKET")
@@ -125,7 +127,7 @@ func TestJiraClient_GetTransitions_Integration(t *testing.T) {
 func TestJiraClient_GetComments_Integration(t *testing.T) {
 	config := getIntegrationConfig(t)
 
-	client, err := NewJiraClient(config)
+	client, err := jira.NewJiraClient(config)
 	require.NoError(t, err)
 
 	testTicket := os.Getenv("JIRA_TEST_TICKET")
@@ -144,7 +146,7 @@ func TestJiraClient_GetComments_Integration(t *testing.T) {
 func TestJiraClient_GetProject_Integration(t *testing.T) {
 	config := getIntegrationConfig(t)
 
-	client, err := NewJiraClient(config)
+	client, err := jira.NewJiraClient(config)
 	require.NoError(t, err)
 
 	// 从 test ticket 提取项目 key，或使用环境变量
@@ -153,7 +155,7 @@ func TestJiraClient_GetProject_Integration(t *testing.T) {
 		t.Skip("跳过测试：需要设置环境变量 JIRA_TEST_TICKET")
 	}
 
-	projectKey := ExtractProjectKey(testTicket)
+	projectKey := jira.ExtractProjectKey(testTicket)
 	require.NotEmpty(t, projectKey)
 
 	project, err := client.GetProject(projectKey)
@@ -168,7 +170,7 @@ func TestJiraClient_GetProject_Integration(t *testing.T) {
 func TestJiraClient_GetProjectStatuses_Integration(t *testing.T) {
 	config := getIntegrationConfig(t)
 
-	client, err := NewJiraClient(config)
+	client, err := jira.NewJiraClient(config)
 	require.NoError(t, err)
 
 	testTicket := os.Getenv("JIRA_TEST_TICKET")
@@ -176,7 +178,7 @@ func TestJiraClient_GetProjectStatuses_Integration(t *testing.T) {
 		t.Skip("跳过测试：需要设置环境变量 JIRA_TEST_TICKET")
 	}
 
-	projectKey := ExtractProjectKey(testTicket)
+	projectKey := jira.ExtractProjectKey(testTicket)
 	require.NotEmpty(t, projectKey)
 
 	statuses, err := client.GetProjectStatuses(projectKey)
@@ -190,7 +192,7 @@ func TestJiraClient_GetProjectStatuses_Integration(t *testing.T) {
 func TestJiraClient_FindUsers_Integration(t *testing.T) {
 	config := getIntegrationConfig(t)
 
-	client, err := NewJiraClient(config)
+	client, err := jira.NewJiraClient(config)
 	require.NoError(t, err)
 
 	// 搜索当前用户（应该能找到）
@@ -206,7 +208,7 @@ func TestJiraClient_FindUsers_Integration(t *testing.T) {
 func TestJiraClient_EndToEnd_Integration(t *testing.T) {
 	config := getIntegrationConfig(t)
 
-	client, err := NewJiraClient(config)
+	client, err := jira.NewJiraClient(config)
 	require.NoError(t, err)
 
 	// 1. 获取当前用户信息
@@ -230,7 +232,7 @@ func TestJiraClient_EndToEnd_Integration(t *testing.T) {
 	assert.NotNil(t, transitions)
 
 	// 4. 获取项目信息
-	projectKey := ExtractProjectKey(testTicket)
+	projectKey := jira.ExtractProjectKey(testTicket)
 	project, err := client.GetProject(projectKey)
 	require.NoError(t, err)
 	assert.NotNil(t, project)

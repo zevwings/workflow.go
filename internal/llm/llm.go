@@ -23,11 +23,11 @@
 //		URL:    "https://api.openai.com/v1/chat/completions",
 //	}
 //
-//	// 创建 LLM 客户端
-//	llmClient := llm.NewClient(httpClient, providerConfig)
+//	// 创建 LLM 客户端（使用子包）
+//	llmClient := client.NewClient(httpClient, providerConfig)
 //
-//	// 创建 PR LLM 客户端
-//	prClient := llm.NewPullRequestLLMClient(llmClient, nil)
+//	// 创建 PR LLM 客户端（使用子包）
+//	prClient := pr.NewPullRequestLLMClient(llmClient, nil)
 //	content, err := prClient.GenerateContent("fix: bug", nil, "")
 //	if err != nil {
 //		// 处理错误
