@@ -8,7 +8,6 @@ import (
 	"github.com/zevwings/workflow/internal/config"
 	"github.com/zevwings/workflow/internal/prompt"
 	"github.com/zevwings/workflow/internal/prompt/form"
-	"github.com/zevwings/workflow/internal/util"
 )
 
 // NewSetupCmd creates the setup command
@@ -80,7 +79,7 @@ func runSetup(cmd *cobra.Command, args []string) error {
 	}
 
 	msg.Success("Initialization completed successfully!")
-	msg.Println("%s", "")
+	msg.Break()
 	msg.Info("You can now use the Workflow CLI commands.")
 
 	return nil
@@ -640,67 +639,12 @@ func verifyConfiguration(msg *prompt.Message, manager *config.GlobalManager) err
 		len(cfg.GitHub.Accounts) > 0
 
 	if hasConfig {
-		msg.Println("%s", "-------  Verifying Configuration -------")
-		msg.Println("%s", "")
+		msg.Print("%s", "-------  Verifying Configuration -------")
+		msg.Break()
 	}
 
-	// 显示日志配置
-	if cfg.Log.Level != "" {
-		msg.Println("%s", fmt.Sprintf("Log Output Folder Name: %s", cfg.Log.Level))
-		msg.Println("%s", "")
-	}
-
-	// 显示 LLM 配置
-	if cfg.LLM.Provider != "" {
-		msg.Info("LLM Configuration")
-		table := prompt.NewTable([]string{"Provider", "Model", "Key", "Output Language"})
-
-		var model, key, language string
-		language = cfg.LLM.Language
-		if language == "" {
-			language = "en"
-		}
-
-		switch cfg.LLM.Provider {
-		case "openai":
-			model = cfg.LLM.OpenAI.Model
-			if model == "" {
-				model = "gpt-3.5-turbo"
-			}
-			key = util.MaskSensitiveValue(cfg.LLM.OpenAI.APIKey)
-		case "deepseek":
-			model = cfg.LLM.DeepSeek.Model
-			if model == "" {
-				model = "deepseek-chat"
-			}
-			key = util.MaskSensitiveValue(cfg.LLM.DeepSeek.APIKey)
-		case "proxy":
-			model = cfg.LLM.Proxy.Model
-			if cfg.LLM.Proxy.URL != "" {
-				model = fmt.Sprintf("%s(%s)", model, cfg.LLM.Proxy.URL)
-			}
-			key = util.MaskSensitiveValue(cfg.LLM.Proxy.APIKey)
-		default:
-			model = "-"
-			key = "-"
-		}
-
-		table.AddRow([]string{cfg.LLM.Provider, model, key, language})
-		table.Render()
-		msg.Println("%s", "")
-	}
-
-	// 验证 Jira 配置
-	if cfg.Jira.Email != "" || cfg.Jira.APIToken != "" || cfg.Jira.ServiceAddress != "" {
-		opts := DefaultVerifyOptions()
-		VerifyJiraConfig(msg, &cfg.Jira, opts)
-	}
-
-	// 验证 GitHub 配置
-	if len(cfg.GitHub.Accounts) > 0 {
-		opts := DefaultVerifyOptions()
-		VerifyGitHubConfig(msg, &cfg.GitHub, opts)
-	}
+	// 使用共用的 showConfig 函数，不显示日志分隔线
+	showConfigWithOptions(msg, cfg, false)
 
 	return nil
 }

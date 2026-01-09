@@ -39,14 +39,14 @@ func runDemo(cmd *cobra.Command, args []string) error {
 	msg.Info("欢迎使用 Prompt 组件演示")
 	msg.Break()
 	msg.Info("本演示将依次展示以下组件：")
-	msg.Println("  1. Message - 消息输出")
-	msg.Println("  2. Confirm - 确认对话框")
-	msg.Println("  3. Input - 文本输入")
-	msg.Println("  4. Password - 密码输入")
-	msg.Println("  5. Select - 单选")
-	msg.Println("  6. MultiSelect - 多选")
-	msg.Println("  7. Spinner - 加载指示器")
-	msg.Println("  8. Table - 表格显示")
+	msg.Print("  1. Message - 消息输出")
+	msg.Print("  2. Confirm - 确认对话框")
+	msg.Print("  3. Input - 文本输入")
+	msg.Print("  4. Password - 密码输入")
+	msg.Print("  5. Select - 单选")
+	msg.Print("  6. MultiSelect - 多选")
+	msg.Print("  7. Spinner - 加载指示器")
+	msg.Print("  8. Table - 表格显示")
 	msg.Break()
 
 	// 1. Message 演示
@@ -105,7 +105,7 @@ func runDemo(cmd *cobra.Command, args []string) error {
 
 	// 5. Select 演示
 	msg.Info("=== 5. Select 单选 ===")
-	msg.Println("提示：使用 ↑/↓ 箭头键导航，回车键确认")
+	msg.Print("提示：使用 ↑/↓ 箭头键导航，回车键确认")
 	options := []string{"选项 A", "选项 B", "选项 C", "选项 D"}
 	selectedIndex, err := prompt.Select().
 		Prompt("请选择一个选项").
@@ -120,7 +120,7 @@ func runDemo(cmd *cobra.Command, args []string) error {
 
 	// 6. MultiSelect 演示
 	msg.Info("=== 6. MultiSelect 多选 ===")
-	msg.Println("提示：使用 ↑/↓ 箭头键导航，空格键切换选择，回车键确认")
+	msg.Print("提示：使用 ↑/↓ 箭头键导航，空格键切换选择，回车键确认")
 	features := []string{"功能 A", "功能 B", "功能 C", "功能 D"}
 	selectedIndices, err := prompt.MultiSelect().
 		Prompt("请选择要启用的功能（可多选）").

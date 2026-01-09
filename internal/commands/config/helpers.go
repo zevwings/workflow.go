@@ -70,7 +70,7 @@ func VerifyJiraConfig(msg *prompt.Message, jiraConfig *config.JiraConfig, opts *
 	} else if jiraResult != nil {
 		msg.Error("Jira verification failed: %s", jiraResult.Message)
 	}
-	msg.Println("%s", "")
+	msg.Break()
 }
 
 // VerifyGitHubConfig 验证 GitHub 配置
@@ -153,7 +153,71 @@ func VerifyGitHubConfig(msg *prompt.Message, githubConfig *config.GitHubConfig, 
 	} else {
 		msg.Warning("Some GitHub account(s) verification failed. Please check the configuration.")
 	}
-	msg.Println("%s", "")
+	msg.Break()
 
 	return allValid
+}
+
+// showConfigWithOptions 格式化显示配置，支持自定义选项
+func showConfigWithOptions(out *prompt.Message, cfg *config.GlobalConfig, showLogSeparator bool) {
+	// 日志配置
+	if cfg.Log.Level != "" {
+		if showLogSeparator {
+			out.Print("%s", "------------------------------------------  Configuration ------------------------------------------")
+		}
+		out.Print("%s", fmt.Sprintf("Log Output Folder Name: %s", cfg.Log.Level))
+		out.Break()
+	}
+
+	// LLM 配置
+	if cfg.LLM.Provider != "" {
+		out.Info("LLM Configuration")
+		table := prompt.NewTable([]string{"Provider", "Model", "Key", "Output Language"})
+
+		var model, key, language string
+		language = cfg.LLM.Language
+		if language == "" {
+			language = "en"
+		}
+
+		switch cfg.LLM.Provider {
+		case "openai":
+			model = cfg.LLM.OpenAI.Model
+			if model == "" {
+				model = "gpt-3.5-turbo"
+			}
+			key = util.MaskSensitiveValue(cfg.LLM.OpenAI.APIKey)
+		case "deepseek":
+			model = cfg.LLM.DeepSeek.Model
+			if model == "" {
+				model = "deepseek-chat"
+			}
+			key = util.MaskSensitiveValue(cfg.LLM.DeepSeek.APIKey)
+		case "proxy":
+			model = cfg.LLM.Proxy.Model
+			if cfg.LLM.Proxy.URL != "" {
+				model = fmt.Sprintf("%s(%s)", model, cfg.LLM.Proxy.URL)
+			}
+			key = util.MaskSensitiveValue(cfg.LLM.Proxy.APIKey)
+		default:
+			model = "-"
+			key = "-"
+		}
+
+		table.AddRow([]string{cfg.LLM.Provider, model, key, language})
+		table.Render()
+		out.Break()
+	}
+
+	// Jira 配置
+	if cfg.Jira.Email != "" || cfg.Jira.APIToken != "" || cfg.Jira.ServiceAddress != "" {
+		opts := DefaultVerifyOptions()
+		VerifyJiraConfig(out, &cfg.Jira, opts)
+	}
+
+	// GitHub 配置
+	if len(cfg.GitHub.Accounts) > 0 {
+		opts := DefaultVerifyOptions()
+		VerifyGitHubConfig(out, &cfg.GitHub, opts)
+	}
 }

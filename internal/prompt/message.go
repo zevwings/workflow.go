@@ -71,13 +71,8 @@ func (m *Message) Debug(format string, args ...interface{}) {
 	}
 }
 
-// Print 普通输出
+// Print 格式化输出并换行
 func (m *Message) Print(format string, args ...interface{}) {
-	fmt.Printf(format, args...)
-}
-
-// Println 普通输出并换行
-func (m *Message) Println(format string, args ...interface{}) {
 	fmt.Println(fmt.Sprintf(format, args...))
 }
 

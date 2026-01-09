@@ -32,8 +32,8 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 	msg.Info("欢迎使用 Form 模块演示")
 	msg.Break()
 	msg.Info("本演示将展示以下场景：")
-	msg.Println("  1. 基本流程 - 多层顺序执行（confirm -> input -> select -> input）")
-	msg.Println("  2. 复杂流程 - 嵌套表单与条件字段组合")
+	msg.Print("  1. 基本流程 - 多层顺序执行（confirm -> input -> select -> input）")
+	msg.Print("  2. 复杂流程 - 嵌套表单与条件字段组合")
 	msg.Break()
 
 	// 1. 基本流程 - 多层顺序执行
@@ -46,16 +46,16 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 			DefaultValue: false,
 		}).
 		AddInput(form.InputFormField{
-			Key:         "name",
-			Prompt:      "请输入姓名",
+			Key:          "name",
+			Prompt:       "请输入姓名",
 			DefaultValue: "",
-			Validator:   nil,
+			Validator:    nil,
 		}).
 		AddInput(form.InputFormField{
-			Key:         "email",
-			Prompt:      "请输入邮箱",
+			Key:          "email",
+			Prompt:       "请输入邮箱",
 			DefaultValue: "",
-			Validator:   prompt.ValidateEmail(),
+			Validator:    prompt.ValidateEmail(),
 		}).
 		AddSelect(form.SelectFormField{
 			Key:          "role",
@@ -64,16 +64,16 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 			DefaultIndex: 0,
 		}).
 		AddInput(form.InputFormField{
-			Key:         "department",
-			Prompt:      "请输入部门",
+			Key:          "department",
+			Prompt:       "请输入部门",
 			DefaultValue: "",
-			Validator:   nil,
+			Validator:    nil,
 		}).
 		AddInput(form.InputFormField{
-			Key:         "remark",
-			Prompt:      "请输入备注",
+			Key:          "remark",
+			Prompt:       "请输入备注",
 			DefaultValue: "",
-			Validator:   nil,
+			Validator:    nil,
 		}).
 		Run()
 	if err != nil {
@@ -82,12 +82,12 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 	roleIndex := result1.GetInt("role")
 	roles := []string{"Admin", "User"}
 	msg.Success("表单结果：")
-	msg.Println("  agree: %v", result1.GetBool("agree"))
-	msg.Println("  name: %s", result1.GetString("name"))
-	msg.Println("  email: %s", result1.GetString("email"))
-	msg.Println("  role: %s (索引: %d)", roles[roleIndex], roleIndex)
-	msg.Println("  department: %s", result1.GetString("department"))
-	msg.Println("  remark: %s", result1.GetString("remark"))
+	msg.Print("  agree: %v", result1.GetBool("agree"))
+	msg.Print("  name: %s", result1.GetString("name"))
+	msg.Print("  email: %s", result1.GetString("email"))
+	msg.Print("  role: %s (索引: %d)", roles[roleIndex], roleIndex)
+	msg.Print("  department: %s", result1.GetString("department"))
+	msg.Print("  remark: %s", result1.GetString("remark"))
 	msg.Break()
 
 	// 2. 复杂流程 - 嵌套表单与条件字段组合
@@ -95,16 +95,16 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 	innerUserForm := prompt.Form().
 		SetTitle("用户信息").
 		AddInput(form.InputFormField{
-			Key:         "name",
-			Prompt:      "姓名",
+			Key:          "name",
+			Prompt:       "姓名",
 			DefaultValue: "",
-			Validator:   prompt.ValidateRequired(),
+			Validator:    prompt.ValidateRequired(),
 		}).
 		AddInput(form.InputFormField{
-			Key:         "email",
-			Prompt:      "邮箱",
+			Key:          "email",
+			Prompt:       "邮箱",
 			DefaultValue: "",
-			Validator:   prompt.ValidateEmail(),
+			Validator:    prompt.ValidateEmail(),
 		}).
 		AddSelect(form.SelectFormField{
 			Key:          "role",
@@ -116,16 +116,16 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 	innerAddressForm := prompt.Form().
 		SetTitle("地址信息").
 		AddInput(form.InputFormField{
-			Key:         "city",
-			Prompt:      "城市",
+			Key:          "city",
+			Prompt:       "城市",
 			DefaultValue: "",
-			Validator:   nil,
+			Validator:    nil,
 		}).
 		AddInput(form.InputFormField{
-			Key:         "street",
-			Prompt:      "街道",
+			Key:          "street",
+			Prompt:       "街道",
 			DefaultValue: "",
-			Validator:   nil,
+			Validator:    nil,
 		})
 
 	result2, err := prompt.Form().
@@ -167,28 +167,28 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("表单执行失败: %w", err)
 	}
 	msg.Success("表单结果：")
-	msg.Println("  createUser: %v", result2.GetBool("createUser"))
+	msg.Print("  createUser: %v", result2.GetBool("createUser"))
 	if result2.GetBool("createUser") {
 		userResult := result2.GetForm("user")
 		if userResult != nil {
 			roleIndex2 := userResult.GetInt("role")
 			roles2 := []string{"Admin", "User"}
-			msg.Println("  user.name: %s", userResult.GetString("name"))
-			msg.Println("  user.email: %s", userResult.GetString("email"))
-			msg.Println("  user.role: %s (索引: %d)", roles2[roleIndex2], roleIndex2)
+			msg.Print("  user.name: %s", userResult.GetString("name"))
+			msg.Print("  user.email: %s", userResult.GetString("email"))
+			msg.Print("  user.role: %s (索引: %d)", roles2[roleIndex2], roleIndex2)
 		}
 	} else {
-		msg.Println("  user: (未填写，因为 createUser 为 false)")
+		msg.Print("  user: (未填写，因为 createUser 为 false)")
 	}
-	msg.Println("  hasAddress: %v", result2.GetBool("hasAddress"))
+	msg.Print("  hasAddress: %v", result2.GetBool("hasAddress"))
 	if result2.GetBool("hasAddress") {
 		addressResult := result2.GetForm("address")
 		if addressResult != nil {
-			msg.Println("  address.city: %s", addressResult.GetString("city"))
-			msg.Println("  address.street: %s", addressResult.GetString("street"))
+			msg.Print("  address.city: %s", addressResult.GetString("city"))
+			msg.Print("  address.street: %s", addressResult.GetString("street"))
 		}
 	} else {
-		msg.Println("  address: (未填写，因为 hasAddress 为 false)")
+		msg.Print("  address: (未填写，因为 hasAddress 为 false)")
 	}
 	tags := result2.GetIntSlice("tags")
 	tagNames := []string{"VIP", "Premium", "Standard"}
@@ -198,7 +198,7 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 			selectedTags = append(selectedTags, tagNames[idx])
 		}
 	}
-	msg.Println("  tags: %v", selectedTags)
+	msg.Print("  tags: %v", selectedTags)
 	msg.Break()
 
 	msg.Success("Form 模块演示完成！")

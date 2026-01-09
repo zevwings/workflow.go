@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	version   string = "0.1.0"
-	buildDate string = "unknown"
-	gitCommit string = "unknown"
+	version   string = "0.0.1"
+	buildDate string = "2026-01-10"
+	gitCommit string = "0000000000000000000000000000000000000000"
 )
 
 func main() {

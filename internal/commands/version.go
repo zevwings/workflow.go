@@ -15,11 +15,11 @@ func NewVersionCmd(version, buildDate, gitCommit string) *cobra.Command {
 		Long:  `显示 Workflow CLI 的版本信息，包括版本号、构建日期和 Git 提交哈希。`,
 		Run: func(cmd *cobra.Command, args []string) {
 			out := prompt.NewMessage(false)
-			out.Println("%s", "Workflow CLI")
-			out.Println("%s", "")
-			out.Println("%s", fmt.Sprintf("Version:    %s", version))
-			out.Println("%s", fmt.Sprintf("Build Date: %s", buildDate))
-			out.Println("%s", fmt.Sprintf("Git Commit: %s", gitCommit))
+			out.Print("%s", "Workflow CLI")
+			out.Break()
+			out.Print("%s", fmt.Sprintf("Version:    %s", version))
+			out.Print("%s", fmt.Sprintf("Build Date: %s", buildDate))
+			out.Print("%s", fmt.Sprintf("Git Commit: %s", gitCommit))
 		},
 	}
 

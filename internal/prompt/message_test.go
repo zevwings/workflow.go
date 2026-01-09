@@ -95,15 +95,15 @@ func TestMessage_Debug_Verbose(t *testing.T) {
 	require.Equal(t, "", strings.TrimSpace(outSilent))
 }
 
-func TestMessage_PrintAndPrintln(t *testing.T) {
+func TestMessage_Print(t *testing.T) {
 	m := NewMessage(false)
 
 	out := captureOutput(t, func() {
 		m.Print("hello %s", "world")
-		m.Println(" line%d", 1)
+		m.Print(" line%d", 1)
 	})
 
-	// Print 不自动换行，Println 会换行
+	// Print 格式化输出并自动换行
 	require.True(t, strings.Contains(out, "hello world"))
 	require.True(t, strings.Contains(out, " line1"))
 }
@@ -126,5 +126,3 @@ func TestFormatMessage_EnableAndDisableColor(t *testing.T) {
 	require.Contains(t, colored, "P:")
 	// 在非TTY环境下，可能不会添加颜色，所以只检查内容存在即可
 }
-
-
