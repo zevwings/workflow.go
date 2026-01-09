@@ -7,6 +7,7 @@ import (
 
 	"github.com/zevwings/workflow/internal/llm/client"
 	"github.com/zevwings/workflow/internal/llm/prompt"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 var (
@@ -99,6 +100,18 @@ func (c *BranchLLMClient) TranslateToEnglish(text string) (string, error) {
 //   - string: 翻译后的英文文本
 //   - error: 如果 LLM API 调用失败或返回空结果，返回相应的错误信息
 func TranslateToEnglish(text string, llmClient client.LLMClient) (string, error) {
+	logger := logging.GetLogger()
+
+	// 记录翻译操作开始
+	textPreview := text
+	if len(textPreview) > 50 {
+		textPreview = textPreview[:50] + "..."
+	}
+	logger.WithFields(logging.Fields{
+		"text_length":  len(text),
+		"text_preview": textPreview,
+	}).Info("Starting translation to English")
+
 	userPrompt := fmt.Sprintf("Translate this text to English: %s", text)
 
 	maxTokens := 100
@@ -111,6 +124,7 @@ func TranslateToEnglish(text string, llmClient client.LLMClient) (string, error)
 
 	translated, err := llmClient.Call(params)
 	if err != nil {
+		logger.WithError(err).Error("Failed to call LLM API for translation")
 		return "", fmt.Errorf("调用 LLM API 翻译文本失败: %w", err)
 	}
 
@@ -119,8 +133,20 @@ func TranslateToEnglish(text string, llmClient client.LLMClient) (string, error)
 	cleaned = strings.Trim(cleaned, `"'`)
 
 	if cleaned == "" {
+		logger.Error("LLM returned empty translation result")
 		return "", fmt.Errorf("LLM 返回的翻译结果为空")
 	}
+
+	// 记录翻译操作成功
+	translatedPreview := cleaned
+	if len(translatedPreview) > 50 {
+		translatedPreview = translatedPreview[:50] + "..."
+	}
+	logger.WithFields(logging.Fields{
+		"original_length":    len(text),
+		"translated_length":  len(cleaned),
+		"translated_preview": translatedPreview,
+	}).Info("Translation to English succeeded")
 
 	return cleaned, nil
 }

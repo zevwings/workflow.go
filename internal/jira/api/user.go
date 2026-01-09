@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/andygrunwald/go-jira/v2/cloud"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 // UserAPI 提供 User 相关的 REST API 方法
@@ -44,8 +45,12 @@ func (api *UserAPI) GetCurrentUser() (*cloud.User, error) {
 //   - *cloud.User: 用户信息
 //   - error: 如果获取失败，返回错误
 func (api *UserAPI) GetUser(accountID string) (*cloud.User, error) {
+	logger := logging.GetLogger()
+	logger.Infof("Jira API call: GetUser(%s)", accountID)
+
 	user, _, err := api.client.User.Get(api.ctx, accountID)
 	if err != nil {
+		logger.WithError(err).Errorf("Jira API call failed: GetUser(%s)", accountID)
 		return nil, fmt.Errorf("获取用户 %s 信息失败: %w", accountID, err)
 	}
 

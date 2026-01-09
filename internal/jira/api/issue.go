@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/andygrunwald/go-jira/v2/cloud"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 // IssueAPI 提供 Issue/Ticket 相关的 REST API 方法
@@ -33,8 +34,12 @@ func NewIssueAPI(client *cloud.Client, ctx context.Context) *IssueAPI {
 //   - *cloud.Issue: Issue 信息
 //   - error: 如果获取失败，返回错误
 func (api *IssueAPI) GetIssue(ticket string) (*cloud.Issue, error) {
+	logger := logging.GetLogger()
+	logger.Infof("Jira API call: GetIssue(%s)", ticket)
+
 	issue, _, err := api.client.Issue.Get(api.ctx, ticket, nil)
 	if err != nil {
+		logger.WithError(err).Errorf("Jira API call failed: GetIssue(%s)", ticket)
 		return nil, fmt.Errorf("获取 issue %s 失败: %w", ticket, err)
 	}
 
@@ -88,8 +93,12 @@ func (api *IssueAPI) GetIssueTransitions(ticket string) ([]cloud.Transition, err
 // 返回:
 //   - error: 如果更新失败，返回错误
 func (api *IssueAPI) TransitionIssue(ticket, transitionID string) error {
+	logger := logging.GetLogger()
+	logger.Infof("Transitioning Jira issue %s to transition %s", ticket, transitionID)
+
 	_, err := api.client.Issue.DoTransition(api.ctx, ticket, transitionID)
 	if err != nil {
+		logger.WithError(err).Errorf("Jira API call failed: TransitionIssue(%s, %s)", ticket, transitionID)
 		return fmt.Errorf("更新 issue %s 状态失败: %w", ticket, err)
 	}
 

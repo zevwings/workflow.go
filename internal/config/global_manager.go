@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/viper"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 // GlobalManager 全局配置管理器
@@ -53,11 +54,16 @@ func NewGlobalManager() (*GlobalManager, error) {
 
 // Load 加载配置文件
 func (m *GlobalManager) Load() error {
+	logger := logging.GetLogger()
+	logger.Infof("Loading config from: %s", m.path)
+
 	if err := m.viper.ReadInConfig(); err != nil {
 		// 配置文件不存在时，创建默认配置
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			logger.Infof("Creating default config file: %s", m.path)
 			return m.SaveDefault()
 		}
+		logger.WithError(err).Error("Config operation failed")
 		return fmt.Errorf("读取配置文件失败: %w", err)
 	}
 	return nil
@@ -65,7 +71,15 @@ func (m *GlobalManager) Load() error {
 
 // Save 保存配置到文件
 func (m *GlobalManager) Save(config interface{}) error {
-	return SaveConfigToFile(m.path, config)
+	logger := logging.GetLogger()
+	logger.Infof("Saving config to: %s", m.path)
+
+	err := SaveConfigToFile(m.path, config)
+	if err != nil {
+		logger.WithError(err).Error("Config operation failed")
+		return err
+	}
+	return nil
 }
 
 // SaveDefault 保存默认配置

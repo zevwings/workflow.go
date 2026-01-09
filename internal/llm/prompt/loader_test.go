@@ -1,6 +1,7 @@
 package prompt
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,9 +12,9 @@ import (
 
 func TestLoadTemplate(t *testing.T) {
 	tests := []struct {
-		name    string
+		name     string
 		template string
-		wantErr bool
+		wantErr  bool
 	}{
 		{
 			name:     "加载 translate.md",
@@ -101,38 +102,38 @@ func TestLoadTemplate_ErrorFormat(t *testing.T) {
 
 func TestMustLoadTemplate(t *testing.T) {
 	tests := []struct {
-		name      string
-		template  string
+		name        string
+		template    string
 		shouldPanic bool
 	}{
 		{
-			name:       "加载存在的模板",
-			template:   "translate.md",
+			name:        "加载存在的模板",
+			template:    "translate.md",
 			shouldPanic: false,
 		},
 		{
-			name:       "加载 branch.md",
-			template:   "branch.md",
+			name:        "加载 branch.md",
+			template:    "branch.md",
 			shouldPanic: false,
 		},
 		{
-			name:       "加载 pr-reword.md",
-			template:   "pr-reword.md",
+			name:        "加载 pr-reword.md",
+			template:    "pr-reword.md",
 			shouldPanic: false,
 		},
 		{
-			name:       "加载 file-summary.md",
-			template:   "file-summary.md",
+			name:        "加载 file-summary.md",
+			template:    "file-summary.md",
 			shouldPanic: false,
 		},
 		{
-			name:       "加载 pr-summary.md",
-			template:   "pr-summary.md",
+			name:        "加载 pr-summary.md",
+			template:    "pr-summary.md",
 			shouldPanic: false,
 		},
 		{
-			name:       "不存在的模板应该 panic",
-			template:   "non-existent.md",
+			name:        "不存在的模板应该 panic",
+			template:    "non-existent.md",
 			shouldPanic: true,
 		},
 	}
@@ -160,19 +161,22 @@ func TestMustLoadTemplate_PanicMessage(t *testing.T) {
 	template := "non-existent-template.md"
 
 	// Act & Assert: 验证 panic 消息
-	assert.Panics(t, func() {
+	var panicValue interface{}
+	func() {
+		defer func() {
+			panicValue = recover()
+		}()
 		MustLoadTemplate(template)
-	}, "应该 panic 当模板不存在时")
-
-	// 验证 panic 消息包含模板名称
-	defer func() {
-		if r := recover(); r != nil {
-			panicMsg := r.(string)
-			assert.Contains(t, panicMsg, "无法加载必需的模板文件")
-			assert.Contains(t, panicMsg, template)
-		}
 	}()
-	MustLoadTemplate(template)
+
+	// 验证 panic 发生
+	require.NotNil(t, panicValue, "应该 panic 当模板不存在时")
+
+	// 验证 panic 消息包含预期的内容
+	panicMsg := fmt.Sprintf("%v", panicValue)
+	assert.Contains(t, panicMsg, "prompt.MustLoadTemplate")
+	assert.Contains(t, panicMsg, "failed to load required template file")
+	assert.Contains(t, panicMsg, template)
 }
 
 // ==================== ListTemplates 测试 ====================
@@ -241,4 +245,3 @@ func TestListTemplates_ConsistentWithLoadTemplate(t *testing.T) {
 		})
 	}
 }
-

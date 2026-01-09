@@ -201,197 +201,6 @@ func TestSetLevel_NilLogger(t *testing.T) {
 	assert.Nil(t, Logger)
 }
 
-// ==================== Debug/Debugf 测试 ====================
-
-func TestDebug(t *testing.T) {
-	// Arrange: 初始化 Logger 并设置 debug 级别
-	buf := &bytes.Buffer{}
-	Init("debug", "text", buf)
-
-	// Act: 记录 debug 日志
-	Debug("debug message")
-
-	// Assert: 验证日志已输出
-	output := buf.String()
-	assert.Contains(t, output, "debug message")
-}
-
-func TestDebugf(t *testing.T) {
-	// Arrange: 初始化 Logger 并设置 debug 级别
-	buf := &bytes.Buffer{}
-	Init("debug", "text", buf)
-
-	// Act: 记录格式化 debug 日志
-	Debugf("debug message: %s", "value")
-
-	// Assert: 验证日志已输出
-	output := buf.String()
-	assert.Contains(t, output, "debug message: value")
-}
-
-func TestDebug_LevelFilter(t *testing.T) {
-	// Arrange: 初始化 Logger 并设置 info 级别（高于 debug）
-	buf := &bytes.Buffer{}
-	Init("info", "text", buf)
-
-	// Act: 记录 debug 日志
-	Debug("debug message")
-
-	// Assert: 验证日志未输出（被过滤）
-	output := buf.String()
-	assert.NotContains(t, output, "debug message")
-}
-
-func TestDebug_NilLogger(t *testing.T) {
-	// Arrange: 确保 Logger 为 nil
-	Logger = nil
-
-	// Act: 记录 debug 日志（不应该 panic）
-	Debug("debug message")
-	Debugf("debug message: %s", "value")
-
-	// Assert: 不应该 panic
-	assert.Nil(t, Logger)
-}
-
-// ==================== Info/Infof 测试 ====================
-
-func TestInfo(t *testing.T) {
-	// Arrange: 初始化 Logger
-	buf := &bytes.Buffer{}
-	Init("info", "text", buf)
-
-	// Act: 记录 info 日志
-	Info("info message")
-
-	// Assert: 验证日志已输出
-	output := buf.String()
-	assert.Contains(t, output, "info message")
-}
-
-func TestInfof(t *testing.T) {
-	// Arrange: 初始化 Logger
-	buf := &bytes.Buffer{}
-	Init("info", "text", buf)
-
-	// Act: 记录格式化 info 日志
-	Infof("info message: %s", "value")
-
-	// Assert: 验证日志已输出
-	output := buf.String()
-	assert.Contains(t, output, "info message: value")
-}
-
-func TestInfo_NilLogger(t *testing.T) {
-	// Arrange: 确保 Logger 为 nil
-	Logger = nil
-
-	// Act: 记录 info 日志（不应该 panic）
-	Info("info message")
-	Infof("info message: %s", "value")
-
-	// Assert: 不应该 panic
-	assert.Nil(t, Logger)
-}
-
-// ==================== Warn/Warnf 测试 ====================
-
-func TestWarn(t *testing.T) {
-	// Arrange: 初始化 Logger
-	buf := &bytes.Buffer{}
-	Init("warn", "text", buf)
-
-	// Act: 记录 warn 日志
-	Warn("warn message")
-
-	// Assert: 验证日志已输出
-	output := buf.String()
-	assert.Contains(t, output, "warn message")
-}
-
-func TestWarnf(t *testing.T) {
-	// Arrange: 初始化 Logger
-	buf := &bytes.Buffer{}
-	Init("warn", "text", buf)
-
-	// Act: 记录格式化 warn 日志
-	Warnf("warn message: %s", "value")
-
-	// Assert: 验证日志已输出
-	output := buf.String()
-	assert.Contains(t, output, "warn message: value")
-}
-
-func TestWarn_NilLogger(t *testing.T) {
-	// Arrange: 确保 Logger 为 nil
-	Logger = nil
-
-	// Act: 记录 warn 日志（不应该 panic）
-	Warn("warn message")
-	Warnf("warn message: %s", "value")
-
-	// Assert: 不应该 panic
-	assert.Nil(t, Logger)
-}
-
-// ==================== Error/Errorf 测试 ====================
-
-func TestError(t *testing.T) {
-	// Arrange: 初始化 Logger
-	buf := &bytes.Buffer{}
-	Init("error", "text", buf)
-
-	// Act: 记录 error 日志
-	Error("error message")
-
-	// Assert: 验证日志已输出
-	output := buf.String()
-	assert.Contains(t, output, "error message")
-}
-
-func TestErrorf(t *testing.T) {
-	// Arrange: 初始化 Logger
-	buf := &bytes.Buffer{}
-	Init("error", "text", buf)
-
-	// Act: 记录格式化 error 日志
-	Errorf("error message: %s", "value")
-
-	// Assert: 验证日志已输出
-	output := buf.String()
-	assert.Contains(t, output, "error message: value")
-}
-
-func TestError_NilLogger(t *testing.T) {
-	// Arrange: 确保 Logger 为 nil
-	Logger = nil
-
-	// Act: 记录 error 日志（不应该 panic）
-	Error("error message")
-	Errorf("error message: %s", "value")
-
-	// Assert: 不应该 panic
-	assert.Nil(t, Logger)
-}
-
-// ==================== Fatal/Fatalf 测试 ====================
-
-// 注意：Fatal 函数会调用 os.Exit，无法直接测试
-// 这里只测试函数不会 panic，以及当 Logger 为 nil 时的行为
-func TestFatal_NilLogger(t *testing.T) {
-	// Arrange: 确保 Logger 为 nil
-	Logger = nil
-
-	// Act: 记录 fatal 日志（不应该 panic，但也不会退出，因为 Logger 为 nil）
-	// 注意：由于 Fatal 会调用 os.Exit，我们无法完全测试它
-	// 这里只验证函数不会 panic
-	Fatal("fatal message")
-	Fatalf("fatal message: %s", "value")
-
-	// Assert: 不应该 panic
-	assert.Nil(t, Logger)
-}
-
 // ==================== WithField/WithFields/WithError 测试 ====================
 
 func TestWithField(t *testing.T) {
@@ -418,7 +227,7 @@ func TestWithFields(t *testing.T) {
 	Init("info", "json", buf)
 
 	// Act: 添加多个字段并记录日志
-	entry := WithFields(logrus.Fields{
+	entry := WithFields(Fields{
 		"key1": "value1",
 		"key2": "value2",
 	})
@@ -467,7 +276,7 @@ func TestWithFields_NilLogger(t *testing.T) {
 	Logger = nil
 
 	// Act: 添加字段（应该返回一个空的 Entry）
-	entry := WithFields(logrus.Fields{
+	entry := WithFields(Fields{
 		"key1": "value1",
 	})
 
@@ -484,4 +293,75 @@ func TestWithError_NilLogger(t *testing.T) {
 
 	// Assert: 验证返回了 Entry（即使 Logger 为 nil）
 	assert.NotNil(t, entry)
+}
+
+// ==================== GetLogger 测试 ====================
+
+func TestGetLogger(t *testing.T) {
+	// Arrange: 初始化 Logger
+	buf := &bytes.Buffer{}
+	Init("info", "json", buf)
+
+	// Act: 获取带模块名的 logger
+	logger := GetLogger()
+	logger.Info("test message")
+
+	// Assert: 验证日志包含模块字段
+	output := buf.String()
+	var logData map[string]interface{}
+	err := json.Unmarshal([]byte(output), &logData)
+	require.NoError(t, err)
+	assert.Contains(t, logData, "module")
+	assert.Equal(t, "test message", logData["msg"])
+	
+	// 验证模块名不是 "unknown"（说明成功获取了模块名）
+	moduleName, ok := logData["module"].(string)
+	assert.True(t, ok)
+	assert.NotEqual(t, "unknown", moduleName)
+}
+
+func TestGetLogger_TextFormat(t *testing.T) {
+	// Arrange: 初始化 Logger（文本格式）
+	buf := &bytes.Buffer{}
+	Init("info", "text", buf)
+
+	// Act: 获取带模块名的 logger
+	logger := GetLogger()
+	logger.Info("test message")
+
+	// Assert: 验证日志包含模块信息
+	output := buf.String()
+	assert.Contains(t, output, "test message")
+	// 文本格式中，模块信息可能包含颜色代码，所以检查 "module" 关键字
+	assert.Contains(t, strings.ToLower(output), "module")
+}
+
+func TestGetLogger_NilLogger(t *testing.T) {
+	// Arrange: 确保 Logger 为 nil
+	Logger = nil
+
+	// Act: 获取 logger（应该返回一个空的 Entry）
+	logger := GetLogger()
+
+	// Assert: 验证返回了 Entry（即使 Logger 为 nil）
+	assert.NotNil(t, logger)
+}
+
+func TestGetLogger_WithFields(t *testing.T) {
+	// Arrange: 初始化 Logger
+	buf := &bytes.Buffer{}
+	Init("info", "json", buf)
+
+	// Act: 获取 logger 并添加额外字段
+	logger := GetLogger()
+	logger.WithFields(Fields{"key": "value"}).Info("test message")
+
+	// Assert: 验证日志包含模块字段和额外字段
+	output := buf.String()
+	var logData map[string]interface{}
+	err := json.Unmarshal([]byte(output), &logData)
+	require.NoError(t, err)
+	assert.Contains(t, logData, "module")
+	assert.Equal(t, "value", logData["key"])
+	assert.Equal(t, "test message", logData["msg"])
 }

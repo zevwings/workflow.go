@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	adapterhttp "github.com/zevwings/workflow/internal/adapter/http"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 var (
@@ -103,6 +105,9 @@ func newClient() *httpClient {
 	client := resty.New()
 	client.SetTimeout(30 * time.Second)
 
+	// 设置 Logrus Logger（通过 adapter 实现）
+	client.SetLogger(adapterhttp.NewLogrusLogger())
+
 	// 配置默认重试策略
 	client.SetRetryCount(3)
 	client.SetRetryWaitTime(1 * time.Second)
@@ -110,7 +115,58 @@ func newClient() *httpClient {
 	client.AddRetryCondition(DefaultRetryCondition)
 	client.SetRetryAfter(DefaultRetryAfter)
 
+	// 添加日志 Hook
+	setupLoggingHooks(client)
+
 	return &httpClient{client: client}
+}
+
+// setupLoggingHooks 设置 HTTP 请求日志 Hook
+//
+// 使用 Resty 的 Hook 机制记录 HTTP 请求的各个阶段：
+//   - OnBeforeRequest: 记录请求发送前（Info 级别）
+//   - OnAfterResponse: 记录请求成功/失败（Info/Warn 级别）
+//   - OnError: 记录请求错误（Error 级别）
+//
+// 所有日志输出前都会自动过滤敏感信息（URL 中的 API Key、请求头中的敏感信息等）。
+func setupLoggingHooks(client *resty.Client) {
+	// 请求发送前 Hook
+	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
+		// 过滤 URL 中的敏感信息
+		filteredURL := FilterSensitiveURL(req.URL)
+		logging.GetLogger().Infof("HTTP %s request to %s", req.Method, filteredURL)
+		return nil
+	})
+
+	// 响应后 Hook
+	client.OnAfterResponse(func(c *resty.Client, resp *resty.Response) error {
+		method := resp.Request.Method
+		// 过滤 URL 中的敏感信息
+		filteredURL := FilterSensitiveURL(resp.Request.URL)
+		statusCode := resp.StatusCode()
+
+		if resp.IsSuccess() {
+			// 2xx 状态码：成功
+			logging.GetLogger().Infof("HTTP %s request to %s succeeded: %d", method, filteredURL, statusCode)
+		} else if statusCode >= 400 && statusCode < 500 {
+			// 4xx 状态码：客户端错误
+			logging.GetLogger().Warnf("HTTP %s request to %s returned client error: %d", method, filteredURL, statusCode)
+		} else if statusCode >= 500 {
+			// 5xx 状态码：服务器错误
+			logging.GetLogger().Warnf("HTTP %s request to %s returned server error: %d", method, filteredURL, statusCode)
+		}
+
+		return nil
+	})
+
+	// 错误 Hook
+	client.OnError(func(req *resty.Request, err error) {
+		if err != nil {
+			// 过滤 URL 中的敏感信息
+			filteredURL := FilterSensitiveURL(req.URL)
+			logging.GetLogger().Errorf("HTTP %s request to %s failed: %v", req.Method, filteredURL, err)
+		}
+	})
 }
 
 // isRetryableNetworkError 判断网络错误是否可重试

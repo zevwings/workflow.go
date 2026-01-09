@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 // Repository Git 仓库封装
@@ -18,20 +19,28 @@ type Repository struct {
 
 // Open 打开指定路径的 Git 仓库
 func Open(path string) (*Repository, error) {
+	logger := logging.GetLogger()
+	logger.Debugf("Opening Git repository: %s", path)
+
 	absPath, err := filepath.Abs(path)
 	if err != nil {
+		logger.WithError(err).WithField("path", path).Error("Failed to resolve absolute path")
 		return nil, fmt.Errorf("failed to get absolute path: %w", err)
 	}
 
 	repo, err := git.PlainOpen(absPath)
 	if err != nil {
+		logger.WithError(err).WithField("path", absPath).Error("Failed to open Git repository")
 		return nil, fmt.Errorf("failed to open repository: %w", err)
 	}
 
 	worktree, err := repo.Worktree()
 	if err != nil {
+		logger.WithError(err).WithField("path", absPath).Error("Failed to get worktree")
 		return nil, fmt.Errorf("failed to get worktree: %w", err)
 	}
+
+	logger.WithField("path", absPath).Debug("Git repository opened successfully")
 
 	return &Repository{
 		repo:     repo,
@@ -51,6 +60,12 @@ func OpenCurrent() (*Repository, error) {
 
 // Init 初始化一个新的 Git 仓库
 func Init(path string, initialBranch string) (*Repository, error) {
+	logger := logging.GetLogger()
+	logger.WithFields(logging.Fields{
+		"path":           path,
+		"initial_branch": initialBranch,
+	}).Info("Initializing new Git repository")
+
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get absolute path: %w", err)
@@ -64,6 +79,10 @@ func Init(path string, initialBranch string) (*Repository, error) {
 
 	repo, err := git.PlainInitWithOptions(absPath, opts)
 	if err != nil {
+		logger.WithError(err).WithFields(logging.Fields{
+			"path":           absPath,
+			"initial_branch": initialBranch,
+		}).Error("Failed to initialize Git repository")
 		return nil, fmt.Errorf("failed to initialize repository: %w", err)
 	}
 
@@ -71,6 +90,8 @@ func Init(path string, initialBranch string) (*Repository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get worktree: %w", err)
 	}
+
+	logger.WithField("path", absPath).Info("Git repository initialized successfully")
 
 	return &Repository{
 		repo:     repo,
@@ -99,4 +120,3 @@ func (r *Repository) Repo() *git.Repository {
 func (r *Repository) Worktree() *git.Worktree {
 	return r.worktree
 }
-

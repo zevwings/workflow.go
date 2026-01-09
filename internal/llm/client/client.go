@@ -49,6 +49,7 @@ import (
 	"time"
 
 	"github.com/zevwings/workflow/internal/http"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 var (
@@ -144,23 +145,50 @@ func Global(config *ProviderConfig) LLMClient {
 //   - string: LLM 生成的文本内容（去除首尾空白）
 //   - error: 如果 API 调用失败或响应格式不正确，返回相应的错误信息
 func (c *llmClient) Call(params *LLMRequestParams) (string, error) {
+	logger := logging.GetLogger()
+
+	// 构建 URL（统一格式）
+	url, err := c.buildURL()
+	if err != nil {
+		logger.WithError(err).Error("Failed to build LLM API URL: URL not configured")
+		return "", fmt.Errorf("构建 URL 失败: %w", err)
+	}
+
+	// 记录 LLM API 调用开始
+	logger.WithFields(logging.Fields{
+		"model": c.config.Model,
+		"url":   url,
+	}).Info("Starting LLM API call")
+
 	// 构建请求体（统一格式）
 	payload, err := c.buildPayload(params)
 	if err != nil {
+		logger.WithError(err).Error("Failed to build LLM request payload")
 		return "", fmt.Errorf("构建请求体失败: %w", err)
 	}
 
 	// 构建请求头（统一格式）
 	headers, err := c.buildHeaders()
 	if err != nil {
+		logger.WithError(err).Error("Failed to build LLM request headers: API key not configured")
 		return "", fmt.Errorf("构建请求头失败: %w", err)
 	}
 
-	// 构建 URL（统一格式）
-	url, err := c.buildURL()
-	if err != nil {
-		return "", fmt.Errorf("构建 URL 失败: %w", err)
+	// 记录请求参数详情（Debug 级别）
+	model := c.config.Model
+	if params.Model != "" {
+		model = params.Model
 	}
+	maxTokens := "nil"
+	if params.MaxTokens != nil {
+		maxTokens = fmt.Sprintf("%d", *params.MaxTokens)
+	}
+	logger.WithFields(logging.Fields{
+		"model":       model,
+		"temperature": params.Temperature,
+		"max_tokens":  maxTokens,
+		"url":         url,
+	}).Debug("LLM request parameters")
 
 	// 构建请求配置
 	reqConfig := http.NewRequestConfig().
@@ -169,15 +197,21 @@ func (c *llmClient) Call(params *LLMRequestParams) (string, error) {
 		WithTimeout(60 * time.Second).                     // LLM API 通常需要更长的超时时间
 		WithRetry(http.NewRetryConfig().WithRetryCount(3)) // 最多重试 3 次
 
+	// 记录 HTTP 请求发送前
+	logger.Debugf("Sending LLM HTTP POST request to %s (timeout: 60s, retries: 3)", url)
+
 	// 发送请求
 	resp, err := c.httpClient.PostWithConfig(url, reqConfig)
 	if err != nil {
+		logger.WithError(err).WithField("url", url).Error("LLM HTTP request failed")
 		return "", fmt.Errorf("发送 LLM 请求到 %s 失败: %w", url, err)
 	}
 
 	// 检查错误（使用 EnsureSuccessWith 统一处理）
 	resp, err = resp.EnsureSuccessWith(func(r *http.HttpResponse) error {
 		errorMessage := r.ExtractErrorMessage()
+		logger.Warnf("LLM API returned error status: url=%s, status=%d, error=%s",
+			url, r.Status, errorMessage)
 		return fmt.Errorf("LLM API 请求失败 (%s): %d - %s", url, r.Status, errorMessage)
 	})
 	if err != nil {
@@ -188,14 +222,30 @@ func (c *llmClient) Call(params *LLMRequestParams) (string, error) {
 	var data map[string]interface{}
 	data, err = http.AsJSON[map[string]interface{}](resp)
 	if err != nil {
+		logger.WithError(err).Error("Failed to parse LLM response as JSON")
 		return "", fmt.Errorf("解析响应 JSON 失败: %w", err)
 	}
 
 	// 根据配置的响应格式提取内容
 	content, err := c.extractContent(data)
 	if err != nil {
+		logger.WithError(err).Error("Failed to extract content from LLM response")
 		return "", fmt.Errorf("提取响应内容失败: %w", err)
 	}
+
+	// 记录响应内容摘要（Debug 级别）
+	contentPreview := content
+	if len(contentPreview) > 100 {
+		contentPreview = contentPreview[:100] + "..."
+	}
+	logger.Debugf("LLM response content preview: %s", contentPreview)
+
+	// 记录 LLM API 调用成功
+	logger.WithFields(logging.Fields{
+		"model":          c.config.Model,
+		"url":            url,
+		"content_length": len(content),
+	}).Info("LLM API call succeeded")
 
 	return content, nil
 }
@@ -305,30 +355,37 @@ func (c *llmClient) buildPayload(params *LLMRequestParams) (map[string]interface
 //   - string: 提取的内容（去除首尾空白）
 //   - error: 如果响应格式不正确或内容为空，返回错误
 func (c *llmClient) extractContent(response map[string]interface{}) (string, error) {
+	logger := logging.GetLogger()
+
 	// 解析为标准结构体
 	// 先将 map 转换为 JSON 字符串，再反序列化
 	jsonBytes, err := json.Marshal(response)
 	if err != nil {
+		logger.WithError(err).Error("Failed to serialize LLM response to JSON string")
 		return "", fmt.Errorf("序列化响应为 JSON 字符串失败: %w", err)
 	}
 
 	var completion ChatCompletionResponse
 	if err := json.Unmarshal(jsonBytes, &completion); err != nil {
+		logger.WithError(err).Error("Failed to parse LLM response as OpenAI ChatCompletion format")
 		return "", fmt.Errorf("解析响应为 OpenAI ChatCompletion 格式失败: %w", err)
 	}
 
 	// 提取内容
 	if len(completion.Choices) == 0 {
+		logger.WithField("response", response).Error("LLM response has no choices")
 		return "", fmt.Errorf("响应中没有 choices 数组或数组为空")
 	}
 
 	choice := completion.Choices[0]
 	if choice.Message.Content == nil {
+		logger.WithField("choice", choice).Error("LLM response content is empty")
 		return "", fmt.Errorf("响应中 content 为空")
 	}
 
 	content := strings.TrimSpace(*choice.Message.Content)
 	if content == "" {
+		logger.WithField("choice", choice).Error("LLM response content is empty string")
 		return "", fmt.Errorf("响应中 content 为空字符串")
 	}
 

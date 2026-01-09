@@ -9,6 +9,7 @@ import (
 	"github.com/zevwings/workflow/internal/llm/client"
 	"github.com/zevwings/workflow/internal/llm/prompt"
 	"github.com/zevwings/workflow/internal/llm/utils"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 var (
@@ -159,9 +160,21 @@ func (c *PullRequestLLMClient) SummarizeFileChange(filePath, fileDiff string) (s
 //   - *PullRequestContent: PR 内容，包含分支名、PR 标题、描述和 scope
 //   - error: 如果 LLM API 调用失败或响应格式不正确，返回相应的错误信息
 func GeneratePRContent(commitTitle string, existsBranches []string, gitDiff string, llmClient client.LLMClient) (*PullRequestContent, error) {
+	logger := logging.GetLogger()
+
+	// 记录 PR 内容生成开始
+	logger.WithFields(logging.Fields{
+		"commit_title":          commitTitle,
+		"has_git_diff":          gitDiff != "",
+		"exists_branches_count": len(existsBranches),
+	}).Info("Starting PR content generation")
+
 	// 构建请求参数
 	userPrompt := buildCreateUserPrompt(commitTitle, existsBranches, gitDiff)
 	systemPrompt := prompt.GenerateBranchSystemPrompt
+
+	// 记录 Prompt 构建完成
+	logger.Debugf("PR content generation prompt built: length=%d", len(userPrompt))
 
 	params := &client.LLMRequestParams{
 		SystemPrompt: systemPrompt,
@@ -173,14 +186,26 @@ func GeneratePRContent(commitTitle string, existsBranches []string, gitDiff stri
 	// 调用 LLM API
 	response, err := llmClient.Call(params)
 	if err != nil {
+		logger.WithError(err).WithField("commit_title", commitTitle).
+			Error("Failed to call LLM API for PR content generation")
 		return nil, fmt.Errorf("调用 LLM API 生成分支名失败 (commit title: '%s'): %w", commitTitle, err)
 	}
 
 	// 解析响应
 	content, err := parseCreateResponse(response, commitTitle)
 	if err != nil {
+		logger.WithError(err).WithField("commit_title", commitTitle).
+			Error("Failed to parse LLM response for PR content generation")
 		return nil, fmt.Errorf("解析 LLM 响应失败 (commit title: '%s'): %w", commitTitle, err)
 	}
+
+	// 记录 PR 内容生成成功
+	logger.WithFields(logging.Fields{
+		"branch_name":     content.BranchName,
+		"pr_title":        content.PRTitle,
+		"has_description": content.Description != nil,
+		"has_scope":       content.Scope != nil,
+	}).Info("PR content generation succeeded")
 
 	return content, nil
 }
@@ -223,32 +248,39 @@ func buildCreateUserPrompt(commitTitle string, existsBranches []string, gitDiff 
 // 从 LLM 的 JSON 响应中提取 `branch_name`、`pr_title`、`description` 和 `scope` 字段。
 // 支持处理包含 markdown 代码块的响应格式。
 func parseCreateResponse(response, commitTitle string) (*PullRequestContent, error) {
+	logger := logging.GetLogger()
+
 	// 使用公共方法提取并修复 JSON（修复转义问题）
 	jsonStr := utils.ExtractAndFixJSON(response)
 
 	// 解析 JSON
 	var jsonData map[string]interface{}
 	if err := json.Unmarshal([]byte(jsonStr), &jsonData); err != nil {
+		logger.WithError(err).Error("Failed to extract JSON from LLM response")
 		return nil, fmt.Errorf("解析 LLM 响应为 JSON 失败。原始响应: %s: %w", jsonStr, err)
 	}
 
 	// 提取 branch_name
 	branchNameRaw, ok := jsonData["branch_name"]
 	if !ok {
+		logger.Error("LLM response missing required field: branch_name")
 		return nil, fmt.Errorf("LLM 响应中缺少 'branch_name' 字段")
 	}
 	branchName, ok := branchNameRaw.(string)
 	if !ok {
+		logger.Error("LLM response field type error: field=branch_name, expected=string")
 		return nil, fmt.Errorf("LLM 响应中 'branch_name' 字段类型错误")
 	}
 
 	// 提取 pr_title
 	prTitleRaw, ok := jsonData["pr_title"]
 	if !ok {
+		logger.Error("LLM response missing required field: pr_title")
 		return nil, fmt.Errorf("LLM 响应中缺少 'pr_title' 字段")
 	}
 	prTitle, ok := prTitleRaw.(string)
 	if !ok {
+		logger.Error("LLM response field type error: field=pr_title, expected=string")
 		return nil, fmt.Errorf("LLM 响应中 'pr_title' 字段类型错误")
 	}
 
@@ -303,6 +335,15 @@ func parseCreateResponse(response, commitTitle string) (*PullRequestContent, err
 //   - *PullRequestSummary: PR 总结结果，包含总结文档和文件名
 //   - error: 如果 LLM API 调用失败或响应格式不正确，返回相应的错误信息
 func SummarizePR(prTitle, prDiff string, lang *client.SupportedLanguage, llmClient client.LLMClient) (*PullRequestSummary, error) {
+	logger := logging.GetLogger()
+
+	// 记录 PR 总结开始
+	logger.WithFields(logging.Fields{
+		"pr_title":       prTitle,
+		"pr_diff_length": len(prDiff),
+		"language":       lang,
+	}).Info("Starting PR summarization")
+
 	// 构建请求参数
 	userPrompt := buildSummaryUserPrompt(prTitle, prDiff)
 	// 根据语言生成 system prompt
@@ -318,14 +359,25 @@ func SummarizePR(prTitle, prDiff string, lang *client.SupportedLanguage, llmClie
 	// 调用 LLM API
 	response, err := llmClient.Call(params)
 	if err != nil {
+		logger.WithError(err).WithField("pr_title", prTitle).
+			Error("Failed to call LLM API for PR summarization")
 		return nil, fmt.Errorf("调用 LLM API 总结 PR 失败 (PR title: '%s'): %w", prTitle, err)
 	}
 
 	// 解析响应
 	summary, err := parseSummaryResponse(response, prTitle)
 	if err != nil {
+		logger.WithError(err).WithField("pr_title", prTitle).
+			Error("Failed to parse LLM response for PR summarization")
 		return nil, fmt.Errorf("解析 LLM 响应失败 (PR title: '%s'): %w", prTitle, err)
 	}
+
+	// 记录 PR 总结成功
+	logger.WithFields(logging.Fields{
+		"pr_title":       prTitle,
+		"filename":       summary.Filename,
+		"summary_length": len(summary.Summary),
+	}).Info("PR summarization succeeded")
 
 	return summary, nil
 }
@@ -346,32 +398,39 @@ func buildSummaryUserPrompt(prTitle, prDiff string) string {
 // 从 LLM 的 JSON 响应中提取 `summary` 和 `filename` 字段。
 // 支持处理包含 markdown 代码块的响应格式。
 func parseSummaryResponse(response, prTitle string) (*PullRequestSummary, error) {
+	logger := logging.GetLogger()
+
 	// 使用公共方法提取并修复 JSON（修复转义问题）
 	jsonStr := utils.ExtractAndFixJSON(response)
 
 	// 解析 JSON
 	var jsonData map[string]interface{}
 	if err := json.Unmarshal([]byte(jsonStr), &jsonData); err != nil {
+		logger.WithError(err).Error("Failed to parse PR summary response as JSON")
 		return nil, fmt.Errorf("解析 LLM 响应为 JSON 失败。原始响应: %s: %w", jsonStr, err)
 	}
 
 	// 提取 summary
 	summaryRaw, ok := jsonData["summary"]
 	if !ok {
+		logger.Error("PR summary response missing required field: summary")
 		return nil, fmt.Errorf("LLM 响应中缺少 'summary' 字段")
 	}
 	summary, ok := summaryRaw.(string)
 	if !ok {
+		logger.Error("PR summary response field type error: field=summary, expected=string")
 		return nil, fmt.Errorf("LLM 响应中 'summary' 字段类型错误")
 	}
 
 	// 提取 filename
 	filenameRaw, ok := jsonData["filename"]
 	if !ok {
+		logger.Error("PR summary response missing required field: filename")
 		return nil, fmt.Errorf("LLM 响应中缺少 'filename' 字段")
 	}
 	filename, ok := filenameRaw.(string)
 	if !ok {
+		logger.Error("PR summary response field type error: field=filename, expected=string")
 		return nil, fmt.Errorf("LLM 响应中 'filename' 字段类型错误")
 	}
 
@@ -379,6 +438,7 @@ func parseSummaryResponse(response, prTitle string) (*PullRequestSummary, error)
 	cleanedFilename := utils.CleanFilename(filename)
 
 	if cleanedFilename == "" {
+		logger.Error("Cleaned filename is empty after sanitization")
 		return nil, fmt.Errorf("清理后的文件名为空")
 	}
 
@@ -408,6 +468,19 @@ func parseSummaryResponse(response, prTitle string) (*PullRequestSummary, error)
 //   - *PullRequestReword: PR Reword 结果，包含标题和描述
 //   - error: 如果 LLM API 调用失败或响应格式不正确，返回相应的错误信息
 func RewordPR(prDiff string, currentTitle *string, llmClient client.LLMClient) (*PullRequestReword, error) {
+	logger := logging.GetLogger()
+
+	titleStr := "nil"
+	if currentTitle != nil {
+		titleStr = *currentTitle
+	}
+
+	// 记录 PR 重写开始
+	logger.WithFields(logging.Fields{
+		"current_title":  titleStr,
+		"pr_diff_length": len(prDiff),
+	}).Info("Starting PR reword")
+
 	// 构建请求参数
 	userPrompt := buildRewordUserPrompt(prDiff, currentTitle)
 	systemPrompt := prompt.RewordPRSystemPrompt
@@ -422,22 +495,25 @@ func RewordPR(prDiff string, currentTitle *string, llmClient client.LLMClient) (
 	// 调用 LLM API
 	response, err := llmClient.Call(params)
 	if err != nil {
-		titleStr := "nil"
-		if currentTitle != nil {
-			titleStr = *currentTitle
-		}
+		logger.WithError(err).WithField("current_title", titleStr).
+			Error("Failed to call LLM API for PR reword")
 		return nil, fmt.Errorf("调用 LLM API 重写 PR 失败 (current title: '%s'): %w", titleStr, err)
 	}
 
 	// 解析响应
 	reword, err := parseRewordResponse(response, currentTitle)
 	if err != nil {
-		titleStr := "nil"
-		if currentTitle != nil {
-			titleStr = *currentTitle
-		}
+		logger.WithError(err).WithField("current_title", titleStr).
+			Error("Failed to parse LLM response for PR reword")
 		return nil, fmt.Errorf("解析 LLM 响应失败 (current title: '%s'): %w", titleStr, err)
 	}
+
+	// 记录 PR 重写成功
+	logger.WithFields(logging.Fields{
+		"old_title":       titleStr,
+		"new_title":       reword.PRTitle,
+		"has_description": reword.Description != nil,
+	}).Info("PR reword succeeded")
 
 	return reword, nil
 }
@@ -477,22 +553,27 @@ func buildRewordUserPrompt(prDiff string, currentTitle *string) string {
 // 从 LLM 的 JSON 响应中提取 `pr_title` 和 `description` 字段。
 // 支持处理包含 markdown 代码块的响应格式。
 func parseRewordResponse(response string, currentTitle *string) (*PullRequestReword, error) {
+	logger := logging.GetLogger()
+
 	// 使用公共方法提取并修复 JSON（修复转义问题）
 	jsonStr := utils.ExtractAndFixJSON(response)
 
 	// 解析 JSON
 	var jsonData map[string]interface{}
 	if err := json.Unmarshal([]byte(jsonStr), &jsonData); err != nil {
+		logger.WithError(err).Error("Failed to parse PR reword response")
 		return nil, fmt.Errorf("解析 LLM 响应为 JSON 失败。原始响应: %s: %w", jsonStr, err)
 	}
 
 	// 提取 pr_title
 	prTitleRaw, ok := jsonData["pr_title"]
 	if !ok {
+		logger.Error("PR reword response missing required field: pr_title")
 		return nil, fmt.Errorf("LLM 响应中缺少 'pr_title' 字段")
 	}
 	prTitle, ok := prTitleRaw.(string)
 	if !ok {
+		logger.Error("PR reword response field type error: field=pr_title, expected=string")
 		return nil, fmt.Errorf("LLM 响应中 'pr_title' 字段类型错误")
 	}
 
@@ -531,6 +612,15 @@ func parseRewordResponse(response string, currentTitle *string) (*PullRequestRew
 //   - string: 文件的修改总结（纯文本）
 //   - error: 如果 LLM API 调用失败，返回相应的错误信息
 func SummarizeFileChange(filePath, fileDiff string, lang *client.SupportedLanguage, llmClient client.LLMClient) (string, error) {
+	logger := logging.GetLogger()
+
+	// 记录文件变更总结开始
+	logger.WithFields(logging.Fields{
+		"file_path":        filePath,
+		"file_diff_length": len(fileDiff),
+		"language":         lang,
+	}).Info("Starting file change summarization")
+
 	// 构建请求参数
 	userPrompt := buildFileSummaryUserPrompt(filePath, fileDiff)
 	// 根据语言生成 system prompt
@@ -546,11 +636,19 @@ func SummarizeFileChange(filePath, fileDiff string, lang *client.SupportedLangua
 	// 调用 LLM API
 	response, err := llmClient.Call(params)
 	if err != nil {
+		logger.WithError(err).WithField("file_path", filePath).
+			Error("Failed to call LLM API for file change summarization")
 		return "", fmt.Errorf("调用 LLM API 总结文件修改失败 (file path: '%s'): %w", filePath, err)
 	}
 
 	// 清理响应（移除可能的 markdown 代码块包装）
 	summary := cleanFileChangeSummaryResponse(response)
+
+	// 记录文件变更总结成功
+	logger.WithFields(logging.Fields{
+		"file_path":      filePath,
+		"summary_length": len(summary),
+	}).Info("File change summarization succeeded")
 
 	return summary, nil
 }

@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/zevwings/workflow/internal/commands"
 	"github.com/zevwings/workflow/internal/config"
@@ -43,24 +45,41 @@ func main() {
 
 	// 执行命令
 	if err := rootCmd.Execute(); err != nil {
+		logger := logging.GetLogger()
+		logger.WithError(err).Error("Command execution failed")
 		os.Exit(1)
 	}
 }
 
 // initLogging 初始化日志系统
 func initLogging() {
+	// 使用全局 logger（此时模块 logger 还未初始化）
+	logger := logging.Logger
+	logger.Info("Initializing logging system")
+
+	// 获取日志目录
+	homeDir, err := os.UserHomeDir()
+	var logDir string
+	if err == nil {
+		logDir = filepath.Join(homeDir, ".workflow", "logs")
+	} else {
+		logger.Warn("Failed to get user home directory, using default log directory")
+	}
+
 	// 尝试加载配置以获取日志级别
 	manager, err := config.NewGlobalManager()
 	if err != nil {
 		// 如果配置管理器创建失败，使用默认设置
-		logging.Init("info", "text", nil)
+		logger.WithError(err).Warn("Failed to create config manager, using default logging settings")
+		logging.InitWithFiles("info", "text", nil, logDir, false)
 		return
 	}
 
 	// 尝试加载配置
 	if err := manager.Load(); err != nil {
 		// 配置文件不存在时使用默认设置
-		logging.Init("info", "text", nil)
+		logger.Debug("Config file not found, using default logging settings")
+		logging.InitWithFiles("info", "text", nil, logDir, false)
 		return
 	}
 
@@ -71,5 +90,12 @@ func initLogging() {
 	}
 
 	logFormat := "text" // 默认文本格式
-	logging.Init(logLevel, logFormat, nil)
+	logging.InitWithFiles(logLevel, logFormat, nil, logDir, false)
+
+	// 记录初始化完成
+	logger.WithFields(logrus.Fields{
+		"level":   logLevel,
+		"format":  logFormat,
+		"log_dir": logDir,
+	}).Info("Logging system initialized")
 }

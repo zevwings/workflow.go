@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v57/github"
+	"github.com/zevwings/workflow/internal/logging"
 	"github.com/zevwings/workflow/internal/pr"
 	"golang.org/x/oauth2"
 )
@@ -34,12 +35,22 @@ type GitHub struct {
 //   - *GitHub: GitHub 实例
 //   - error: 如果创建失败，返回错误
 func NewGitHub(token, owner, repo string) (*GitHub, error) {
+	logger := logging.GetLogger()
+
 	if token == "" {
+		logger.Error("GitHub client creation failed: missing required parameters")
 		return nil, fmt.Errorf("token is required")
 	}
 	if owner == "" || repo == "" {
+		logger.Error("GitHub client creation failed: missing required parameters")
 		return nil, fmt.Errorf("owner and repo are required")
 	}
+
+	// 记录客户端创建开始
+	logger.WithFields(logging.Fields{
+		"owner": owner,
+		"repo":  repo,
+	}).Info("Creating GitHub client")
 
 	// 创建 OAuth 客户端
 	ctx := context.Background()
@@ -50,6 +61,12 @@ func NewGitHub(token, owner, repo string) (*GitHub, error) {
 
 	// 创建 GitHub 客户端
 	client := github.NewClient(tc)
+
+	// 记录客户端创建成功
+	logger.WithFields(logging.Fields{
+		"owner": owner,
+		"repo":  repo,
+	}).Info("GitHub client created successfully")
 
 	return &GitHub{
 		client: client,
@@ -72,8 +89,18 @@ func (g *GitHub) GetPlatformName() string {
 //   - string: 默认分支名（如 "main", "master"）
 //   - error: 如果获取失败，返回错误
 func (g *GitHub) GetDefaultBranch(ctx context.Context) (string, error) {
+	logger := logging.GetLogger()
+	logger.WithFields(logging.Fields{
+		"owner": g.owner,
+		"repo":  g.repo,
+	}).Debug("Getting default branch")
+
 	repo, _, err := g.client.Repositories.Get(ctx, g.owner, g.repo)
 	if err != nil {
+		logger.WithError(err).WithFields(logging.Fields{
+			"owner": g.owner,
+			"repo":  g.repo,
+		}).Error("Failed to get default branch")
 		return "", fmt.Errorf("failed to get repository: %w", err)
 	}
 
@@ -86,6 +113,8 @@ func (g *GitHub) GetDefaultBranch(ctx context.Context) (string, error) {
 
 // CreatePullRequest 创建 Pull Request
 func (g *GitHub) CreatePullRequest(ctx context.Context, title, body, sourceBranch string, targetBranch *string) (string, error) {
+	logger := logging.GetLogger()
+
 	// 1. 如果没有指定目标分支，获取默认分支
 	baseBranch := "main"
 	if targetBranch != nil && *targetBranch != "" {
@@ -99,6 +128,13 @@ func (g *GitHub) CreatePullRequest(ctx context.Context, title, body, sourceBranc
 		// 如果获取失败，使用默认值 "main"
 	}
 
+	// 记录创建 PR 开始
+	logger.WithFields(logging.Fields{
+		"title":         title,
+		"source_branch": sourceBranch,
+		"target_branch": baseBranch,
+	}).Info("Creating pull request")
+
 	// 2. 构建 PR 请求
 	newPR := &github.NewPullRequest{
 		Title: github.String(title),
@@ -110,18 +146,38 @@ func (g *GitHub) CreatePullRequest(ctx context.Context, title, body, sourceBranc
 	// 3. 创建 PR
 	pr, _, err := g.client.PullRequests.Create(ctx, g.owner, g.repo, newPR)
 	if err != nil {
+		logger.WithError(err).WithFields(logging.Fields{
+			"title":         title,
+			"source_branch": sourceBranch,
+			"target_branch": baseBranch,
+		}).Error("Failed to create pull request")
 		return "", fmt.Errorf("failed to create PR: %w", err)
 	}
+
+	// 记录创建 PR 成功
+	logger.WithFields(logging.Fields{
+		"pr_url":    pr.GetHTMLURL(),
+		"pr_number": pr.GetNumber(),
+	}).Info("Pull request created successfully")
 
 	return pr.GetHTMLURL(), nil
 }
 
 // MergePullRequest 合并 Pull Request
 func (g *GitHub) MergePullRequest(ctx context.Context, prID string, mergeMethod string, deleteBranch bool) error {
+	logger := logging.GetLogger()
+
 	prNumber, err := parsePRNumber(prID)
 	if err != nil {
 		return err
 	}
+
+	// 记录合并 PR 开始
+	logger.WithFields(logging.Fields{
+		"pr_id":         prID,
+		"merge_method":  mergeMethod,
+		"delete_branch": deleteBranch,
+	}).Info("Merging pull request")
 
 	// 验证合并方法
 	validMethods := map[string]bool{
@@ -138,6 +194,7 @@ func (g *GitHub) MergePullRequest(ctx context.Context, prID string, mergeMethod 
 		MergeMethod: mergeMethod,
 	})
 	if err != nil {
+		logger.WithError(err).WithField("pr_id", prID).Error("Failed to merge pull request")
 		return fmt.Errorf("failed to merge PR: %w", err)
 	}
 
@@ -157,11 +214,17 @@ func (g *GitHub) MergePullRequest(ctx context.Context, prID string, mergeMethod 
 		}
 	}
 
+	// 记录合并 PR 成功
+	logger.WithField("pr_id", prID).Info("Pull request merged successfully")
+
 	return nil
 }
 
 // ClosePullRequest 关闭 Pull Request
 func (g *GitHub) ClosePullRequest(ctx context.Context, prID string) error {
+	logger := logging.GetLogger()
+	logger.WithField("pr_id", prID).Info("Closing pull request")
+
 	prNumber, err := parsePRNumber(prID)
 	if err != nil {
 		return err
@@ -172,6 +235,7 @@ func (g *GitHub) ClosePullRequest(ctx context.Context, prID string) error {
 		State: &state,
 	})
 	if err != nil {
+		logger.WithError(err).WithField("pr_id", prID).Error("Failed to close pull request")
 		return fmt.Errorf("failed to close PR: %w", err)
 	}
 
@@ -180,6 +244,8 @@ func (g *GitHub) ClosePullRequest(ctx context.Context, prID string) error {
 
 // GetPullRequestStatus 获取 PR 状态
 func (g *GitHub) GetPullRequestStatus(ctx context.Context, prID string) (*pr.PullRequestStatus, error) {
+	logger := logging.GetLogger()
+
 	prNumber, err := parsePRNumber(prID)
 	if err != nil {
 		return nil, err
@@ -187,6 +253,7 @@ func (g *GitHub) GetPullRequestStatus(ctx context.Context, prID string) (*pr.Pul
 
 	ghPR, _, err := g.client.PullRequests.Get(ctx, g.owner, g.repo, prNumber)
 	if err != nil {
+		logger.WithError(err).WithField("pr_id", prID).Error("Failed to get pull request status")
 		return nil, fmt.Errorf("failed to get PR: %w", err)
 	}
 
@@ -225,6 +292,11 @@ func (g *GitHub) ListPullRequests(ctx context.Context, state string, limit int) 
 
 	ghPRs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, opts)
 	if err != nil {
+		logger := logging.GetLogger()
+		logger.WithError(err).WithFields(logging.Fields{
+			"state": state,
+			"limit": limit,
+		}).Error("Failed to list pull requests")
 		return nil, fmt.Errorf("failed to list PRs: %w", err)
 	}
 
@@ -248,6 +320,9 @@ func (g *GitHub) ListPullRequests(ctx context.Context, state string, limit int) 
 
 // UpdatePullRequest 更新 Pull Request
 func (g *GitHub) UpdatePullRequest(ctx context.Context, prID string, title, body *string, state *string) error {
+	logger := logging.GetLogger()
+	logger.WithField("pr_id", prID).Info("Updating pull request")
+
 	prNumber, err := parsePRNumber(prID)
 	if err != nil {
 		return err
@@ -261,6 +336,7 @@ func (g *GitHub) UpdatePullRequest(ctx context.Context, prID string, title, body
 
 	_, _, err = g.client.PullRequests.Edit(ctx, g.owner, g.repo, prNumber, update)
 	if err != nil {
+		logger.WithError(err).WithField("pr_id", prID).Error("Failed to update pull request")
 		return fmt.Errorf("failed to update PR: %w", err)
 	}
 

@@ -9,6 +9,7 @@
 - [概述](#-概述)
 - [模板分类](#-模板分类)
   - [架构文档模板](#-架构文档模板)
+  - [模块文档模板](#-模块文档模板)
   - [开发指南模板](#-开发指南模板)
   - [测试文档模板](#-测试文档模板)
   - [需求文档模板](#-需求文档模板)
@@ -31,7 +32,7 @@
 
 ### 模板组织原则
 
-- **分类清晰**：按文档类型分为 6 大类
+- **分类清晰**：按文档类型分为 7 大类
 - **结构统一**：所有模板遵循统一的章节结构
 - **易于扩展**：添加新模板类型只需创建新的子目录
 - **路径稳定**：所有模板在 `docs/templates/` 下，便于引用
@@ -49,12 +50,33 @@
 
 | 模板文件 | 用途 | 包含章节 |
 |---------|------|---------|
-| `architecture.template` | 模块架构文档 | 概述、Lib层架构、Commands层架构、工作流程、依赖关系、代码示例、测试、相关文档（Go 语言版本） |
+| `architecture.template` | 模块架构文档 | 概述、模块架构、架构设计、集成关系、核心功能、使用示例、扩展性、相关文档（Go 语言版本） |
 
 **适用场景**：
 - 新增模块的架构设计文档
 - 现有模块的架构重构文档
 - 系统架构的详细说明
+
+---
+
+### 📦 模块文档模板
+
+**目录**: `module/`
+
+模块文档模板用于创建模块的基础使用说明文档（README.md）。
+
+| 模板文件 | 用途 | 包含章节 |
+|---------|------|---------|
+| `README.template` | 模块 README | 模块简介、文件说明、快速开始、主要接口、注意事项、依赖、相关文档 |
+
+**适用场景**：
+- 为新模块创建 README.md
+- 更新现有模块的使用说明
+- 统一模块文档格式
+
+**文档位置**：
+- 模块 README 应放在 `internal/{模块路径}/README.md`
+- 与架构文档（`docs/architecture/{模块名}.md`）配合使用
 
 ---
 
@@ -162,6 +184,9 @@
 # 例如：创建新模块的架构文档
 cp docs/templates/architecture/architecture.template docs/architecture/my-module.md
 
+# 例如：创建模块 README
+cp docs/templates/module/README.template internal/my-module/README.md
+
 # 例如：创建需求文档
 cp docs/templates/requirements/requirement.template docs/requirements/my-feature.md
 
@@ -196,6 +221,7 @@ cp docs/templates/testing/test-case.template docs/testing/test-my-feature.md
 | 文档类型 | 存放目录 | 是否需要索引 |
 |---------|---------|-------------|
 | 架构文档 | `docs/architecture/` | 是（`docs/README.md`） |
+| 模块 README | `internal/{模块路径}/` | 否（模块内部文档） |
 | 开发指南 | `docs/development/` | 是（`docs/README.md`） |
 | 测试指南 | `docs/testing/` | 是（`docs/README.md`） |
 | 需求文档 | `docs/requirements/` | 是（`docs/requirements/README.md`） |
@@ -216,6 +242,9 @@ cp docs/templates/testing/test-case.template docs/testing/test-my-feature.md
 ```bash
 # 架构文档模板
 docs/templates/architecture/architecture.template
+
+# 模块文档模板
+docs/templates/module/README.template
 
 # 开发指南模板
 docs/templates/development/development-core.template
@@ -244,6 +273,7 @@ docs/templates/review/review-workflow.template
 | 使用场景 | 推荐模板 |
 |---------|---------|
 | 我要设计一个新模块 | `architecture/architecture.template` |
+| 我要为新模块创建 README | `module/README.template` |
 | 我要定义一个新的开发规范 | `development/guideline.template` |
 | 我要编写一个技术参考文档 | `development/development-reference.template` |
 | 我要定义一个开发工作流程 | `development/development-workflow.template` |

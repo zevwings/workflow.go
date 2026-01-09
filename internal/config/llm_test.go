@@ -256,3 +256,110 @@ func TestLLMConfig_CurrentProvider_EdgeCases(t *testing.T) {
 	})
 }
 
+// ==================== CurrentLanguage 测试 ====================
+
+func TestLLMConfig_CurrentLanguage(t *testing.T) {
+	tests := []struct {
+		name     string
+		config   LLMConfig
+		wantCode string
+		wantErr  bool
+		errMsg   string
+	}{
+		{
+			name: "语言未设置 - 返回默认英文",
+			config: LLMConfig{
+				Language: "", // 未设置语言
+			},
+			wantCode: "en",
+			wantErr:  false,
+		},
+		{
+			name: "设置英文语言",
+			config: LLMConfig{
+				Language: "en",
+			},
+			wantCode: "en",
+			wantErr:  false,
+		},
+		{
+			name: "设置简体中文",
+			config: LLMConfig{
+				Language: "zh-CN",
+			},
+			wantCode: "zh-CN",
+			wantErr:  false,
+		},
+		{
+			name: "设置繁体中文",
+			config: LLMConfig{
+				Language: "zh-TW",
+			},
+			wantCode: "zh-TW",
+			wantErr:  false,
+		},
+		{
+			name: "设置日语",
+			config: LLMConfig{
+				Language: "ja",
+			},
+			wantCode: "ja",
+			wantErr:  false,
+		},
+		{
+			name: "设置韩语",
+			config: LLMConfig{
+				Language: "ko",
+			},
+			wantCode: "ko",
+			wantErr:  false,
+		},
+		{
+			name: "无效的语言代码",
+			config: LLMConfig{
+				Language: "invalid-lang",
+			},
+			wantCode: "",
+			wantErr:  true,
+			errMsg:   "不支持的语言代码",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Act: 获取当前语言配置
+			lang, err := tt.config.CurrentLanguage()
+
+			// Assert: 验证结果
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
+				}
+				assert.Nil(t, lang)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, lang)
+				assert.Equal(t, tt.wantCode, lang.Code)
+			}
+		})
+	}
+}
+
+func TestLLMConfig_CurrentLanguage_DefaultEnglish(t *testing.T) {
+	// Arrange: 语言未设置的配置
+	config := LLMConfig{
+		Language: "",
+	}
+
+	// Act: 获取当前语言配置
+	lang, err := config.CurrentLanguage()
+
+	// Assert: 应该返回默认英文配置
+	assert.NoError(t, err)
+	assert.NotNil(t, lang)
+	assert.Equal(t, "en", lang.Code)
+	assert.Equal(t, "English", lang.Name)
+	assert.Equal(t, "English", lang.NativeName)
+}
+

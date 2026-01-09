@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/zevwings/workflow/internal/config"
+	"github.com/zevwings/workflow/internal/logging"
 	"github.com/zevwings/workflow/internal/prompt"
 )
 
@@ -31,6 +32,9 @@ func newConfigShowCmd() *cobra.Command {
 		Short: "查看当前配置",
 		Long:  `显示当前 Workflow CLI 配置文件的内容。`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			logger := logging.GetLogger()
+			logger.Info("Starting config show command")
+
 			out := prompt.NewMessage(false)
 
 			manager, err := config.NewGlobalManager()
@@ -40,6 +44,7 @@ func newConfigShowCmd() *cobra.Command {
 
 			if err := manager.Load(); err != nil {
 				if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+					logger.Warn("Config file not found")
 					out.Warning("配置文件不存在，请运行 'workflow setup' 进行初始化")
 					return nil
 				}
@@ -53,6 +58,7 @@ func newConfigShowCmd() *cobra.Command {
 			// 读取并显示配置文件内容
 			data, err := os.ReadFile(configPath)
 			if err != nil {
+				logger.WithError(err).Error("Failed to read config file")
 				return fmt.Errorf("读取配置文件失败: %w", err)
 			}
 
@@ -75,6 +81,9 @@ func newConfigValidateCmd() *cobra.Command {
 		Long:  `验证配置文件格式和内容是否正确。`,
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			logger := logging.GetLogger()
+			logger.Info("Starting config validate command")
+
 			out := prompt.NewMessage(false)
 
 			manager, err := config.NewGlobalManager()
@@ -101,6 +110,7 @@ func newConfigValidateCmd() *cobra.Command {
 			// TODO: 实现详细的配置验证逻辑
 			// 目前只检查文件是否可以解析
 
+			logger.Info("Config validation passed")
 			out.Success("配置文件验证通过")
 
 			if fix {

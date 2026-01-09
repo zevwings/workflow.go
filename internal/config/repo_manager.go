@@ -9,6 +9,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/viper"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 // GitRepository 定义 Git 仓库操作接口
@@ -66,6 +67,9 @@ type RepoManager struct {
 //   - *RepoManager: 仓库配置管理器实例
 //   - error: 如果创建失败，返回错误
 func NewRepoManager(gitRepo GitRepository) (*RepoManager, error) {
+	logger := logging.GetLogger()
+	logger.Debug("Creating repository config manager")
+
 	var repoPath string
 	var repoID string
 	var err error
@@ -78,18 +82,21 @@ func NewRepoManager(gitRepo GitRepository) (*RepoManager, error) {
 			var err error
 			repoPath, err = os.Getwd()
 			if err != nil {
+				logger.WithError(err).Error("Failed to get current directory")
 				return nil, fmt.Errorf("获取当前目录失败: %w", err)
 			}
 		}
 
 		// 检查是否为 Git 仓库
 		if !gitRepo.IsGitRepo(repoPath) {
+			logger.WithField("path", repoPath).Error("Path is not a Git repository")
 			return nil, fmt.Errorf("路径不是 Git 仓库: %s", repoPath)
 		}
 
 		// 生成 repo_id
 		repoID, err = generateRepoIDWithGit(repoPath, gitRepo)
 		if err != nil {
+			logger.WithError(err).WithField("path", repoPath).Error("Failed to generate repository ID")
 			return nil, fmt.Errorf("生成仓库 ID 失败: %w", err)
 		}
 	} else {
@@ -97,6 +104,7 @@ func NewRepoManager(gitRepo GitRepository) (*RepoManager, error) {
 		var err error
 		repoPath, err = os.Getwd()
 		if err != nil {
+			logger.WithError(err).Error("Failed to get current directory")
 			return nil, fmt.Errorf("获取当前目录失败: %w", err)
 		}
 		repoID = generateSimpleRepoID(repoPath)
@@ -136,9 +144,13 @@ func NewRepoManager(gitRepo GitRepository) (*RepoManager, error) {
 // 2. 再加载项目私有配置（如果存在）
 // 3. 私有配置覆盖公共配置
 func (r *RepoManager) Load() error {
+	logger := logging.GetLogger()
+
 	// 加载项目公共配置（如果存在）
 	if _, err := os.Stat(r.publicPath); err == nil {
+		logger.Debugf("Loading public config from: %s", r.publicPath)
 		if err := r.publicViper.ReadInConfig(); err != nil {
+			logger.WithError(err).WithField("config_path", r.publicPath).Error("Failed to load config file")
 			return fmt.Errorf("读取项目公共配置失败: %w", err)
 		}
 	}
@@ -146,6 +158,9 @@ func (r *RepoManager) Load() error {
 	// 加载项目私有配置（如果存在）
 	// 注意：私有配置的加载逻辑会在后续方法中实现
 	// 这里先不实现，因为需要解析 TOML 并合并到 publicViper
+	if _, err := os.Stat(r.privatePath); err == nil {
+		logger.Debugf("Loading private config from: %s", r.privatePath)
+	}
 
 	return nil
 }
@@ -272,6 +287,9 @@ func (r *RepoManager) GetAutoAcceptChangeType() bool {
 // 返回:
 //   - error: 如果保存失败，返回错误
 func (r *RepoManager) SaveTemplateConfig(cfg *TemplateConfig) error {
+	logger := logging.GetLogger()
+	logger.Infof("Saving config to: %s", r.publicPath)
+
 	// 读取现有配置（如果存在）
 	var existingConfig map[string]interface{}
 	if _, err := os.Stat(r.publicPath); err == nil {
@@ -305,7 +323,12 @@ func (r *RepoManager) SaveTemplateConfig(cfg *TemplateConfig) error {
 	existingConfig["template"] = templateSection
 
 	// 使用辅助函数保存配置
-	return SaveConfigToFile(r.publicPath, existingConfig)
+	err := SaveConfigToFile(r.publicPath, existingConfig)
+	if err != nil {
+		logger.WithError(err).WithField("config_path", r.publicPath).Error("Failed to save config file")
+		return err
+	}
+	return nil
 }
 
 // GetPublicConfigPath 获取项目公共配置文件路径

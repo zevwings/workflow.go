@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/andygrunwald/go-jira/v2/cloud"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 // ProjectAPI 提供 Project 相关的 REST API 方法
@@ -30,8 +31,12 @@ func NewProjectAPI(client *cloud.Client, ctx context.Context) *ProjectAPI {
 //   - *cloud.Project: 项目信息
 //   - error: 如果获取失败，返回错误
 func (api *ProjectAPI) GetProject(projectKey string) (*cloud.Project, error) {
+	logger := logging.GetLogger()
+	logger.Infof("Jira API call: GetProject(%s)", projectKey)
+
 	project, _, err := api.client.Project.Get(api.ctx, projectKey)
 	if err != nil {
+		logger.WithError(err).Errorf("Jira API call failed: GetProject(%s)", projectKey)
 		return nil, fmt.Errorf("获取项目 %s 失败: %w", projectKey, err)
 	}
 

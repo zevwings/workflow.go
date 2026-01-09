@@ -74,22 +74,26 @@ Lib 层使用 `logging` 包，默认输出到日志文件，不输出到控制�
 ```go
 import "github.com/zevwings/workflow/internal/logging"
 
+// 获取带模块名的 logger（自动识别模块名）
+logger := logging.GetLogger()
+
 // 调试信息（输出到日志文件）
-logging.Debugf("Processing data: %s", data)
+logger.Debugf("Processing data: %s", data)
 
 // 信息日志（输出到日志文件）
-logging.Infof("Operation completed")
+logger.Infof("Operation completed")
 
 // 警告日志（输出到日志文件）
-logging.Warnf("Retrying operation")
+logger.Warnf("Retrying operation")
 
 // 错误日志（输出到日志文件）
-logging.Errorf("Operation failed: %v", err)
+logger.Errorf("Operation failed: %v", err)
 ```
 
 **重要规则**：
 - ❌ **禁止**在 Lib 层使用 `output` 包（会直接输出到控制台，影响用户体验）
 - ✅ **必须**在 Lib 层使用 `logging` 包（输出到日志文件）
+- ✅ **必须**使用 `GetLogger()` 获取 logger，自动包含模块信息
 
 ---
 
@@ -224,51 +228,63 @@ out.Info("API token: %s", maskedToken)
 ### 1. 选择合适的日志级别
 
 ```go
+logger := logging.GetLogger()
+
 // ✅ 好的做法：使用合适的日志级别
-logging.Infof("API request sent")  // 重要操作
-logging.Debugf("Request payload: %s", payload)  // 调试信息
+logger.Infof("API request sent")  // 重要操作
+logger.Debugf("Request payload: %s", payload)  // 调试信息
 
 // ❌ 不好的做法：过度使用 debug 级别
-logging.Debugf("API request sent")  // 应该是 info 级别
+logger.Debugf("API request sent")  // 应该是 info 级别
 ```
 
 ### 2. 提供有意义的日志消息
 
 ```go
+logger := logging.GetLogger()
+
 // ✅ 好的做法：提供上下文信息
-logging.Infof("Downloading file from %s to %s", url, path)
+logger.Infof("Downloading file from %s to %s", url, path)
 
 // ❌ 不好的做法：日志消息不清晰
-logging.Infof("Downloading")
+logger.Infof("Downloading")
 ```
 
 ### 3. 过滤敏感信息
 
 ```go
+import (
+    "github.com/zevwings/workflow/internal/logging"
+    "github.com/zevwings/workflow/internal/lib/util"
+)
+
+logger := logging.GetLogger()
+
 // ✅ 好的做法：过滤敏感信息
-import "github.com/zevwings/workflow/internal/lib/util"
-logging.Infof("API token: %s", util.MaskSensitiveValue(token))
-logging.Infof("User: %s", util.MaskSensitiveValue(user))
+logger.Infof("API token: %s", util.MaskSensitiveValue(token))
+logger.Infof("User: %s", util.MaskSensitiveValue(user))
 
 // ❌ 不好的做法：直接输出敏感信息
-logging.Infof("API token: %s", token)
+logger.Infof("API token: %s", token)
 ```
 
 ### 4. 避免过度日志记录
 
 ```go
+logger := logging.GetLogger()
+
 // ✅ 好的做法：只在关键点记录日志
-logging.Infof("Starting operation")
+logger.Infof("Starting operation")
 result, err := performOperation()
 if err != nil {
     return err
 }
-logging.Infof("Operation completed")
+logger.Infof("Operation completed")
 
 // ❌ 不好的做法：记录过多细节
-logging.Debugf("Step 1")
-logging.Debugf("Step 2")
-logging.Debugf("Step 3")
+logger.Debugf("Step 1")
+logger.Debugf("Step 2")
+logger.Debugf("Step 3")
 // ... 太多日志
 ```
 

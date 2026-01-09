@@ -3,6 +3,8 @@ package prompt
 import (
 	"embed"
 	"fmt"
+
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 //go:embed templates/*.md
@@ -24,12 +26,22 @@ var templatesFS embed.FS
 //	    log.Fatal(err)
 //	}
 func LoadTemplate(name string) (string, error) {
+	logger := logging.GetLogger()
+	logger.Debugf("Loading prompt template: %s", name)
+
 	// 注意：路径是相对于 embed 指令中指定的路径
 	// 如果使用 templates/*.md，则读取时需要包含 templates/ 前缀
 	data, err := templatesFS.ReadFile("templates/" + name)
 	if err != nil {
+		logger.WithError(err).WithField("template_name", name).Error("Failed to load prompt template")
 		return "", fmt.Errorf("读取模板文件失败 (%s): %w", name, err)
 	}
+
+	logger.WithFields(logging.Fields{
+		"template_name":   name,
+		"template_length": len(data),
+	}).Debug("Prompt template loaded successfully")
+
 	return string(data), nil
 }
 
@@ -61,8 +73,11 @@ func MustLoadTemplate(name string) string {
 //   - []string: 模板文件名列表
 //   - error: 如果列出失败，返回错误
 func ListTemplates() ([]string, error) {
+	logger := logging.GetLogger()
+
 	entries, err := templatesFS.ReadDir("templates")
 	if err != nil {
+		logger.WithError(err).Error("Failed to list prompt templates")
 		return nil, fmt.Errorf("列出模板文件失败: %w", err)
 	}
 
@@ -72,6 +87,8 @@ func ListTemplates() ([]string, error) {
 			files = append(files, entry.Name())
 		}
 	}
+
+	logger.WithField("template_count", len(files)).Debug("Prompt templates listed successfully")
 
 	return files, nil
 }

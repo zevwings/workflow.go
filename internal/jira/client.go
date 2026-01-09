@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/andygrunwald/go-jira/v2/cloud"
+	"github.com/zevwings/workflow/internal/logging"
 )
 
 // Config Jira 配置
@@ -39,13 +40,19 @@ type Client struct {
 //   - *Client: Jira 客户端实例
 //   - error: 如果配置不完整或客户端创建失败，返回错误
 func NewClient(config *Config) (*Client, error) {
+	logger := logging.GetLogger()
+
 	if config == nil {
 		return nil, fmt.Errorf("config 不能为 nil")
 	}
 
 	if config.URL == "" || config.Username == "" || config.Token == "" {
+		logger.Error("Jira configuration is incomplete")
 		return nil, fmt.Errorf("Jira 配置不完整，请设置 URL、Username 和 Token")
 	}
+
+	// 记录客户端创建开始
+	logger.WithField("url", config.URL).Info("Creating Jira client")
 
 	// 创建 Jira 客户端（使用 Basic Auth）
 	tp := cloud.BasicAuthTransport{
@@ -55,8 +62,12 @@ func NewClient(config *Config) (*Client, error) {
 
 	jiraClient, err := cloud.NewClient(config.URL, tp.Client())
 	if err != nil {
+		logger.WithError(err).WithField("url", config.URL).Error("Failed to create Jira client")
 		return nil, fmt.Errorf("创建 Jira 客户端失败: %w", err)
 	}
+
+	// 记录客户端创建成功
+	logger.WithField("url", config.URL).Info("Jira client created successfully")
 
 	return &Client{
 		jira: jiraClient,
