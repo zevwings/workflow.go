@@ -33,12 +33,17 @@ var (
 // InitWithFiles 初始化日志系统（支持按模块分别输出到文件）
 //
 // 参数:
-//   - level: 日志级别 (debug, info, warn, error)
+//   - level: 日志级别 (debug, info, warn, error)。如果为空，只写入文件且只记录 info/warn/error 级别
 //   - format: 日志格式 (text, json)
 //   - output: 输出目标，如果为 nil 且 logDir 为空则输出到控制台
 //   - logDir: 日志目录，如果为空则不创建文件日志。如果指定，每个模块会输出到 {logDir}/{module}.log
 //   - consoleOut: 是否同时输出到控制台（仅在 logDir 不为空时有效）
 func InitWithFiles(level string, format string, output io.Writer, logDir string, consoleOut bool) {
+	// 如果 level 为空，强制只写入文件，不输出到控制台
+	if level == "" {
+		consoleOut = false
+	}
+
 	// 保存配置
 	logConfig.level = level
 	logConfig.format = format
@@ -58,9 +63,16 @@ func InitWithFiles(level string, format string, output io.Writer, logDir string,
 	Logger = logrus.New()
 
 	// 设置日志级别
-	logLevel, err := logrus.ParseLevel(strings.ToLower(level))
-	if err != nil {
+	// 如果 level 为空，设置为 info 级别（只记录 info, warn, error）
+	var logLevel logrus.Level
+	if level == "" {
 		logLevel = logrus.InfoLevel
+	} else {
+		var err error
+		logLevel, err = logrus.ParseLevel(strings.ToLower(level))
+		if err != nil {
+			logLevel = logrus.InfoLevel
+		}
 	}
 	Logger.SetLevel(logLevel)
 
@@ -79,10 +91,59 @@ func InitWithFiles(level string, format string, output io.Writer, logDir string,
 	}
 
 	// 设置输出目标
-	if output == nil {
-		output = os.Stdout
+	// 如果 level 为空，不输出到控制台
+	if level == "" {
+		// 只输出到文件（如果 logDir 不为空）
+		if logDir != "" {
+			// 创建全局日志文件
+			globalFile := filepath.Join(logDir, "workflow.log")
+			fileWriter := &lumberjack.Logger{
+				Filename:   globalFile,
+				MaxSize:    10, // 10MB
+				MaxBackups: 5,  // 保留 5 个备份
+				MaxAge:     30, // 保留 30 天
+				Compress:   true,
+			}
+			Logger.SetOutput(fileWriter)
+		} else {
+			// 如果没有 logDir，使用 io.Discard 丢弃输出
+			Logger.SetOutput(io.Discard)
+		}
+	} else {
+		// level 不为空，根据 consoleOut 决定输出
+		if output == nil {
+			if consoleOut && logDir != "" {
+				// 同时输出到控制台和文件
+				globalFile := filepath.Join(logDir, "workflow.log")
+				fileWriter := &lumberjack.Logger{
+					Filename:   globalFile,
+					MaxSize:    10,
+					MaxBackups: 5,
+					MaxAge:     30,
+					Compress:   true,
+				}
+				Logger.SetOutput(io.MultiWriter(os.Stdout, fileWriter))
+			} else if consoleOut {
+				// 只输出到控制台
+				Logger.SetOutput(os.Stdout)
+			} else if logDir != "" {
+				// 只输出到文件
+				globalFile := filepath.Join(logDir, "workflow.log")
+				fileWriter := &lumberjack.Logger{
+					Filename:   globalFile,
+					MaxSize:    10,
+					MaxBackups: 5,
+					MaxAge:     30,
+					Compress:   true,
+				}
+				Logger.SetOutput(fileWriter)
+			} else {
+				Logger.SetOutput(os.Stdout)
+			}
+		} else {
+			Logger.SetOutput(output)
+		}
 	}
-	Logger.SetOutput(output)
 }
 
 // Init 初始化日志系统（向后兼容，不创建文件日志）
@@ -233,9 +294,16 @@ func getModuleLogger(module string) *logrus.Logger {
 	logger := logrus.New()
 
 	// 设置日志级别
-	logLevel, err := logrus.ParseLevel(strings.ToLower(logConfig.level))
-	if err != nil {
+	// 如果 level 为空，设置为 info 级别（只记录 info, warn, error）
+	var logLevel logrus.Level
+	if logConfig.level == "" {
 		logLevel = logrus.InfoLevel
+	} else {
+		var err error
+		logLevel, err = logrus.ParseLevel(strings.ToLower(logConfig.level))
+		if err != nil {
+			logLevel = logrus.InfoLevel
+		}
 	}
 	logger.SetLevel(logLevel)
 
@@ -257,8 +325,9 @@ func getModuleLogger(module string) *logrus.Logger {
 	// 创建 handlers
 	var handlers []io.Writer
 
-	// 1. 控制台输出（如果启用）
-	if logConfig.consoleOut {
+	// 1. 控制台输出（如果启用且 level 不为空）
+	// 如果 level 为空，不输出到控制台
+	if logConfig.consoleOut && logConfig.level != "" {
 		handlers = append(handlers, os.Stdout)
 	}
 
@@ -303,8 +372,14 @@ func getModuleLogger(module string) *logrus.Logger {
 			logger.SetOutput(io.MultiWriter(handlers...))
 		}
 	} else {
-		// 如果没有 handlers，输出到 stdout
-		logger.SetOutput(os.Stdout)
+		// 如果没有 handlers
+		if logConfig.level == "" {
+			// level 为空时，如果没有文件输出，使用 io.Discard 丢弃
+			logger.SetOutput(io.Discard)
+		} else {
+			// level 不为空时，输出到 stdout
+			logger.SetOutput(os.Stdout)
+		}
 	}
 
 	// 设置格式化器
@@ -423,7 +498,10 @@ func GetLogger() *LoggerEntry {
 	if !logConfig.initialized {
 		// 如果未初始化，返回全局 Logger
 		if Logger == nil {
-			entry = logrus.NewEntry(logrus.New())
+			// 创建一个静默的 logger（输出到 io.Discard），避免在日志系统初始化前输出到控制台
+			silentLogger := logrus.New()
+			silentLogger.SetOutput(io.Discard)
+			entry = logrus.NewEntry(silentLogger)
 		} else {
 			module := getCallerModule()
 			entry = Logger.WithField("module", module)

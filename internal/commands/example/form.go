@@ -30,11 +30,11 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 	msg := prompt.NewMessage(false)
 
 	msg.Info("欢迎使用 Form 模块演示")
-	msg.Println("")
+	msg.Break()
 	msg.Info("本演示将展示以下场景：")
 	msg.Println("  1. 基本流程 - 多层顺序执行（confirm -> input -> select -> input）")
 	msg.Println("  2. 复杂流程 - 嵌套表单与条件字段组合")
-	msg.Println("")
+	msg.Break()
 
 	// 1. 基本流程 - 多层顺序执行
 	msg.Info("=== 1. 基本流程 - 多层顺序执行 ===")
@@ -88,7 +88,7 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 	msg.Println("  role: %s (索引: %d)", roles[roleIndex], roleIndex)
 	msg.Println("  department: %s", result1.GetString("department"))
 	msg.Println("  remark: %s", result1.GetString("remark"))
-	msg.Println("")
+	msg.Break()
 
 	// 2. 复杂流程 - 嵌套表单与条件字段组合
 	msg.Info("=== 2. 复杂流程 - 嵌套表单与条件字段组合 ===")
@@ -199,7 +199,7 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 		}
 	}
 	msg.Println("  tags: %v", selectedTags)
-	msg.Println("")
+	msg.Break()
 
 	msg.Success("Form 模块演示完成！")
 

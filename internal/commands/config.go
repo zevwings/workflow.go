@@ -53,7 +53,7 @@ func newConfigShowCmd() *cobra.Command {
 
 			configPath := manager.GetConfigPath()
 			out.Info("配置文件路径: %s", configPath)
-			out.Println("")
+			out.Break()
 
 			// 读取并显示配置文件内容
 			data, err := os.ReadFile(configPath)

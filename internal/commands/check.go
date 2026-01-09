@@ -29,7 +29,7 @@ func NewCheckCmd() *cobra.Command {
 func runCheck(cmd *cobra.Command, args []string) error {
 	out := prompt.NewMessage(false)
 	out.Info("开始环境检查...")
-	out.Println("")
+	out.Break()
 
 	table := prompt.NewTable([]string{"检查项", "状态", "说明"})
 
@@ -65,9 +65,9 @@ func runCheck(cmd *cobra.Command, args []string) error {
 		table.AddRow([]string{"网络连接", "✗", "网络连接失败"})
 	}
 
-	out.Println("")
+	out.Break()
 	table.Render()
-	out.Println("")
+	out.Break()
 
 	if gitOK && repoOK && configOK && networkOK {
 		out.Success("所有检查通过")

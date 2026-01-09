@@ -27,7 +27,6 @@ func runSetup(cmd *cobra.Command, args []string) error {
 	msg := prompt.NewMessage(false)
 
 	msg.Info("Starting Workflow CLI initialization...")
-	msg.Println("")
 
 	// Step 1: Load GlobalConfig
 	manager, err := config.Global()
@@ -81,6 +80,15 @@ func runSetup(cmd *cobra.Command, args []string) error {
 func handleGitHubConfig(msg *prompt.Message, cfg *config.GlobalConfig, configExists bool) error {
 	hasGitHub := len(cfg.GitHub.Accounts) > 0
 
+	// Always print the info message about detected accounts
+	msg.Break()
+	if hasGitHub {
+		msg.Info("The following GitHub accounts were detected:")
+	} else {
+		msg.Info("No GitHub accounts were detected.")
+	}
+	msg.Break()
+
 	if hasGitHub && configExists {
 		// Build account selection options
 		options := []string{}
@@ -109,9 +117,6 @@ func handleGitHubConfig(msg *prompt.Message, cfg *config.GlobalConfig, configExi
 		options = append(options, "Add new account")
 		addNewAccountIndex := optionIndex
 
-		msg.Info("The following GitHub accounts were detected:")
-		msg.Println("")
-
 		choice, err := prompt.AskSelect(prompt.SelectField{
 			Message:      "GitHub account management",
 			Options:      options,
@@ -130,12 +135,6 @@ func handleGitHubConfig(msg *prompt.Message, cfg *config.GlobalConfig, configExi
 			cfg.GitHub.Current = accountName
 			return nil
 		}
-	}
-
-	// If no accounts exist or "Add new account" is selected
-	if !hasGitHub {
-		msg.Info("No GitHub accounts configured. Let's add one:")
-		msg.Println("")
 	}
 
 	// Collect GitHub account information
@@ -207,6 +206,15 @@ func handleGitHubConfig(msg *prompt.Message, cfg *config.GlobalConfig, configExi
 // handleJiraConfig handles Jira configuration
 func handleJiraConfig(msg *prompt.Message, cfg *config.GlobalConfig, configExists bool) error {
 	hasJira := cfg.Jira.ServiceAddress != "" || cfg.Jira.APIToken != ""
+
+	// Always print the info message about detected configuration
+	msg.Break()
+	if hasJira {
+		msg.Info("Jira configuration detected.")
+	} else {
+		msg.Info("No Jira configuration detected.")
+	}
+	msg.Break()
 
 	if hasJira && configExists {
 		keepJira, err := prompt.AskConfirm(prompt.ConfirmField{
@@ -298,6 +306,15 @@ func handleJiraConfig(msg *prompt.Message, cfg *config.GlobalConfig, configExist
 // handleLLMConfig handles LLM configuration
 func handleLLMConfig(msg *prompt.Message, cfg *config.GlobalConfig, configExists bool) error {
 	hasLLM := cfg.LLM.Provider != ""
+
+	// Always print the info message about detected configuration
+	msg.Break()
+	if hasLLM {
+		msg.Info("LLM configuration detected (Provider: %s).", cfg.LLM.Provider)
+	} else {
+		msg.Info("No LLM configuration detected.")
+	}
+	msg.Break()
 
 	if hasLLM && configExists {
 		keepLLM, err := prompt.AskConfirm(prompt.ConfirmField{
@@ -539,6 +556,15 @@ func handleLLMConfig(msg *prompt.Message, cfg *config.GlobalConfig, configExists
 
 // handleLogConfig handles Log configuration
 func handleLogConfig(msg *prompt.Message, cfg *config.GlobalConfig) error {
+	// Always print the info message about detected configuration
+	msg.Break()
+	if cfg.Log.Level != "" {
+		msg.Info("Log configuration detected (Level: %s).", cfg.Log.Level)
+	} else {
+		msg.Info("No log configuration detected.")
+	}
+	msg.Break()
+
 	// If log level is already configured, default to yes (enabled)
 	defaultEnableLogging := cfg.Log.Level != ""
 	enableLogging, err := prompt.AskConfirm(prompt.ConfirmField{

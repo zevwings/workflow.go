@@ -37,7 +37,7 @@ func runDemo(cmd *cobra.Command, args []string) error {
 	msg := prompt.NewMessage(false)
 
 	msg.Info("欢迎使用 Prompt 组件演示")
-	msg.Println("")
+	msg.Break()
 	msg.Info("本演示将依次展示以下组件：")
 	msg.Println("  1. Message - 消息输出")
 	msg.Println("  2. Confirm - 确认对话框")
@@ -47,14 +47,14 @@ func runDemo(cmd *cobra.Command, args []string) error {
 	msg.Println("  6. MultiSelect - 多选")
 	msg.Println("  7. Spinner - 加载指示器")
 	msg.Println("  8. Table - 表格显示")
-	msg.Println("")
+	msg.Break()
 
 	// 1. Message 演示
 	msg.Info("=== 1. Message 消息输出 ===")
 	msg.Success("成功消息示例")
 	msg.Warning("警告消息示例")
 	msg.Error("错误消息示例")
-	msg.Println("")
+	msg.Break()
 
 	// 2. Confirm 演示
 	msg.Info("=== 2. Confirm 确认对话框 ===")
@@ -70,7 +70,7 @@ func runDemo(cmd *cobra.Command, args []string) error {
 	} else {
 		msg.Warning("您选择了: 否")
 	}
-	msg.Println("")
+	msg.Break()
 
 	// 3. Input 演示
 	msg.Info("=== 3. Input 文本输入 ===")
@@ -83,7 +83,7 @@ func runDemo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("输入失败: %w", err)
 	}
 	msg.Success("您输入的姓名是: %s", name)
-	msg.Println("")
+	msg.Break()
 
 	// 4. Password 演示
 	msg.Info("=== 4. Password 密码输入 ===")
@@ -101,7 +101,7 @@ func runDemo(cmd *cobra.Command, args []string) error {
 	}
 	maskedPassword := maskPassword(password)
 	msg.Success("密码已输入（长度: %d 字符，显示: %s）", len(password), maskedPassword)
-	msg.Println("")
+	msg.Break()
 
 	// 5. Select 演示
 	msg.Info("=== 5. Select 单选 ===")
@@ -116,7 +116,7 @@ func runDemo(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("选择失败: %w", err)
 	}
 	msg.Success("您选择了: %s (索引: %d)", options[selectedIndex], selectedIndex)
-	msg.Println("")
+	msg.Break()
 
 	// 6. MultiSelect 演示
 	msg.Info("=== 6. MultiSelect 多选 ===")
@@ -139,7 +139,7 @@ func runDemo(cmd *cobra.Command, args []string) error {
 		}
 		msg.Success("您选择了: %s (索引: %v)", strings.Join(selectedNames, ", "), selectedIndices)
 	}
-	msg.Println("")
+	msg.Break()
 
 	// 7. Spinner 演示
 	msg.Info("=== 7. Spinner 加载指示器 ===")
@@ -147,7 +147,7 @@ func runDemo(cmd *cobra.Command, args []string) error {
 	spinner.Start()
 	time.Sleep(2 * time.Second)
 	spinner.WithSuccess("处理完成")
-	msg.Println("")
+	msg.Break()
 
 	// 8. Table 演示
 	msg.Info("=== 8. Table 表格显示 ===")
@@ -161,7 +161,7 @@ func runDemo(cmd *cobra.Command, args []string) error {
 	table.AddRow([]string{"Spinner", "✓", "加载指示器功能正常"})
 	table.AddRow([]string{"Table", "✓", "表格显示功能正常"})
 	table.Render()
-	msg.Println("")
+	msg.Break()
 
 	msg.Success("演示完成！所有组件功能正常。")
 
