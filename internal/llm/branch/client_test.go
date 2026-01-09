@@ -8,29 +8,27 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	httppkg "github.com/zevwings/workflow/internal/http"
 	"github.com/zevwings/workflow/internal/llm/client"
 )
 
 // ==================== NewBranchLLMClient 测试 ====================
 
 func TestNewBranchLLMClient(t *testing.T) {
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    "https://api.openai.com/v1/chat/completions",
 	}
-	llmClient := client.NewClient(httpClient, config)
+	llmClient := client.Global(config)
 
-	branchClient := NewBranchLLMClient(llmClient)
+	branchClient := newBranchLLMClient(llmClient)
 	assert.NotNil(t, branchClient)
 	assert.Equal(t, llmClient, branchClient.llmClient)
 }
 
 func TestNewBranchLLMClient_NilLLMClient(t *testing.T) {
 	assert.Panics(t, func() {
-		NewBranchLLMClient(nil)
+		newBranchLLMClient(nil)
 	}, "应该 panic 当 llmClient 为 nil")
 }
 
@@ -65,14 +63,13 @@ func TestBranchLLMClient_TranslateToEnglish(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	branchClient := NewBranchLLMClient(llmClient)
+	llmClient := client.Global(config)
+	branchClient := newBranchLLMClient(llmClient)
 
 	translated, err := branchClient.TranslateToEnglish("添加用户登录")
 	require.NoError(t, err)
@@ -108,14 +105,13 @@ func TestBranchLLMClient_TranslateToEnglish_WithQuotes(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	branchClient := NewBranchLLMClient(llmClient)
+	llmClient := client.Global(config)
+	branchClient := newBranchLLMClient(llmClient)
 
 	translated, err := branchClient.TranslateToEnglish("添加用户登录")
 	require.NoError(t, err)
@@ -151,14 +147,13 @@ func TestBranchLLMClient_TranslateToEnglish_EmptyResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	branchClient := NewBranchLLMClient(llmClient)
+	llmClient := client.Global(config)
+	branchClient := newBranchLLMClient(llmClient)
 
 	_, err := branchClient.TranslateToEnglish("添加用户登录")
 	assert.Error(t, err)
@@ -194,14 +189,13 @@ func TestBranchLLMClient_TranslateToEnglish_WhitespaceOnly(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	branchClient := NewBranchLLMClient(llmClient)
+	llmClient := client.Global(config)
+	branchClient := newBranchLLMClient(llmClient)
 
 	_, err := branchClient.TranslateToEnglish("添加用户登录")
 	assert.Error(t, err)
@@ -215,17 +209,15 @@ func TestBranchLLMClient_TranslateToEnglish_HTTPError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	branchClient := NewBranchLLMClient(llmClient)
+	llmClient := client.Global(config)
+	branchClient := newBranchLLMClient(llmClient)
 
 	_, err := branchClient.TranslateToEnglish("添加用户登录")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "调用 LLM API 翻译文本失败")
 }
-

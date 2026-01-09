@@ -9,25 +9,11 @@
 // 使用示例：
 //
 //	import (
-//		"github.com/zevwings/workflow/internal/http"
-//		"github.com/zevwings/workflow/internal/llm"
+//		adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
 //	)
 //
-//	// 创建 HTTP 客户端
-//	httpClient := http.Global()
-//
-//	// 从外部获取配置（例如从 config 包）
-//	providerConfig := &llm.ProviderConfig{
-//		APIKey: "your-api-key",
-//		Model:  "gpt-3.5-turbo",
-//		URL:    "https://api.openai.com/v1/chat/completions",
-//	}
-//
-//	// 创建 LLM 客户端（使用子包）
-//	llmClient := client.NewClient(httpClient, providerConfig)
-//
-//	// 创建 PR LLM 客户端（使用子包）
-//	prClient := pr.NewPullRequestLLMClient(llmClient, nil)
+//	// 使用适配器层的便捷函数创建 PR LLM 客户端（内部自动创建配置提供者和 LLM 客户端）
+//	prClient := adapterllm.NewPullRequestLLMClient()
 //	content, err := prClient.GenerateContent("fix: bug", nil, "")
 //	if err != nil {
 //		// 处理错误
@@ -35,140 +21,260 @@
 package llm
 
 import (
-	"github.com/zevwings/workflow/internal/http"
+	"fmt"
+
 	"github.com/zevwings/workflow/internal/llm/branch"
 	"github.com/zevwings/workflow/internal/llm/client"
 	"github.com/zevwings/workflow/internal/llm/pr"
 )
 
 // ============================================================================
+// 接口定义
+// ============================================================================
+
+// LLMConfigProvider LLM 配置提供者接口
+//
+// 用于从外部配置源获取 LLM 提供商配置和语言配置。
+// 实现此接口的类型可以从 config.LLMConfig 或其他配置源获取配置。
+//
+// 接口方法返回的类型：
+//   - GetProviderConfig() 返回 *ProviderConfig（即 client.ProviderConfig）
+//   - GetLanguage() 返回 *SupportedLanguage（即 client.SupportedLanguage）
+//
+// 使用示例：
+//
+//	import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+//
+//	// 方式 1: 使用适配器层的便捷函数（推荐，最简单）
+//	prClient := adapterllm.NewPullRequestLLMClient()
+//
+//	// 方式 2: 使用适配器创建 provider 并传入
+//	provider := adapterllm.NewLLMConfigProvider()
+//	prClient := llm.NewPullRequestLLMClient(provider)
+//
+//	// 方式 3: 手动实现 LLMConfigProvider 接口并传入
+//	provider := yourCustomProvider // 实现 LLMConfigProvider 接口
+//	prClient := llm.NewPullRequestLLMClient(provider)
+type LLMConfigProvider interface {
+	// GetProviderConfig 获取提供商配置
+	//
+	// 返回:
+	//   - *ProviderConfig: LLM 提供商配置（APIKey、Model、URL）
+	//   - error: 如果配置无效，返回错误
+	GetProviderConfig() (*ProviderConfig, error)
+
+	// GetLanguage 获取语言配置
+	//
+	// 返回:
+	//   - *SupportedLanguage: 语言配置，如果为 nil 表示使用默认英文配置
+	//   - error: 如果配置无效，返回错误
+	GetLanguage() (*SupportedLanguage, error)
+}
+
+// ============================================================================
 // 类型重新导出
 // ============================================================================
+
+// ProviderConfig 提供商配置
+//
+// 用于 LLM 客户端的基础配置，包含 API 密钥、模型名称和 URL。
+// 此类型是 client.ProviderConfig 的类型别名。
+type ProviderConfig = client.ProviderConfig
+
+// SupportedLanguage 支持的语言信息
+//
+// 用于 LLM prompt 生成时的语言配置。
+// 此类型是 client.SupportedLanguage 的类型别名。
+type SupportedLanguage = client.SupportedLanguage
 
 // LLMClient LLM 客户端
 //
 // 所有 LLM 提供商使用同一个客户端实现，通过配置结构体区分不同的提供商。
+// 此类型是 client.LLMClient 的类型别名。
 type LLMClient = client.LLMClient
 
 // LLMRequestParams LLM 请求参数
 //
 // 包含调用 LLM API 所需的所有参数。
+// 此类型是 client.LLMRequestParams 的类型别名。
 type LLMRequestParams = client.LLMRequestParams
 
 // PullRequestContent PR 内容，包含分支名、PR 标题、描述和 scope
 //
 // 由 LLM 生成的分支名、PR 标题、描述和 scope，用于创建 Pull Request。
+// 此类型是 pr.PullRequestContent 的类型别名。
 type PullRequestContent = pr.PullRequestContent
 
 // PullRequestReword PR Reword 结果，包含标题和描述
 //
 // 由 LLM 基于当前 PR 标题和 PR diff 生成的标题和完整描述，用于更新现有 PR。
+// 此类型是 pr.PullRequestReword 的类型别名。
 type PullRequestReword = pr.PullRequestReword
 
 // PullRequestSummary PR 总结结果，包含总结文档和文件名
 //
 // 由 LLM 生成的 PR 总结文档和对应的文件名。
+// 此类型是 pr.PullRequestSummary 的类型别名。
 type PullRequestSummary = pr.PullRequestSummary
-
-// ProviderConfig 提供商配置
-//
-// 用于 LLM 客户端的基础配置，包含 API 密钥、模型名称和 URL。
-// 配置应该从外部传入，例如从 config 包获取。
-type ProviderConfig = client.ProviderConfig
-
-// ============================================================================
-// 客户端相关函数重新导出
-// ============================================================================
-
-// NewClient 创建新的 LLM 客户端
-//
-// 参数:
-//   - httpClient: HTTP 客户端（不能为 nil）
-//   - config: LLM 提供商配置（不能为 nil）
-//
-// 返回:
-//   - *LLMClient: LLM 客户端实例
-//
-// 注意:
-//
-//	ProviderConfig 应该从外部传入，例如从 config 包获取。
-func NewClient(httpClient *http.Client, config *ProviderConfig) *LLMClient {
-	return client.NewClient(httpClient, config)
-}
-
-// Global 获取全局 LLMClient 单例
-//
-// 返回进程级别的 LLMClient 单例。
-// 单例会在首次调用时初始化，后续调用会复用同一个实例。
-//
-// 参数:
-//   - httpClient: HTTP 客户端（必须，不能为 nil）
-//   - config: LLM 提供商配置（必须，不能为 nil）
-//
-// 返回:
-//   - *LLMClient: LLM 客户端实例
-//
-// 注意:
-//
-//	ProviderConfig 应该从外部传入，例如从 config 包获取。
-func Global(httpClient *http.Client, config *ProviderConfig) *LLMClient {
-	return client.Global(httpClient, config)
-}
-
-// DefaultLLMRequestParams 返回默认的 LLM 请求参数
-//
-// 返回:
-//   - *LLMRequestParams: 使用默认值的请求参数
-func DefaultLLMRequestParams() *LLMRequestParams {
-	return client.DefaultLLMRequestParams()
-}
-
-// ============================================================================
-// Client 构造函数
-// ============================================================================
 
 // PullRequestLLMClient PR LLM 客户端
 //
 // 封装所有 PR 相关的 LLM 操作，包括生成 PR 内容、总结 PR、重写 PR 和总结文件变更。
 // 提供统一的接口和配置管理。
+// 此类型是 pr.PullRequestLLMClient 的类型别名。
 type PullRequestLLMClient = pr.PullRequestLLMClient
-
-// NewPullRequestLLMClient 创建新的 PR LLM 客户端
-//
-// 参数:
-//   - llmClient: LLM 客户端实例（不能为 nil）
-//   - lang: 语言配置（如果为 nil，使用默认英文配置）
-//
-// 返回:
-//   - *PullRequestLLMClient: PR LLM 客户端实例
-//
-// 使用示例:
-//
-//	prClient := llm.NewPullRequestLLMClient(llmClient, lang)
-//	content, err := prClient.GenerateContent(commitTitle, branches, diff)
-//	summary, err := prClient.Summarize(prTitle, prDiff)
-func NewPullRequestLLMClient(llmClient *LLMClient, lang *client.SupportedLanguage) *PullRequestLLMClient {
-	return pr.NewPullRequestLLMClient(llmClient, lang)
-}
 
 // BranchLLMClient 分支 LLM 客户端
 //
 // 封装所有分支相关的 LLM 操作，包括翻译功能。
 // 提供统一的接口和配置管理。
+// 此类型是 branch.BranchLLMClient 的类型别名。
 type BranchLLMClient = branch.BranchLLMClient
+
+// ============================================================================
+// 内部函数
+// ============================================================================
+
+// global 获取全局 LLMClient 单例（内部函数，不导出）
+//
+// 从 LLMConfigProvider 接口获取配置，内部创建 HTTP 客户端和 LLM 客户端。
+// 返回进程级别的 LLMClient 单例，首次调用时初始化，后续调用复用同一个实例。
+//
+// 参数:
+//   - provider: LLM 配置提供者（不能为 nil）
+//
+// 返回:
+//   - LLMClient: LLM 客户端实例
+//   - error: 如果配置无效或创建失败，返回错误
+func global(provider LLMConfigProvider) (LLMClient, error) {
+	if provider == nil {
+		return nil, fmt.Errorf("LLMConfigProvider 不能为 nil")
+	}
+
+	// 从接口获取提供商配置
+	providerConfig, err := provider.GetProviderConfig()
+	if err != nil {
+		return nil, fmt.Errorf("获取 LLM provider 配置失败: %w", err)
+	}
+
+	// 创建全局 LLM 客户端单例（自动使用 http.Global()）
+	llmClient := client.Global(providerConfig)
+
+	return llmClient, nil
+}
+
+// ============================================================================
+// 公开构造函数
+// ============================================================================
+
+// NewPullRequestLLMClient 创建新的 PR LLM 客户端
+//
+// 从 LLMConfigProvider 接口获取配置，内部自动创建 LLM 客户端和 HTTP 客户端。
+// 语言配置从 provider 中获取，如果为 nil 则使用默认英文配置。
+// 返回进程级别的 PullRequestLLMClient 单例，首次调用时初始化，后续调用复用同一个实例。
+//
+// 参数:
+//   - provider: LLM 配置提供者（不能为 nil）
+//
+// 返回:
+//   - *PullRequestLLMClient: PR LLM 客户端实例
+//
+// 注意:
+//   - 如果配置无效，函数会 panic
+//   - LLM 客户端和 HTTP 客户端在内部自动创建和管理
+//   - 首次调用时传入的参数会被保存，后续调用会忽略参数
+//   - 如果传入 nil，会在首次调用时 panic
+//
+// 优势:
+//   - 减少资源消耗：避免重复创建客户端实例
+//   - 线程安全：可以在多线程环境中安全使用
+//   - 统一管理：所有 PR LLM 调用使用同一个客户端实例
+//
+// 使用示例:
+//
+//	import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+//
+//	// 方式 1: 使用适配器层的便捷函数（推荐，最简单）
+//	prClient := adapterllm.NewPullRequestLLMClient()
+//	content, err := prClient.GenerateContent("fix: bug", nil, "")
+//	summary, err := prClient.Summarize("PR Title", "PR Diff")
+//
+//	// 方式 2: 使用适配器创建 provider 并传入
+//	provider := adapterllm.NewLLMConfigProvider()
+//	prClient := llm.NewPullRequestLLMClient(provider)
+//
+//	// 方式 3: 手动实现 LLMConfigProvider 接口并传入
+//	provider := yourCustomProvider // 实现 LLMConfigProvider 接口
+//	prClient := llm.NewPullRequestLLMClient(provider)
+func NewPullRequestLLMClient(provider LLMConfigProvider) *PullRequestLLMClient {
+	if provider == nil {
+		panic(fmt.Errorf("默认语言（英文）配置不可用"))
+	}
+
+	// 创建 LLM 客户端
+	llmClient, err := global(provider)
+	if err != nil {
+		panic(fmt.Errorf("默认语言（英文）配置不可用"))
+	}
+
+	// 获取语言配置
+	lang, err := provider.GetLanguage()
+	if err != nil {
+		panic(fmt.Sprintf("获取语言配置失败: %v", err))
+	}
+
+	// 使用 PR 包中的单例函数
+	return pr.Global(llmClient, lang)
+}
 
 // NewBranchLLMClient 创建新的分支 LLM 客户端
 //
+// 从 LLMConfigProvider 接口获取配置，内部自动创建 LLM 客户端和 HTTP 客户端。
+// 返回进程级别的 BranchLLMClient 单例，首次调用时初始化，后续调用复用同一个实例。
+//
 // 参数:
-//   - llmClient: LLM 客户端实例（不能为 nil）
+//   - provider: LLM 配置提供者（不能为 nil）
 //
 // 返回:
 //   - *BranchLLMClient: 分支 LLM 客户端实例
 //
+// 注意:
+//   - 如果配置无效，函数会 panic
+//   - LLM 客户端和 HTTP 客户端在内部自动创建和管理
+//   - 首次调用时传入的参数会被保存，后续调用会忽略参数
+//   - 如果传入 nil，会在首次调用时 panic
+//
+// 优势:
+//   - 减少资源消耗：避免重复创建客户端实例
+//   - 线程安全：可以在多线程环境中安全使用
+//   - 统一管理：所有分支 LLM 调用使用同一个客户端实例
+//
 // 使用示例:
 //
-//	branchClient := llm.NewBranchLLMClient(llmClient)
+//	import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+//
+//	// 方式 1: 使用适配器层的便捷函数（推荐，最简单）
+//	branchClient := adapterllm.NewBranchLLMClient()
 //	translated, err := branchClient.TranslateToEnglish("你好")
-func NewBranchLLMClient(llmClient *LLMClient) *BranchLLMClient {
-	return branch.NewBranchLLMClient(llmClient)
+//
+//	// 方式 2: 使用适配器创建 provider 并传入
+//	provider := adapterllm.NewLLMConfigProvider()
+//	branchClient := llm.NewBranchLLMClient(provider)
+//
+//	// 方式 3: 手动实现 LLMConfigProvider 接口并传入
+//	provider := yourCustomProvider // 实现 LLMConfigProvider 接口
+//	branchClient := llm.NewBranchLLMClient(provider)
+func NewBranchLLMClient(provider LLMConfigProvider) *BranchLLMClient {
+	if provider == nil {
+		panic(fmt.Errorf("默认语言（英文）配置不可用"))
+	}
+
+	// 创建 LLM 客户端
+	llmClient, err := global(provider)
+	if err != nil {
+		panic(fmt.Errorf("默认语言（英文）配置不可用"))
+	}
+
+	// 使用分支包中的单例函数
+	return branch.Global(llmClient)
 }

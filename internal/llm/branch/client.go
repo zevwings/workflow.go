@@ -3,9 +3,16 @@ package branch
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/zevwings/workflow/internal/llm/client"
 	"github.com/zevwings/workflow/internal/llm/prompt"
+)
+
+var (
+	// globalBranchClient 全局分支 LLM 客户端单例
+	globalBranchClient *BranchLLMClient
+	branchOnce         sync.Once
 )
 
 // BranchLLMClient 分支 LLM 客户端
@@ -13,23 +20,53 @@ import (
 // 封装所有分支相关的 LLM 操作，包括翻译功能。
 // 提供统一的接口和配置管理。
 type BranchLLMClient struct {
-	llmClient *client.LLMClient
+	llmClient client.LLMClient
 }
 
-// NewBranchLLMClient 创建新的分支 LLM 客户端
+// newBranchLLMClient 创建新的分支 LLM 客户端（内部函数，不导出）
 //
 // 参数:
 //   - llmClient: LLM 客户端实例（不能为 nil）
 //
 // 返回:
 //   - *BranchLLMClient: 分支 LLM 客户端实例
-func NewBranchLLMClient(llmClient *client.LLMClient) *BranchLLMClient {
+func newBranchLLMClient(llmClient client.LLMClient) *BranchLLMClient {
 	if llmClient == nil {
-		panic("branch.NewBranchLLMClient: llmClient 不能为 nil")
+		panic("branch.newBranchLLMClient: llmClient 不能为 nil")
 	}
 	return &BranchLLMClient{
 		llmClient: llmClient,
 	}
+}
+
+// Global 获取全局 BranchLLMClient 单例
+//
+// 返回进程级别的 BranchLLMClient 单例。
+// 单例会在首次调用时初始化，后续调用会复用同一个实例。
+//
+// 参数:
+//   - llmClient: LLM 客户端实例（必须，不能为 nil）
+//
+// 返回:
+//   - *BranchLLMClient: 分支 LLM 客户端实例
+//
+// 注意:
+//   - LLM 客户端必须由调用者提供，分支模块不负责它的创建和生命周期
+//   - 首次调用时传入的参数会被保存，后续调用会忽略参数
+//   - 如果传入 nil，会在首次调用时 panic
+//
+// 优势:
+//   - 减少资源消耗：避免重复创建客户端实例
+//   - 线程安全：可以在多线程环境中安全使用
+//   - 统一管理：所有分支 LLM 调用使用同一个客户端实例
+func Global(llmClient client.LLMClient) *BranchLLMClient {
+	if llmClient == nil {
+		panic("branch.Global: llmClient 不能为 nil")
+	}
+	branchOnce.Do(func() {
+		globalBranchClient = newBranchLLMClient(llmClient)
+	})
+	return globalBranchClient
 }
 
 // TranslateToEnglish 翻译为英文
@@ -61,7 +98,7 @@ func (c *BranchLLMClient) TranslateToEnglish(text string) (string, error) {
 // 返回:
 //   - string: 翻译后的英文文本
 //   - error: 如果 LLM API 调用失败或返回空结果，返回相应的错误信息
-func TranslateToEnglish(text string, llmClient *client.LLMClient) (string, error) {
+func TranslateToEnglish(text string, llmClient client.LLMClient) (string, error) {
 	userPrompt := fmt.Sprintf("Translate this text to English: %s", text)
 
 	maxTokens := 100

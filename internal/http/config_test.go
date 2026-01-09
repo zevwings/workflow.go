@@ -24,7 +24,7 @@ func TestRequestConfig_WithQuery(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	config := NewRequestConfig().
 		WithQuery(map[string]string{
 			"key1": "value1",
@@ -46,7 +46,7 @@ func TestRequestConfig_WithHeaders(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	config := NewRequestConfig().
 		WithHeaders(map[string]string{
 			"X-Header-1": "value1",
@@ -70,7 +70,7 @@ func TestRequestConfig_WithAuth(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	config := NewRequestConfig().
 		WithAuth(NewAuthorization("testuser", "testpass"))
 
@@ -96,7 +96,7 @@ func TestRequestConfig_WithBody_JSON(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	config := NewRequestConfig().
 		WithBody(RequestBody{
 			Name:  "test",
@@ -139,7 +139,7 @@ func TestRequestConfig_NilConfig(t *testing.T) {
 		WithJSONBody(map[string]string{"message": "success"}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
@@ -180,7 +180,7 @@ func TestRequestConfig_QueryParams(t *testing.T) {
 				}).
 				Build(t)
 
-			client := NewClient()
+			client := newClient()
 			config := NewRequestConfig().WithQuery(tc.query)
 			resp, err := client.GetWithConfig(server.URL(), config)
 			require.NoError(t, err)

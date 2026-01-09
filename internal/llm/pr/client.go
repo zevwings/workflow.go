@@ -4,10 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/zevwings/workflow/internal/llm/client"
 	"github.com/zevwings/workflow/internal/llm/prompt"
 	"github.com/zevwings/workflow/internal/llm/utils"
+)
+
+var (
+	// globalPRClient 全局 PR LLM 客户端单例
+	globalPRClient *PullRequestLLMClient
+	prOnce         sync.Once
 )
 
 // PullRequestLLMClient PR LLM 客户端
@@ -15,11 +22,11 @@ import (
 // 封装所有 PR 相关的 LLM 操作，包括生成 PR 内容、总结 PR、重写 PR 和总结文件变更。
 // 提供统一的接口和配置管理。
 type PullRequestLLMClient struct {
-	llmClient *client.LLMClient
+	llmClient client.LLMClient
 	lang      *client.SupportedLanguage
 }
 
-// NewPullRequestLLMClient 创建新的 PR LLM 客户端
+// newPullRequestLLMClient 创建新的 PR LLM 客户端（内部函数，不导出）
 //
 // 参数:
 //   - llmClient: LLM 客户端实例（不能为 nil）
@@ -27,14 +34,45 @@ type PullRequestLLMClient struct {
 //
 // 返回:
 //   - *PullRequestLLMClient: PR LLM 客户端实例
-func NewPullRequestLLMClient(llmClient *client.LLMClient, lang *client.SupportedLanguage) *PullRequestLLMClient {
+func newPullRequestLLMClient(llmClient client.LLMClient, lang *client.SupportedLanguage) *PullRequestLLMClient {
 	if llmClient == nil {
-		panic("pr.NewPullRequestLLMClient: llmClient 不能为 nil")
+		panic("pr.newPullRequestLLMClient: llmClient 不能为 nil")
 	}
 	return &PullRequestLLMClient{
 		llmClient: llmClient,
 		lang:      lang,
 	}
+}
+
+// Global 获取全局 PullRequestLLMClient 单例
+//
+// 返回进程级别的 PullRequestLLMClient 单例。
+// 单例会在首次调用时初始化，后续调用会复用同一个实例。
+//
+// 参数:
+//   - llmClient: LLM 客户端实例（必须，不能为 nil）
+//   - lang: 语言配置（如果为 nil，使用默认英文配置）
+//
+// 返回:
+//   - *PullRequestLLMClient: PR LLM 客户端实例
+//
+// 注意:
+//   - LLM 客户端必须由调用者提供，PR 模块不负责它的创建和生命周期
+//   - 首次调用时传入的参数会被保存，后续调用会忽略参数
+//   - 如果传入 nil，会在首次调用时 panic
+//
+// 优势:
+//   - 减少资源消耗：避免重复创建客户端实例
+//   - 线程安全：可以在多线程环境中安全使用
+//   - 统一管理：所有 PR LLM 调用使用同一个客户端实例
+func Global(llmClient client.LLMClient, lang *client.SupportedLanguage) *PullRequestLLMClient {
+	if llmClient == nil {
+		panic("pr.Global: llmClient 不能为 nil")
+	}
+	prOnce.Do(func() {
+		globalPRClient = newPullRequestLLMClient(llmClient, lang)
+	})
+	return globalPRClient
 }
 
 // GenerateContent 生成 PR 内容（分支名、标题、描述和 scope）
@@ -120,7 +158,7 @@ func (c *PullRequestLLMClient) SummarizeFileChange(filePath, fileDiff string) (s
 // 返回:
 //   - *PullRequestContent: PR 内容，包含分支名、PR 标题、描述和 scope
 //   - error: 如果 LLM API 调用失败或响应格式不正确，返回相应的错误信息
-func GeneratePRContent(commitTitle string, existsBranches []string, gitDiff string, llmClient *client.LLMClient) (*PullRequestContent, error) {
+func GeneratePRContent(commitTitle string, existsBranches []string, gitDiff string, llmClient client.LLMClient) (*PullRequestContent, error) {
 	// 构建请求参数
 	userPrompt := buildCreateUserPrompt(commitTitle, existsBranches, gitDiff)
 	systemPrompt := prompt.GenerateBranchSystemPrompt
@@ -264,7 +302,7 @@ func parseCreateResponse(response, commitTitle string) (*PullRequestContent, err
 // 返回:
 //   - *PullRequestSummary: PR 总结结果，包含总结文档和文件名
 //   - error: 如果 LLM API 调用失败或响应格式不正确，返回相应的错误信息
-func SummarizePR(prTitle, prDiff string, lang *client.SupportedLanguage, llmClient *client.LLMClient) (*PullRequestSummary, error) {
+func SummarizePR(prTitle, prDiff string, lang *client.SupportedLanguage, llmClient client.LLMClient) (*PullRequestSummary, error) {
 	// 构建请求参数
 	userPrompt := buildSummaryUserPrompt(prTitle, prDiff)
 	// 根据语言生成 system prompt
@@ -369,7 +407,7 @@ func parseSummaryResponse(response, prTitle string) (*PullRequestSummary, error)
 // 返回:
 //   - *PullRequestReword: PR Reword 结果，包含标题和描述
 //   - error: 如果 LLM API 调用失败或响应格式不正确，返回相应的错误信息
-func RewordPR(prDiff string, currentTitle *string, llmClient *client.LLMClient) (*PullRequestReword, error) {
+func RewordPR(prDiff string, currentTitle *string, llmClient client.LLMClient) (*PullRequestReword, error) {
 	// 构建请求参数
 	userPrompt := buildRewordUserPrompt(prDiff, currentTitle)
 	systemPrompt := prompt.RewordPRSystemPrompt
@@ -492,7 +530,7 @@ func parseRewordResponse(response string, currentTitle *string) (*PullRequestRew
 // 返回:
 //   - string: 文件的修改总结（纯文本）
 //   - error: 如果 LLM API 调用失败，返回相应的错误信息
-func SummarizeFileChange(filePath, fileDiff string, lang *client.SupportedLanguage, llmClient *client.LLMClient) (string, error) {
+func SummarizeFileChange(filePath, fileDiff string, lang *client.SupportedLanguage, llmClient client.LLMClient) (string, error) {
 	// 构建请求参数
 	userPrompt := buildFileSummaryUserPrompt(filePath, fileDiff)
 	// 根据语言生成 system prompt

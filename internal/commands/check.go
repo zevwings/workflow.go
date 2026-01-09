@@ -108,7 +108,7 @@ func checkConfig(out *prompt.Message) bool {
 }
 
 func checkNetwork(out *prompt.Message) bool {
-	client := http.NewClient()
+	client := http.Global()
 
 	// 检查 GitHub 连接（使用超时上下文）
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

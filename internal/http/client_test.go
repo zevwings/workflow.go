@@ -19,7 +19,7 @@ import (
 
 // TestNewClient 测试创建新的 HTTP 客户端
 func TestNewClient(t *testing.T) {
-	client := NewClient()
+	client := newClient()
 	assert.NotNil(t, client)
 	assert.NotNil(t, client.client)
 }
@@ -35,7 +35,7 @@ func TestGlobal(t *testing.T) {
 
 // TestClient_GetRestyClient 测试获取底层 resty 客户端
 func TestClient_GetRestyClient(t *testing.T) {
-	client := NewClient()
+	client := newClient()
 	restyClient := client.GetRestyClient()
 	assert.NotNil(t, restyClient)
 }
@@ -50,7 +50,7 @@ func TestClient_Get(t *testing.T) {
 		WithJSONBody(map[string]string{"message": "success"}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.Get(server.URL())
 
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func TestClient_Post(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.Post(server.URL(), map[string]string{"key": "test"})
 
 	require.NoError(t, err)
@@ -85,7 +85,7 @@ func TestClient_Put(t *testing.T) {
 		WithJSONBody(map[string]bool{"updated": true}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.Put(server.URL(), map[string]string{"key": "value"})
 
 	require.NoError(t, err)
@@ -99,7 +99,7 @@ func TestClient_Delete(t *testing.T) {
 		WithStatus(http.StatusNoContent).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.Delete(server.URL())
 
 	require.NoError(t, err)
@@ -114,7 +114,7 @@ func TestClient_Patch(t *testing.T) {
 		WithJSONBody(map[string]bool{"patched": true}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.Patch(server.URL(), map[string]string{"key": "value"})
 
 	require.NoError(t, err)
@@ -134,7 +134,7 @@ func TestClient_GetWithConfig(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	config := NewRequestConfig().
 		WithHeader("X-Test-Header", "test-value")
 
@@ -157,7 +157,7 @@ func TestClient_PostWithConfig(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	config := NewRequestConfig().
 		WithBody(map[string]string{"key": "test"})
 
@@ -174,7 +174,7 @@ func TestClient_PutWithConfig(t *testing.T) {
 		WithJSONBody(map[string]bool{"updated": true}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	config := NewRequestConfig().
 		WithBody(map[string]string{"key": "value"})
 
@@ -190,7 +190,7 @@ func TestClient_DeleteWithConfig(t *testing.T) {
 		WithStatus(http.StatusNoContent).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.DeleteWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusNoContent, resp.Status)
@@ -204,7 +204,7 @@ func TestClient_PatchWithConfig(t *testing.T) {
 		WithJSONBody(map[string]bool{"patched": true}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	config := NewRequestConfig().
 		WithBody(map[string]string{"key": "value"})
 
@@ -224,7 +224,7 @@ func TestClient_SetAuth(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	client.SetAuth("test-token")
 
 	resp, err := client.Get(server.URL())
@@ -244,7 +244,7 @@ func TestClient_SetBasicAuth(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	client.SetBasicAuth("user", "pass")
 
 	resp, err := client.Get(server.URL())
@@ -254,7 +254,7 @@ func TestClient_SetBasicAuth(t *testing.T) {
 
 // TestClient_SetProxy 测试设置代理
 func TestClient_SetProxy(t *testing.T) {
-	client := NewClient()
+	client := newClient()
 	// 设置代理（不会实际测试代理连接，只测试设置是否成功）
 	client.SetProxy("http://proxy.example.com:8080")
 
@@ -271,7 +271,7 @@ func TestClient_Stream(t *testing.T) {
 		WithStringBody("streaming data").
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	stream, err := client.Stream(MethodGet, server.URL(), nil)
 	require.NoError(t, err)
 	defer stream.Close()
@@ -300,7 +300,7 @@ func TestClient_Stream_AllMethods(t *testing.T) {
 				WithStringBody("stream data").
 				Build(t)
 
-			client := NewClient()
+			client := newClient()
 			stream, err := client.Stream(method, server.URL(), nil)
 			require.NoError(t, err)
 			defer stream.Close()
@@ -340,7 +340,7 @@ func TestClient_PostMultipart(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	// 对于普通字段，使用 SetFormData（resty 会自动处理）
 	// 这里我们使用 Reader 来确保是 multipart 请求
 	config := NewMultipartRequestConfig().
@@ -380,7 +380,7 @@ func TestClient_PostMultipart_File(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	config := NewMultipartRequestConfig().
 		WithMultipartField(MultipartField{
 			ParamName: "file",
@@ -395,7 +395,7 @@ func TestClient_PostMultipart_File(t *testing.T) {
 
 // TestClient_PostMultipart_Error 测试 Multipart 配置错误
 func TestClient_PostMultipart_Error(t *testing.T) {
-	client := NewClient()
+	client := newClient()
 	_, err := client.PostMultipart("http://example.com", nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "MultipartRequestConfig is required")
@@ -428,7 +428,7 @@ func TestClient_StatusCodes(t *testing.T) {
 				WithJSONBody(map[string]string{"message": "test"}).
 				Build(t)
 
-			client := NewClient()
+			client := newClient()
 			resp, err := client.GetWithConfig(server.URL(), nil)
 			require.NoError(t, err)
 			assert.Equal(t, tc.statusCode, resp.Status)
@@ -455,7 +455,7 @@ func TestRetry_ServerError(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
@@ -478,7 +478,7 @@ func TestRetry_429TooManyRequests(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.Status)
@@ -500,7 +500,7 @@ func TestRetry_CustomConfig(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	retryConfig := NewRetryConfig().
 		WithRetryCount(2).
 		WithRetryWaitTime(100 * time.Millisecond)
@@ -522,7 +522,7 @@ func TestRetry_DisableRetry(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	retryConfig := NewRetryConfig().DisableRetry()
 	config := NewRequestConfig().WithRetry(retryConfig)
 
@@ -547,7 +547,7 @@ func TestRetry_CustomCondition(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	// 自定义重试条件：即使是 400 也重试
 	retryConfig := NewRetryConfig().
 		WithRetryCount(2).
@@ -573,7 +573,7 @@ func TestRetry_NoRetryOn4xx(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusBadRequest, resp.Status)
@@ -606,7 +606,7 @@ func TestDefaultRetryCondition(t *testing.T) {
 					WithStatus(tc.status).
 					Build(t)
 
-				client := NewClient()
+				client := newClient()
 				resp, _ = client.Get(server.URL())
 			}
 
@@ -620,14 +620,14 @@ func TestDefaultRetryCondition(t *testing.T) {
 
 // TestClient_InvalidURL 测试无效 URL
 func TestClient_InvalidURL(t *testing.T) {
-	client := NewClient()
+	client := newClient()
 	_, err := client.GetWithConfig("invalid-url", nil)
 	assert.Error(t, err)
 }
 
 // TestClient_InvalidMethod 测试无效的 HTTP 方法
 func TestClient_InvalidMethod(t *testing.T) {
-	client := NewClient()
+	client := newClient()
 	_, err := client.Stream(HttpMethod("INVALID"), "http://example.com", nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid HTTP method")
@@ -636,7 +636,7 @@ func TestClient_InvalidMethod(t *testing.T) {
 // TestClient_ConnectionRefused 测试连接被拒绝（需要模拟）
 func TestClient_ConnectionRefused(t *testing.T) {
 	// 使用一个不存在的端口
-	client := NewClient()
+	client := newClient()
 	// 设置较短的超时时间以便快速失败
 	client.client.SetTimeout(1 * time.Second)
 

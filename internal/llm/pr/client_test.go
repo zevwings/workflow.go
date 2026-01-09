@@ -8,40 +8,37 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	httppkg "github.com/zevwings/workflow/internal/http"
 	"github.com/zevwings/workflow/internal/llm/client"
 )
 
 // ==================== NewPullRequestLLMClient 测试 ====================
 
 func TestNewPullRequestLLMClient(t *testing.T) {
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    "https://api.openai.com/v1/chat/completions",
 	}
-	llmClient := client.NewClient(httpClient, config)
+	llmClient := client.Global(config)
 
-	prClient := NewPullRequestLLMClient(llmClient, nil)
+	prClient := newPullRequestLLMClient(llmClient, nil)
 	assert.NotNil(t, prClient)
 	assert.Equal(t, llmClient, prClient.llmClient)
 }
 
 func TestNewPullRequestLLMClient_NilLLMClient(t *testing.T) {
 	assert.Panics(t, func() {
-		NewPullRequestLLMClient(nil, nil)
+		newPullRequestLLMClient(nil, nil)
 	}, "应该 panic 当 llmClient 为 nil")
 }
 
 func TestNewPullRequestLLMClient_WithLang(t *testing.T) {
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    "https://api.openai.com/v1/chat/completions",
 	}
-	llmClient := client.NewClient(httpClient, config)
+	llmClient := client.Global(config)
 	lang := &client.SupportedLanguage{
 		Code:                "zh-CN",
 		Name:                "Chinese",
@@ -49,7 +46,7 @@ func TestNewPullRequestLLMClient_WithLang(t *testing.T) {
 		InstructionTemplate: "**所有输出必须仅使用中文。**",
 	}
 
-	prClient := NewPullRequestLLMClient(llmClient, lang)
+	prClient := newPullRequestLLMClient(llmClient, lang)
 	assert.NotNil(t, prClient)
 	assert.Equal(t, lang, prClient.lang)
 }
@@ -85,14 +82,13 @@ func TestPullRequestLLMClient_GenerateContent(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	prClient := NewPullRequestLLMClient(llmClient, nil)
+	llmClient := client.Global(config)
+	prClient := newPullRequestLLMClient(llmClient, nil)
 
 	content, err := prClient.GenerateContent("fix: add user login", []string{"main", "develop"}, "diff content")
 	require.NoError(t, err)
@@ -133,14 +129,13 @@ func TestPullRequestLLMClient_GenerateContent_WithoutOptionalFields(t *testing.T
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	prClient := NewPullRequestLLMClient(llmClient, nil)
+	llmClient := client.Global(config)
+	prClient := newPullRequestLLMClient(llmClient, nil)
 
 	content, err := prClient.GenerateContent("fix: add user login", nil, "")
 	require.NoError(t, err)
@@ -179,14 +174,13 @@ func TestPullRequestLLMClient_GenerateContent_InvalidJSON(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	prClient := NewPullRequestLLMClient(llmClient, nil)
+	llmClient := client.Global(config)
+	prClient := newPullRequestLLMClient(llmClient, nil)
 
 	_, err := prClient.GenerateContent("fix: add user login", nil, "")
 	assert.Error(t, err)
@@ -222,14 +216,13 @@ func TestPullRequestLLMClient_GenerateContent_MissingFields(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	prClient := NewPullRequestLLMClient(llmClient, nil)
+	llmClient := client.Global(config)
+	prClient := newPullRequestLLMClient(llmClient, nil)
 
 	_, err := prClient.GenerateContent("fix: add user login", nil, "")
 	assert.Error(t, err)
@@ -267,14 +260,13 @@ func TestPullRequestLLMClient_Summarize(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	prClient := NewPullRequestLLMClient(llmClient, nil)
+	llmClient := client.Global(config)
+	prClient := newPullRequestLLMClient(llmClient, nil)
 
 	summary, err := prClient.Summarize("Add user authentication", "diff content")
 	require.NoError(t, err)
@@ -311,14 +303,13 @@ func TestPullRequestLLMClient_Summarize_MissingFields(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	prClient := NewPullRequestLLMClient(llmClient, nil)
+	llmClient := client.Global(config)
+	prClient := newPullRequestLLMClient(llmClient, nil)
 
 	_, err := prClient.Summarize("Add user authentication", "diff content")
 	assert.Error(t, err)
@@ -356,14 +347,13 @@ func TestPullRequestLLMClient_Reword(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	prClient := NewPullRequestLLMClient(llmClient, nil)
+	llmClient := client.Global(config)
+	prClient := newPullRequestLLMClient(llmClient, nil)
 
 	currentTitle := "Add user login"
 	reword, err := prClient.Reword("diff content", &currentTitle)
@@ -402,14 +392,13 @@ func TestPullRequestLLMClient_Reword_NilTitle(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	prClient := NewPullRequestLLMClient(llmClient, nil)
+	llmClient := client.Global(config)
+	prClient := newPullRequestLLMClient(llmClient, nil)
 
 	reword, err := prClient.Reword("diff content", nil)
 	require.NoError(t, err)
@@ -447,17 +436,15 @@ func TestPullRequestLLMClient_SummarizeFileChange(t *testing.T) {
 	}))
 	defer server.Close()
 
-	httpClient := httppkg.NewClient()
 	config := &client.ProviderConfig{
 		APIKey: "test-api-key",
 		Model:  "gpt-3.5-turbo",
 		URL:    server.URL,
 	}
-	llmClient := client.NewClient(httpClient, config)
-	prClient := NewPullRequestLLMClient(llmClient, nil)
+	llmClient := client.Global(config)
+	prClient := newPullRequestLLMClient(llmClient, nil)
 
 	summary, err := prClient.SummarizeFileChange("auth/login.go", "diff content")
 	require.NoError(t, err)
 	assert.Contains(t, summary, "authentication")
 }
-

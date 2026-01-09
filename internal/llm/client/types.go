@@ -16,21 +16,6 @@ type LLMRequestParams struct {
 	Model string `json:"model,omitempty"`
 }
 
-// DefaultLLMRequestParams 返回默认的 LLM 请求参数
-//
-// 返回:
-//   - *LLMRequestParams: 使用默认值的请求参数
-func DefaultLLMRequestParams() *LLMRequestParams {
-	temperature := float32(0.5)
-	return &LLMRequestParams{
-		SystemPrompt: "",
-		UserPrompt:   "",
-		MaxTokens:    nil,
-		Temperature:  temperature,
-		Model:        "",
-	}
-}
-
 // ChatCompletionResponse OpenAI Chat Completions API 响应
 //
 // 完整的 OpenAI 标准响应格式，支持所有标准字段和扩展字段。
@@ -79,16 +64,4 @@ type Usage struct {
 	CompletionTokens int `json:"completion_tokens"`
 	// TotalTokens 总 token 数
 	TotalTokens int `json:"total_tokens"`
-}
-
-// ProviderConfig 提供商配置
-//
-// 用于 LLM 客户端的基础配置，包含 API 密钥、模型名称和 URL。
-type ProviderConfig struct {
-	// APIKey API 密钥
-	APIKey string
-	// Model 模型名称
-	Model string
-	// URL API URL（仅 proxy provider 需要，openai/deepseek 使用固定 URL）
-	URL string
 }

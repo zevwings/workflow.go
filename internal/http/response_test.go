@@ -29,7 +29,7 @@ func TestHttpResponse_AsJSON(t *testing.T) {
 		}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
@@ -47,7 +47,7 @@ func TestHttpResponse_AsText(t *testing.T) {
 		WithStringBody("Hello, World!").
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
@@ -64,7 +64,7 @@ func TestHttpResponse_AsBytes(t *testing.T) {
 		WithBody(expectedBytes).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
@@ -93,7 +93,7 @@ func TestHttpResponse_IsSuccess(t *testing.T) {
 				WithStatus(tc.statusCode).
 				Build(t)
 
-			client := NewClient()
+			client := newClient()
 			resp, err := client.GetWithConfig(server.URL(), nil)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, resp.IsSuccess())
@@ -109,7 +109,7 @@ func TestHttpResponse_EnsureSuccess(t *testing.T) {
 		WithJSONBody(map[string]string{"message": "success"}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
@@ -125,7 +125,7 @@ func TestHttpResponse_EnsureSuccess_Error(t *testing.T) {
 		WithJSONBody(map[string]string{"error": "Bad Request"}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
@@ -142,7 +142,7 @@ func TestHttpResponse_EnsureSuccessWith(t *testing.T) {
 		WithJSONBody(map[string]string{"message": "success"}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
@@ -209,7 +209,7 @@ func TestHttpResponse_ExtractErrorMessage(t *testing.T) {
 				WithStringBody(tc.body).
 				Build(t)
 
-			client := NewClient()
+			client := newClient()
 			resp, err := client.GetWithConfig(server.URL(), nil)
 			require.NoError(t, err)
 
@@ -228,7 +228,7 @@ func TestHttpResponse_GetHeader(t *testing.T) {
 		WithJSONBody(map[string]string{"message": "success"}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
@@ -251,7 +251,7 @@ func TestHttpResponse_ParseWith(t *testing.T) {
 		WithJSONBody(map[string]string{"message": "success"}).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
@@ -278,7 +278,7 @@ func TestHttpResponse_EmptyBody(t *testing.T) {
 		WithStatus(http.StatusNoContent).
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
@@ -301,7 +301,7 @@ func TestHttpResponse_JSONEmptyBody(t *testing.T) {
 		WithStringBody("").
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
@@ -320,7 +320,7 @@ func TestHttpResponse_InvalidJSON(t *testing.T) {
 		WithStringBody("invalid json").
 		Build(t)
 
-	client := NewClient()
+	client := newClient()
 	resp, err := client.GetWithConfig(server.URL(), nil)
 	require.NoError(t, err)
 
