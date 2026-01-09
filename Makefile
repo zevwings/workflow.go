@@ -16,12 +16,6 @@ build:
 	@go build $(LDFLAGS) -o bin/$(BINARY_NAME) ./cmd/workflow
 	@echo "构建完成: bin/$(BINARY_NAME)"
 
-# 构建包含示例代码的二进制文件
-build-example:
-	@echo "构建 $(BINARY_NAME)（包含示例）..."
-	@go build -tags=example $(LDFLAGS) -o bin/$(BINARY_NAME) ./cmd/workflow
-	@echo "构建完成: bin/$(BINARY_NAME)"
-
 # 安装到系统
 install: build
 	@echo "安装 $(BINARY_NAME)..."
@@ -32,9 +26,9 @@ install: build
 run:
 	@go run $(LDFLAGS) ./cmd/workflow
 
-# 运行程序（包含示例代码）
+# 运行示例程序
 run-example:
-	@go run -tags=example $(LDFLAGS) ./cmd/workflow
+	@go run -tags=example $(LDFLAGS) ./cmd/example
 
 # 清理构建文件
 clean:
@@ -97,10 +91,10 @@ completion:
 help:
 	@echo "可用的 Make 目标:"
 	@echo "  build          - 构建二进制文件（不包含示例）"
-	@echo "  build-example  - 构建二进制文件（包含示例代码）"
+	@echo "  build-example  - 构建示例程序（独立的 workflow-example）"
 	@echo "  install        - 安装到系统 (/usr/local/bin)"
 	@echo "  run            - 运行程序（不包含示例）"
-	@echo "  run-example    - 运行程序（包含示例代码）"
+	@echo "  run-example    - 运行示例程序"
 	@echo "  clean          - 清理构建文件"
 	@echo "  test           - 运行测试"
 	@echo "  test-coverage  - 运行测试并生成覆盖率报告"

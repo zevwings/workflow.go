@@ -1,5 +1,8 @@
 {
   "gopls": {
-    "buildFlags": ["-tags=integration,test,example"]
+    "buildFlags": ["-tags=integration,test,example"],
+    "analyses": {
+      "unusedparams": false
+    }
   }
 }

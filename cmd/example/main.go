@@ -1,3 +1,5 @@
+//go:build example
+
 package main
 
 import (
@@ -7,7 +9,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/zevwings/workflow/internal/commands"
+	"github.com/zevwings/workflow/internal/commands/example"
 	"github.com/zevwings/workflow/internal/config"
 	"github.com/zevwings/workflow/internal/logging"
 )
@@ -24,21 +26,23 @@ func main() {
 
 	// 创建根命令
 	rootCmd := &cobra.Command{
-		Use:   "workflow",
-		Short: "Workflow CLI - Git 工作流自动化工具",
-		Long: `Workflow CLI 是一个功能强大的 Git 工作流自动化工具，
-支持 PR 管理、Jira 集成、LLM 集成等功能。`,
+		Use:   "example",
+		Short: "Workflow CLI Example - 演示和测试工具",
+		Long: `Workflow CLI Example 是一个演示和测试工具，
+用于展示 Workflow CLI 的各种功能和组件。
+
+此工具包含以下演示命令：
+- demo-prompt: 演示所有 Prompt 组件的交互功能
+- demo-form: 演示 Form 模块的交互式表单功能`,
 		Version: version,
 	}
 
-	// 注册子命令
-	rootCmd.AddCommand(commands.NewSetupCmd())
-	rootCmd.AddCommand(commands.NewVersionCmd(version, buildDate, gitCommit))
-	rootCmd.AddCommand(commands.NewConfigCmd())
-	rootCmd.AddCommand(commands.NewCheckCmd())
+	// 注册示例命令
+	rootCmd.AddCommand(example.NewDemoCmd())
+	rootCmd.AddCommand(example.NewDemoFormCmd())
 
 	// 设置版本模板
-	rootCmd.SetVersionTemplate(fmt.Sprintf("workflow version %s\nBuild Date: %s\nGit Commit: %s\n", version, buildDate, gitCommit))
+	rootCmd.SetVersionTemplate(fmt.Sprintf("example version %s\nBuild Date: %s\nGit Commit: %s\n", version, buildDate, gitCommit))
 
 	// 执行命令
 	if err := rootCmd.Execute(); err != nil {
