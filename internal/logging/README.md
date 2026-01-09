@@ -32,7 +32,9 @@ internal/logging/
 import "github.com/zevwings/workflow/internal/logging"
 
 // 初始化日志系统（支持文件输出）
-logDir := "~/.workflow/logs"
+// 使用 XDG_STATE_HOME（遵循 XDG Base Directory Specification）
+// 默认位置：~/.local/state/workflow/logs
+logDir := "$XDG_STATE_HOME/workflow/logs" // 或使用 config.StateDir()
 logging.InitWithFiles("info", "text", nil, logDir, false)
 
 // 获取 logger（自动识别模块名）
@@ -54,7 +56,7 @@ func doRequest() {
     // 自动识别模块名为 "http"
     logger := logging.GetLogger()
     logger.Infof("HTTP request: %s", url)
-    // 日志输出到: ~/.workflow/logs/http.log
+    // 日志输出到: $XDG_STATE_HOME/workflow/logs/http.log（默认：~/.local/state/workflow/logs/http.log）
 }
 ```
 
@@ -83,7 +85,7 @@ func (c *llmClient) Call() {
     // 自动识别模块名为 "llm"
     logger := logging.GetLogger()
     logger.Infof("Calling LLM API: %s", url)
-    // 日志输出到: ~/.workflow/logs/llm.log
+    // 日志输出到: $XDG_STATE_HOME/workflow/logs/llm.log（默认：~/.local/state/workflow/logs/llm.log）
 }
 ```
 

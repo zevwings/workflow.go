@@ -58,17 +58,18 @@ func initLogging() {
 	logger := logging.Logger
 	logger.Info("Initializing logging system")
 
-	// 获取日志目录
-	homeDir, err := os.UserHomeDir()
+	// 获取日志目录（使用 XDG_STATE_HOME）
 	var logDir string
+	workflowStateDir, err := config.StateDir()
 	if err == nil {
-		logDir = filepath.Join(homeDir, ".workflow", "logs")
+		logDir = filepath.Join(workflowStateDir, "logs")
 	} else {
-		logger.Warn("Failed to get user home directory, using default log directory")
+		logger.WithError(err).Warn("Failed to get XDG state directory, using empty log directory")
+		logDir = ""
 	}
 
 	// 尝试加载配置以获取日志级别
-	manager, err := config.NewGlobalManager()
+	manager, err := config.Global()
 	if err != nil {
 		// 如果配置管理器创建失败，使用默认设置
 		logger.WithError(err).Warn("Failed to create config manager, using default logging settings")
@@ -85,7 +86,8 @@ func initLogging() {
 	}
 
 	// 从配置中获取日志级别和格式
-	logLevel := manager.GetString("log.level")
+	// 直接访问配置字段
+	logLevel := manager.LogConfig.Level
 	if logLevel == "" {
 		logLevel = "info"
 	}

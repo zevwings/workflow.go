@@ -37,7 +37,7 @@ func newConfigShowCmd() *cobra.Command {
 
 			out := prompt.NewMessage(false)
 
-			manager, err := config.NewGlobalManager()
+			manager, err := config.Global()
 			if err != nil {
 				return fmt.Errorf("创建配置管理器失败: %w", err)
 			}
@@ -86,7 +86,7 @@ func newConfigValidateCmd() *cobra.Command {
 
 			out := prompt.NewMessage(false)
 
-			manager, err := config.NewGlobalManager()
+			manager, err := config.Global()
 			if err != nil {
 				return fmt.Errorf("创建配置管理器失败: %w", err)
 			}

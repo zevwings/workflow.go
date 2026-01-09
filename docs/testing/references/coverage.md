@@ -8,6 +8,7 @@
 
 - [覆盖率工具](#-覆盖率工具)
 - [生成覆盖率报告](#-生成覆盖率报告)
+- [美观的覆盖率 UI 工具](#-美观的覆盖率-ui-工具)
 - [覆盖率目标](#-覆盖率目标)
 - [覆盖率提升技巧](#-覆盖率提升技巧)
 
@@ -73,6 +74,155 @@ go test -coverprofile=coverage.out -covermode=atomic ./...
 # 上传到覆盖率服务（如 Codecov）
 # codecov -f coverage.out
 ```
+
+---
+
+## 美观的覆盖率 UI 工具
+
+Go 标准库的 `go tool cover` 生成的 HTML 报告功能完整，但界面较为简单。如果你需要类似 Rust `cargo-tarpaulin` 那样更美观、交互性更强的 UI，可以使用以下工具：
+
+### 1. gocovsh（终端交互式 UI，推荐，类似 cargo-tarpaulin）
+
+`gocovsh` 提供终端交互式 UI，类似 `cargo-tarpaulin` 的终端体验，无需浏览器即可查看覆盖率。
+
+#### 安装
+
+```bash
+go install github.com/orlangure/gocovsh@latest
+```
+
+#### 使用
+
+```bash
+# 生成覆盖率文件
+go test -tags=test -coverprofile=coverage/coverage.out ./...
+
+# 启动交互式终端 UI
+gocovsh coverage/coverage.out
+```
+
+#### 使用 Makefile
+
+```bash
+# 使用 gocovsh 交互式查看覆盖率
+make test-coverage-interactive
+```
+
+**特点**：
+- 🖥️ 终端交互式界面（最接近 cargo-tarpaulin 的体验）
+- ⌨️ 键盘导航（方向键、搜索等）
+- 📁 按包浏览覆盖率
+- 🔎 实时搜索功能
+- 🎨 彩色高亮显示
+- 🎯 支持多种主题（mocha, latte, frappe, macchiato）
+
+### 2. gocov + gocov-html（HTML 报告）
+
+`gocov` 和 `gocov-html` 组合使用，提供另一种 HTML 报告格式。
+
+#### 安装
+
+```bash
+go install github.com/axw/gocov/gocov@latest
+go install github.com/matm/gocov-html@latest
+```
+
+#### 使用
+
+```bash
+# 生成覆盖率 JSON 报告
+gocov test -tags=test ./... > coverage/coverage.json
+
+# 转换为 HTML
+gocov-html coverage/coverage.json > coverage/coverage-ui.html
+
+# 打开报告
+open coverage/coverage-ui.html  # macOS
+```
+
+#### 使用 Makefile
+
+```bash
+# 生成美观的覆盖率报告
+make test-coverage-ui
+
+# 打开报告
+make open-coverage-ui
+```
+
+**特点**：
+- 🎨 比标准 HTML 更美观的界面
+- 📊 详细的覆盖率统计
+- 🔍 按包、文件查看覆盖率
+- 📄 JSON 格式便于集成其他工具
+
+### 3. go-cover-treemap（树状图可视化）
+
+`go-cover-treemap` 生成 SVG 树状图，直观展示各包的覆盖率情况。
+
+#### 安装
+
+```bash
+go install github.com/nikolaydubina/go-cover-treemap@latest
+```
+
+#### 使用
+
+```bash
+# 生成覆盖率文件
+go test -tags=test -coverprofile=coverage/coverage.out ./...
+
+# 生成树状图
+go-cover-treemap -coverprofile=coverage/coverage.out > coverage/coverage-treemap.svg
+
+# 打开报告
+open coverage/coverage-treemap.svg
+```
+
+#### 使用 Makefile
+
+```bash
+# 生成覆盖率树状图
+make test-coverage-treemap
+```
+
+**特点**：
+- 📊 树状图可视化，直观展示覆盖率分布
+- 🎨 SVG 格式，可缩放
+- 🔍 快速识别低覆盖率区域
+
+### 工具对比
+
+| 工具 | 类型 | 界面 | 交互性 | 推荐场景 |
+|------|------|------|--------|----------|
+| `go tool cover` | HTML | 简单 | 低 | 快速查看，CI/CD |
+| `gocovsh` | 终端 | 美观 | 高 | **日常开发，最接近 cargo-tarpaulin** |
+| `gocov + gocov-html` | HTML | 中等 | 中 | 代码审查，HTML 报告 |
+| `go-cover-treemap` | SVG | 美观 | 低 | 覆盖率概览，可视化展示 |
+
+### 推荐使用方式
+
+1. **日常开发**（最推荐）：使用 `gocovsh` 快速查看覆盖率，体验最接近 `cargo-tarpaulin`
+   ```bash
+   make test-coverage-interactive
+   ```
+   使用方向键导航，Enter 选择，Esc 退出
+
+2. **代码审查**：使用 `gocov + gocov-html` 生成 HTML 报告
+   ```bash
+   make test-coverage-ui
+   make open-coverage-ui
+   ```
+
+3. **可视化概览**：使用 `go-cover-treemap` 生成树状图
+   ```bash
+   make test-coverage-treemap
+   ```
+
+4. **CI/CD**：使用标准 `go tool cover` 生成报告
+   ```bash
+   make test-coverage
+   ```
 
 ---
 
@@ -272,3 +422,23 @@ go tool cover -func=coverage.out | grep -v "100.0%"
 ---
 
 **最后更新**: 2025-01-28
+
+---
+
+## 快速参考
+
+### 标准覆盖率报告
+
+```bash
+make test-coverage        # 生成标准 HTML 报告
+make open-coverage       # 打开标准报告
+```
+
+### 美观的覆盖率报告
+
+```bash
+make test-coverage-interactive  # 使用 gocovsh 终端 UI（最推荐，类似 cargo-tarpaulin）
+make test-coverage-ui           # 生成美观的 HTML 报告（gocov-html）
+make open-coverage-ui           # 打开美观的报告
+make test-coverage-treemap      # 生成覆盖率树状图可视化
+```

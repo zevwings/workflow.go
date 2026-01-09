@@ -14,7 +14,7 @@ import (
 
 // mockGitRepository 实现 GitRepository 接口用于测试
 type mockGitRepository struct {
-	repoPath string
+	repoPath  string
 	isGitRepo bool
 	remoteURL string
 	openError error
@@ -37,7 +37,7 @@ func (m *mockGitRepository) Open(path string) (GitRepo, error) {
 
 // mockGitRepo 实现 GitRepo 接口用于测试
 type mockGitRepo struct {
-	remoteURL string
+	remoteURL         string
 	getRemoteURLError error
 }
 
@@ -65,7 +65,7 @@ func TestNewRepoManager_WithGitRepo(t *testing.T) {
 	}
 
 	// Act: 创建仓库配置管理器
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 
 	// Assert: 验证结果
 	require.NoError(t, err)
@@ -100,7 +100,7 @@ func TestNewRepoManager_WithGitRepo_EmptyPath(t *testing.T) {
 	}
 
 	// Act: 创建仓库配置管理器
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 
 	// Assert: 验证结果
 	require.NoError(t, err)
@@ -118,7 +118,7 @@ func TestNewRepoManager_WithGitRepo_NotGitRepo(t *testing.T) {
 	}
 
 	// Act: 创建仓库配置管理器
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 
 	// Assert: 应该返回错误
 	assert.Error(t, err)
@@ -139,7 +139,7 @@ func TestNewRepoManager_WithoutGitRepo(t *testing.T) {
 	require.NoError(t, os.Chdir(tempDir))
 
 	// Act: 创建仓库配置管理器（不提供 Git 接口）
-	manager, err := NewRepoManager(nil)
+	manager, err := newRepoManager(nil)
 
 	// Assert: 验证结果
 	require.NoError(t, err)
@@ -161,7 +161,7 @@ func TestNewRepoManager_WithGitRepo_OpenError(t *testing.T) {
 	}
 
 	// Act: 创建仓库配置管理器
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 
 	// Assert: 应该返回错误
 	assert.Error(t, err)
@@ -181,7 +181,7 @@ func TestNewRepoManager_WithGitRepo_NoRemoteURL(t *testing.T) {
 	}
 
 	// Act: 创建仓库配置管理器
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 
 	// Assert: 应该返回错误
 	assert.Error(t, err)
@@ -214,7 +214,7 @@ prefix = "feature/"
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 
 	// Act: 加载配置
@@ -223,9 +223,10 @@ prefix = "feature/"
 	// Assert: 验证配置已加载
 	assert.NoError(t, err)
 
-	// 验证可以读取配置
-	templateConfig := manager.GetTemplateConfig()
-	assert.NotNil(t, templateConfig)
+	// 验证可以读取配置（使用直接字段访问）
+	assert.NotNil(t, manager.Config)
+	assert.NotNil(t, manager.TemplateConfig)
+	assert.NotNil(t, manager.Config.Template)
 }
 
 func TestRepoManager_Load_PublicConfigNotExists(t *testing.T) {
@@ -239,7 +240,7 @@ func TestRepoManager_Load_PublicConfigNotExists(t *testing.T) {
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 
 	// Act: 加载配置（文件不存在）
@@ -279,12 +280,12 @@ title_format = "{{type}}: {{description}}"
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 	require.NoError(t, manager.Load())
 
-	// Act: 获取模板配置
-	templateConfig := manager.GetTemplateConfig()
+	// Act: 获取模板配置（使用直接字段访问）
+	templateConfig := manager.TemplateConfig
 
 	// Assert: 验证配置
 	assert.NotNil(t, templateConfig)
@@ -307,11 +308,11 @@ func TestRepoManager_GetTemplateConfig_Empty(t *testing.T) {
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 
-	// Act: 获取模板配置
-	templateConfig := manager.GetTemplateConfig()
+	// Act: 获取模板配置（使用直接字段访问）
+	templateConfig := manager.TemplateConfig
 
 	// Assert: 验证返回空配置
 	assert.NotNil(t, templateConfig)
@@ -337,7 +338,7 @@ func TestRepoManager_GetBranchPrefix(t *testing.T) {
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 	repoID := manager.GetRepoID()
 
@@ -365,7 +366,7 @@ func TestRepoManager_GetBranchPrefix_NotConfigured(t *testing.T) {
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 
 	// Act: 获取分支前缀
@@ -392,7 +393,7 @@ func TestRepoManager_GetIgnoreBranches(t *testing.T) {
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 	repoID := manager.GetRepoID()
 
@@ -423,7 +424,7 @@ func TestRepoManager_GetIgnoreBranches_NotConfigured(t *testing.T) {
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 
 	// Act: 获取忽略分支列表
@@ -450,7 +451,7 @@ func TestRepoManager_GetAutoAcceptChangeType(t *testing.T) {
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 	repoID := manager.GetRepoID()
 
@@ -482,7 +483,7 @@ func TestRepoManager_GetAutoAcceptChangeType_False(t *testing.T) {
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 	repoID := manager.GetRepoID()
 
@@ -510,7 +511,7 @@ func TestRepoManager_GetAutoAcceptChangeType_NotConfigured(t *testing.T) {
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 
 	// Act: 获取自动接受变更类型设置
@@ -533,7 +534,7 @@ func TestRepoManager_SaveTemplateConfig(t *testing.T) {
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 
 	templateConfig := &TemplateConfig{
@@ -549,8 +550,10 @@ func TestRepoManager_SaveTemplateConfig(t *testing.T) {
 		},
 	}
 
-	// Act: 保存模板配置
-	err = manager.SaveTemplateConfig(templateConfig)
+	// Act: 保存模板配置（使用直接字段访问和 Save）
+	manager.TemplateConfig = templateConfig
+	manager.Config.Template = *templateConfig
+	err = manager.Save()
 
 	// Assert: 验证配置已保存
 	assert.NoError(t, err)
@@ -562,7 +565,7 @@ func TestRepoManager_SaveTemplateConfig(t *testing.T) {
 
 	// 重新加载并验证
 	require.NoError(t, manager.Load())
-	loadedConfig := manager.GetTemplateConfig()
+	loadedConfig := manager.TemplateConfig
 	assert.Equal(t, "conventional", loadedConfig.Commit["format"])
 	assert.Equal(t, "feat", loadedConfig.Commit["type"])
 	assert.Equal(t, "feature/", loadedConfig.Branch["prefix"])
@@ -589,7 +592,7 @@ format = "old-format"
 		remoteURL: "https://github.com/owner/repo.git",
 	}
 
-	manager, err := NewRepoManager(mockGitRepo)
+	manager, err := newRepoManager(mockGitRepo)
 	require.NoError(t, err)
 
 	templateConfig := &TemplateConfig{
@@ -598,15 +601,17 @@ format = "old-format"
 		},
 	}
 
-	// Act: 保存新配置
-	err = manager.SaveTemplateConfig(templateConfig)
+	// Act: 保存新配置（使用直接字段访问和 Save）
+	manager.TemplateConfig = templateConfig
+	manager.Config.Template = *templateConfig
+	err = manager.Save()
 
 	// Assert: 验证配置已更新
 	assert.NoError(t, err)
 
 	// 重新加载并验证
 	require.NoError(t, manager.Load())
-	loadedConfig := manager.GetTemplateConfig()
+	loadedConfig := manager.TemplateConfig
 	assert.Equal(t, "new-format", loadedConfig.Commit["format"])
 }
 
@@ -662,4 +667,3 @@ func TestExtractRepoNameFromURL(t *testing.T) {
 		})
 	}
 }
-

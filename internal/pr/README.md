@@ -219,7 +219,7 @@ case "gitlab":
 
 ### GitHub
 
-需要在 `~/.workflow/config.toml` 中配置 GitHub token：
+需要在 `$XDG_CONFIG_HOME/workflow/config.toml`（默认：`~/.config/workflow/config.toml`）中配置 GitHub token：
 
 ```toml
 [github]

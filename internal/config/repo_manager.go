@@ -6,10 +6,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/viper"
 	"github.com/zevwings/workflow/internal/logging"
+)
+
+var (
+	// repoManager 仓库配置管理器单例
+	repoManager *RepoManager
+	repoOnce    sync.Once
+	repoErr     error
 )
 
 // GitRepository 定义 Git 仓库操作接口
@@ -40,7 +48,11 @@ type GitRepo interface {
 //
 // 管理仓库级别的配置：
 //   - 项目公共配置：.workflow/config.toml（项目根目录，提交到 Git）
-//   - 项目私有配置：~/.workflow/config/repository.toml（用户主目录，不提交）
+//   - 项目私有配置：$XDG_CONFIG_HOME/workflow/config/repository.toml（遵循 XDG 规范，不提交）
+//
+// 配置字段可以直接访问，例如：
+//   - manager.TemplateConfig.Commit
+//   - manager.Config.Template.Branch
 type RepoManager struct {
 	// 项目公共配置
 	publicViper *viper.Viper
@@ -53,9 +65,16 @@ type RepoManager struct {
 
 	// 缓存的私有配置（延迟加载）
 	privateConfig *PrivateRepoConfig
+
+	// Config 仓库公共配置数据
+	// 在 Load() 时自动加载，可以直接访问配置字段
+	Config *RepoConfig
+
+	// 便捷字段：直接访问子配置（指向 Config 中的对应字段）
+	TemplateConfig *TemplateConfig // 指向 Config.Template
 }
 
-// NewRepoManager 创建仓库配置管理器
+// newRepoManager 创建仓库配置管理器（私有函数）
 //
 // 通过依赖注入解耦 config 模块对 git 模块的依赖。
 // 仓库路径从 GitRepository 接口中获取。
@@ -66,7 +85,7 @@ type RepoManager struct {
 // 返回:
 //   - *RepoManager: 仓库配置管理器实例
 //   - error: 如果创建失败，返回错误
-func NewRepoManager(gitRepo GitRepository) (*RepoManager, error) {
+func newRepoManager(gitRepo GitRepository) (*RepoManager, error) {
 	logger := logging.GetLogger()
 	logger.Debug("Creating repository config manager")
 
@@ -118,23 +137,65 @@ func NewRepoManager(gitRepo GitRepository) (*RepoManager, error) {
 	publicViper.AddConfigPath(filepath.Join(repoPath, ".workflow"))
 	publicViper.AddConfigPath(repoPath)
 
-	// 获取用户主目录
-	homeDir, err := os.UserHomeDir()
+	// 使用 XDG 配置目录设置私有配置路径
+	workflowConfigDir, err := ConfigDir()
 	if err != nil {
-		return nil, fmt.Errorf("获取用户主目录失败: %w", err)
+		return nil, fmt.Errorf("获取配置目录失败: %w", err)
 	}
 
-	// 设置私有配置路径
-	privateConfigDir := filepath.Join(homeDir, ".workflow", "config")
+	privateConfigDir := filepath.Join(workflowConfigDir, "config")
 	privatePath := filepath.Join(privateConfigDir, "repository.toml")
 
-	return &RepoManager{
+	config := &RepoConfig{
+		Template: TemplateConfig{
+			Commit:       make(map[string]interface{}),
+			Branch:       make(map[string]interface{}),
+			PullRequests: make(map[string]interface{}),
+		},
+	}
+
+	manager := &RepoManager{
 		publicViper: publicViper,
 		publicPath:  publicPath,
 		privatePath: privatePath,
 		repoID:      repoID,
 		repoPath:    repoPath,
-	}, nil
+		Config:      config,
+	}
+
+	// 初始化便捷字段，指向 Config 中的对应字段
+	manager.TemplateConfig = &config.Template
+
+	return manager, nil
+}
+
+// Global 获取全局 RepoManager 单例
+//
+// 返回进程级别的 RepoManager 单例。
+// 单例会在首次调用时初始化，后续调用会复用同一个实例。
+//
+// 参数:
+//   - gitRepo: Git 仓库操作接口（如果为 nil，则跳过 Git 相关操作，使用当前目录和简单 ID）
+//     首次调用时传入的参数会被保存，后续调用会忽略参数
+//
+// 返回:
+//   - *RepoManager: 仓库配置管理器实例
+//   - error: 如果创建失败，返回错误
+//
+// 注意:
+//   - 首次调用时如果创建失败，后续调用会返回相同的错误
+//   - 首次调用时传入的参数会被保存，后续调用会忽略参数
+//   - 线程安全：可以在多线程环境中安全使用
+//
+// 优势:
+//   - 减少资源消耗：避免重复创建管理器实例
+//   - 统一管理：所有配置操作使用同一个管理器实例
+//   - 配置一致性：确保整个进程使用相同的配置状态
+func GlobalRepoManager(gitRepo GitRepository) (*RepoManager, error) {
+	repoOnce.Do(func() {
+		repoManager, repoErr = newRepoManager(gitRepo)
+	})
+	return repoManager, repoErr
 }
 
 // Load 加载仓库配置
@@ -143,6 +204,8 @@ func NewRepoManager(gitRepo GitRepository) (*RepoManager, error) {
 // 1. 先加载项目公共配置（如果存在）
 // 2. 再加载项目私有配置（如果存在）
 // 3. 私有配置覆盖公共配置
+//
+// 从配置文件加载配置到内存，并更新 Config 字段。
 func (r *RepoManager) Load() error {
 	logger := logging.GetLogger()
 
@@ -154,6 +217,12 @@ func (r *RepoManager) Load() error {
 			return fmt.Errorf("读取项目公共配置失败: %w", err)
 		}
 	}
+
+	// 从 publicViper 加载配置到 Config 字段
+	r.Config = r.getRepoConfig()
+
+	// 更新便捷字段的指针（确保指向最新的 Config）
+	r.TemplateConfig = &r.Config.Template
 
 	// 加载项目私有配置（如果存在）
 	// 注意：私有配置的加载逻辑会在后续方法中实现
@@ -167,39 +236,20 @@ func (r *RepoManager) Load() error {
 
 // GetTemplateConfig 获取模板配置
 //
-// 从项目公共配置中读取模板配置。
+// 返回 Config 字段中的模板配置的引用。
+// 可以直接使用 manager.Config.Template 或 manager.TemplateConfig 访问，此方法保留以保持向后兼容。
 //
 // 返回:
-//   - *TemplateConfig: 模板配置结构
+//   - *TemplateConfig: 模板配置结构（指向 Config.Template）
 func (r *RepoManager) GetTemplateConfig() *TemplateConfig {
-	cfg := &TemplateConfig{
-		Commit:       make(map[string]interface{}),
-		Branch:       make(map[string]interface{}),
-		PullRequests: make(map[string]interface{}),
-	}
-
-	// 读取 template.commit
-	if commitMap := r.publicViper.GetStringMap("template.commit"); commitMap != nil {
-		for k, v := range commitMap {
-			cfg.Commit[k] = v
+	if r.Config == nil {
+		return &TemplateConfig{
+			Commit:       make(map[string]interface{}),
+			Branch:       make(map[string]interface{}),
+			PullRequests: make(map[string]interface{}),
 		}
 	}
-
-	// 读取 template.branch
-	if branchMap := r.publicViper.GetStringMap("template.branch"); branchMap != nil {
-		for k, v := range branchMap {
-			cfg.Branch[k] = v
-		}
-	}
-
-	// 读取 template.pull_requests
-	if prMap := r.publicViper.GetStringMap("template.pull_requests"); prMap != nil {
-		for k, v := range prMap {
-			cfg.PullRequests[k] = v
-		}
-	}
-
-	return cfg
+	return r.TemplateConfig
 }
 
 // GetBranchPrefix 获取分支前缀（个人偏好）
@@ -277,58 +327,95 @@ func (r *RepoManager) GetAutoAcceptChangeType() bool {
 	return false
 }
 
-// SaveTemplateConfig 保存模板配置
+// Save 保存配置到文件
+//
+// 保存当前 Config 字段的内容到文件。
+// 保存后会自动重新加载以同步 publicViper。
+func (r *RepoManager) Save() error {
+	logger := logging.GetLogger()
+	logger.Infof("Saving config to: %s", r.publicPath)
+
+	err := SaveConfigToFile(r.publicPath, r.Config)
+	if err != nil {
+		logger.WithError(err).WithField("config_path", r.publicPath).Error("Failed to save config file")
+		return err
+	}
+
+	// 重新加载以同步 publicViper 和 Config 字段
+	if err := r.Load(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SaveTemplateConfig 保存模板配置（已废弃，请使用 Save()）
 //
 // 保存模板配置到项目公共配置文件。
+// 此方法保留以保持向后兼容，但建议直接设置 manager.Config.Template 或 manager.TemplateConfig 后调用 Save()。
 //
 // 参数:
 //   - cfg: 模板配置
 //
 // 返回:
 //   - error: 如果保存失败，返回错误
+//
+// 已废弃: 请使用 manager.TemplateConfig = cfg; manager.Save() 或直接操作 manager.Config.Template
 func (r *RepoManager) SaveTemplateConfig(cfg *TemplateConfig) error {
-	logger := logging.GetLogger()
-	logger.Infof("Saving config to: %s", r.publicPath)
+	// 更新 Config 中的模板配置
+	if r.Config == nil {
+		r.Config = &RepoConfig{
+			Template: TemplateConfig{
+				Commit:       make(map[string]interface{}),
+				Branch:       make(map[string]interface{}),
+				PullRequests: make(map[string]interface{}),
+			},
+		}
+		r.TemplateConfig = &r.Config.Template
+	}
+	r.Config.Template = *cfg
+	r.TemplateConfig = &r.Config.Template
+	return r.Save()
+}
 
-	// 读取现有配置（如果存在）
-	var existingConfig map[string]interface{}
-	if _, err := os.Stat(r.publicPath); err == nil {
-		data, err := os.ReadFile(r.publicPath)
-		if err == nil {
-			if err := toml.Unmarshal(data, &existingConfig); err != nil {
-				existingConfig = make(map[string]interface{})
-			}
+// getRepoConfig 获取完整的仓库配置（私有方法）
+//
+// 从 publicViper 中读取完整的仓库公共配置。
+// 此方法仅在内部使用（Load 方法中），外部应直接访问 Config 字段。
+//
+// 返回:
+//   - *RepoConfig: 仓库配置结构
+func (r *RepoManager) getRepoConfig() *RepoConfig {
+	cfg := &RepoConfig{
+		Template: TemplateConfig{
+			Commit:       make(map[string]interface{}),
+			Branch:       make(map[string]interface{}),
+			PullRequests: make(map[string]interface{}),
+		},
+	}
+
+	// 读取 template.commit
+	if commitMap := r.publicViper.GetStringMap("template.commit"); commitMap != nil {
+		for k, v := range commitMap {
+			cfg.Template.Commit[k] = v
 		}
 	}
-	if existingConfig == nil {
-		existingConfig = make(map[string]interface{})
+
+	// 读取 template.branch
+	if branchMap := r.publicViper.GetStringMap("template.branch"); branchMap != nil {
+		for k, v := range branchMap {
+			cfg.Template.Branch[k] = v
+		}
 	}
 
-	// 更新 template 部分
-	templateSection := make(map[string]interface{})
-	if existingTemplate, ok := existingConfig["template"].(map[string]interface{}); ok {
-		templateSection = existingTemplate
+	// 读取 template.pull_requests
+	if prMap := r.publicViper.GetStringMap("template.pull_requests"); prMap != nil {
+		for k, v := range prMap {
+			cfg.Template.PullRequests[k] = v
+		}
 	}
 
-	if len(cfg.Commit) > 0 {
-		templateSection["commit"] = cfg.Commit
-	}
-	if len(cfg.Branch) > 0 {
-		templateSection["branch"] = cfg.Branch
-	}
-	if len(cfg.PullRequests) > 0 {
-		templateSection["pull_requests"] = cfg.PullRequests
-	}
-
-	existingConfig["template"] = templateSection
-
-	// 使用辅助函数保存配置
-	err := SaveConfigToFile(r.publicPath, existingConfig)
-	if err != nil {
-		logger.WithError(err).WithField("config_path", r.publicPath).Error("Failed to save config file")
-		return err
-	}
-	return nil
+	return cfg
 }
 
 // GetPublicConfigPath 获取项目公共配置文件路径
@@ -416,7 +503,7 @@ func extractRepoNameFromURL(url string) string {
 
 // PrivateRepoConfig 私有仓库配置结构
 //
-// 用于解析 ~/.workflow/config/repository.toml 文件。
+// 用于解析 $XDG_CONFIG_HOME/workflow/config/repository.toml 文件。
 // 格式：
 //
 //	[${repo_id}.branch]

@@ -95,7 +95,7 @@ func checkGitRepo(out *prompt.Message) bool {
 }
 
 func checkConfig(out *prompt.Message) bool {
-	manager, err := config.NewGlobalManager()
+	manager, err := config.Global()
 	if err != nil {
 		return false
 	}

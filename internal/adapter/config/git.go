@@ -41,7 +41,7 @@ func (w *gitRepoWrapper) GetRemoteURL(name string) (string, error) {
 
 // NewRepoManagerWithDefaultGit 创建仓库配置管理器（便捷函数）
 //
-// 此函数使用默认的 git 模块实现，内部调用 config.NewRepoManager。
+// 此函数使用默认的 git 模块实现，内部调用 config.GlobalRepoManager。
 // 将 Git 适配器的创建移到 adapter 层，避免 config 包依赖 git 包。
 //
 // 参数:
@@ -53,5 +53,5 @@ func (w *gitRepoWrapper) GetRemoteURL(name string) (string, error) {
 func NewRepoManagerWithDefaultGit(repoPath string) (*config.RepoManager, error) {
 	// 使用默认的 git 适配器，通过包装器实现接口
 	gitAdapter := &gitAdapterWrapper{impl: git.NewGitAdapter(repoPath)}
-	return config.NewRepoManager(gitAdapter)
+	return config.GlobalRepoManager(gitAdapter)
 }

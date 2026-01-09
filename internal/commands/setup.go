@@ -28,7 +28,7 @@ func runSetup(cmd *cobra.Command, args []string) error {
 	msg.Println("")
 
 	// 创建配置管理器
-	manager, err := config.NewGlobalManager()
+	manager, err := config.Global()
 	if err != nil {
 		return fmt.Errorf("创建配置管理器失败: %w", err)
 	}
@@ -48,7 +48,8 @@ func runSetup(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 		// 加载现有配置
-		cfg = manager.GetGlobalConfig()
+		// 直接访问 Config 字段
+		cfg = manager.Config
 	} else {
 		// 配置文件不存在，创建新配置
 		cfg = &config.GlobalConfig{
@@ -166,7 +167,8 @@ func runSetup(cmd *cobra.Command, args []string) error {
 	}
 
 	// 保存配置
-	if err := manager.Save(cfg); err != nil {
+	manager.Config = cfg
+	if err := manager.Save(); err != nil {
 		return fmt.Errorf("保存配置失败: %w", err)
 	}
 

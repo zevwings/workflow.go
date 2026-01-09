@@ -78,12 +78,19 @@ func (p *llmConfigProvider) GetLanguage() (*llm.SupportedLanguage, error) {
 //
 // 返回:
 //   - *config.LLMConfig: LLM 配置实例
+//
+// 注意: 可以直接使用 manager.LLMConfig 访问，此方法保留以保持向后兼容。
 func getLLMConfig() *config.LLMConfig {
-	manager, err := config.NewGlobalManager()
+	manager, err := config.Global()
 	if err != nil {
 		panic(fmt.Errorf("adapter/llm.getLLMConfig: failed to initialize global config manager: %w", err))
 	}
-	return manager.GetLLMConfig()
+	// 确保配置已加载
+	if err := manager.Load(); err != nil {
+		// 如果加载失败，使用默认配置
+	}
+	// 直接返回便捷字段
+	return manager.LLMConfig
 }
 
 // ============================================================================

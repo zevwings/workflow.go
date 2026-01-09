@@ -6,7 +6,7 @@
 
 ### 1. 配置 Jira
 
-在 `~/.workflow/config.toml` 中配置 Jira 信息：
+在 `$XDG_CONFIG_HOME/workflow/config.toml`（默认：`~/.config/workflow/config.toml`）中配置 Jira 信息：
 
 ```toml
 [jira]

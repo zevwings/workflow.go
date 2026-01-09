@@ -154,8 +154,9 @@ func TestCacheDir(t *testing.T) string {
 
 // TestWorkflowConfigDir 获取测试 Workflow 配置目录
 //
-// 返回 ~/.workflow 目录路径（已创建）。
-// 支持测试环境隔离（通过 TestHomeDir）。
+// 返回 XDG 配置目录下的 workflow 子目录路径（已创建）。
+// 遵循 XDG Base Directory Specification，使用 TestConfigDir 获取基础配置目录。
+// 支持测试环境隔离（通过环境变量）。
 //
 // 参数:
 //   - t: 测试对象
@@ -163,13 +164,12 @@ func TestCacheDir(t *testing.T) string {
 // 返回:
 //   - string: Workflow 配置目录路径（已创建）
 func TestWorkflowConfigDir(t *testing.T) string {
-	homeDir := TestHomeDir(t)
-	configDir := filepath.Join(homeDir, ".workflow")
+	configDir := TestConfigDir(t)
+	workflowConfigDir := filepath.Join(configDir, "workflow")
 
 	// 确保目录存在
-	err := os.MkdirAll(configDir, 0755)
-	require.NoError(t, err, "创建 Workflow 配置目录失败: %s", configDir)
+	err := os.MkdirAll(workflowConfigDir, 0755)
+	require.NoError(t, err, "创建 Workflow 配置目录失败: %s", workflowConfigDir)
 
-	return configDir
+	return workflowConfigDir
 }
-

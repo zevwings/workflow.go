@@ -34,7 +34,9 @@ func TestNewGlobalManager(t *testing.T) {
 	assert.NoError(t, err, "配置目录应该已创建")
 
 	// 验证默认值已设置
-	assert.Equal(t, "info", manager.GetString("log.level"))
+	// 注意：需要先 Load 才能访问配置字段
+	manager.Load()
+	assert.Equal(t, "info", manager.LogConfig.Level)
 }
 
 func TestNewGlobalManager_CreatesDirectory(t *testing.T) {
@@ -86,9 +88,9 @@ email = "test@example.com"
 
 	// Assert: 验证配置已加载
 	assert.NoError(t, err)
-	assert.Equal(t, "debug", manager.GetString("log.level"))
-	assert.Equal(t, "Test User", manager.GetString("user.name"))
-	assert.Equal(t, "test@example.com", manager.GetString("user.email"))
+	assert.Equal(t, "debug", manager.LogConfig.Level)
+	assert.Equal(t, "Test User", manager.UserConfig.Name)
+	assert.Equal(t, "test@example.com", manager.UserConfig.Email)
 }
 
 func TestGlobalManager_Load_FileNotExists(t *testing.T) {
@@ -112,7 +114,7 @@ func TestGlobalManager_Load_FileNotExists(t *testing.T) {
 	assert.NoError(t, err, "默认配置文件应该已创建")
 
 	// 验证默认值
-	assert.Equal(t, "info", manager.GetString("log.level"))
+	assert.Equal(t, "info", manager.LogConfig.Level)
 }
 
 // ==================== Save 和 SaveDefault 测试 ====================
@@ -125,7 +127,8 @@ func TestGlobalManager_Save(t *testing.T) {
 	manager, err := NewGlobalManager()
 	require.NoError(t, err)
 
-	config := &GlobalConfig{
+	// Act: 设置并保存配置
+	manager.Config = &GlobalConfig{
 		Log: LogConfig{
 			Level: "debug",
 		},
@@ -134,9 +137,7 @@ func TestGlobalManager_Save(t *testing.T) {
 			Email: "test@example.com",
 		},
 	}
-
-	// Act: 保存配置
-	err = manager.Save(config)
+	err = manager.Save()
 
 	// Assert: 验证配置已保存
 	assert.NoError(t, err)
@@ -149,9 +150,9 @@ func TestGlobalManager_Save(t *testing.T) {
 	// 重新加载并验证
 	err = manager.Load()
 	require.NoError(t, err)
-	assert.Equal(t, "debug", manager.GetString("log.level"))
-	assert.Equal(t, "Test User", manager.GetString("user.name"))
-	assert.Equal(t, "test@example.com", manager.GetString("user.email"))
+	assert.Equal(t, "debug", manager.LogConfig.Level)
+	assert.Equal(t, "Test User", manager.UserConfig.Name)
+	assert.Equal(t, "test@example.com", manager.UserConfig.Email)
 }
 
 func TestGlobalManager_SaveDefault(t *testing.T) {
@@ -176,12 +177,12 @@ func TestGlobalManager_SaveDefault(t *testing.T) {
 	// 重新加载并验证
 	err = manager.Load()
 	require.NoError(t, err)
-	assert.Equal(t, "info", manager.GetString("log.level"))
+	assert.Equal(t, "info", manager.LogConfig.Level)
 }
 
-// ==================== Get, GetString, Set 测试 ====================
+// ==================== 配置字段直接访问测试 ====================
 
-func TestGlobalManager_GetAndSet(t *testing.T) {
+func TestGlobalManager_DirectFieldAccess(t *testing.T) {
 	// Arrange: 设置测试环境
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
@@ -189,18 +190,24 @@ func TestGlobalManager_GetAndSet(t *testing.T) {
 	manager, err := NewGlobalManager()
 	require.NoError(t, err)
 
-	// Act & Assert: 测试 Set 和 Get
-	manager.Set("test.key", "test-value")
-	value := manager.Get("test.key")
-	assert.Equal(t, "test-value", value)
+	// 加载配置
+	err = manager.Load()
+	require.NoError(t, err)
 
-	// 测试 GetString
-	strValue := manager.GetString("test.key")
-	assert.Equal(t, "test-value", strValue)
+	// Act & Assert: 测试直接访问配置字段
+	// 修改配置字段
+	manager.LogConfig.Level = "debug"
+	manager.UserConfig.Name = "Test User"
+	manager.UserConfig.Email = "test@example.com"
 
-	// 测试不存在的键
-	nonExistent := manager.GetString("non.existent")
-	assert.Empty(t, nonExistent)
+	// 验证修改
+	assert.Equal(t, "debug", manager.LogConfig.Level)
+	assert.Equal(t, "Test User", manager.UserConfig.Name)
+	assert.Equal(t, "test@example.com", manager.UserConfig.Email)
+
+	// 验证通过 Config 字段也能访问
+	assert.Equal(t, "debug", manager.Config.Log.Level)
+	assert.Equal(t, "Test User", manager.Config.User.Name)
 }
 
 // ==================== GetLLMConfig 测试 ====================
@@ -357,9 +364,9 @@ name = "account1"
 	assert.Empty(t, githubConfig.Accounts[0].Token)
 }
 
-// ==================== GetGlobalConfig 测试 ====================
+// ==================== Config 字段直接访问测试 ====================
 
-func TestGlobalManager_GetGlobalConfig(t *testing.T) {
+func TestGlobalManager_ConfigField(t *testing.T) {
 	// Arrange: 设置测试环境并创建完整配置文件
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
@@ -406,8 +413,8 @@ https = "https://proxy.example.com:8080"
 	require.NoError(t, err)
 	require.NoError(t, manager.Load())
 
-	// Act: 获取完整全局配置
-	globalConfig := manager.GetGlobalConfig()
+	// Act: 直接访问 Config 字段
+	globalConfig := manager.Config
 
 	// Assert: 验证所有配置
 	assert.NotNil(t, globalConfig)
@@ -425,7 +432,7 @@ https = "https://proxy.example.com:8080"
 	assert.Equal(t, "https://proxy.example.com:8080", globalConfig.Proxy.HTTPS)
 }
 
-func TestGlobalManager_GetGlobalConfig_DefaultLogLevel(t *testing.T) {
+func TestGlobalManager_ConfigField_DefaultLogLevel(t *testing.T) {
 	// Arrange: 设置测试环境，不设置 log.level
 	tempDir := t.TempDir()
 	t.Setenv("HOME", tempDir)
@@ -433,8 +440,11 @@ func TestGlobalManager_GetGlobalConfig_DefaultLogLevel(t *testing.T) {
 	manager, err := NewGlobalManager()
 	require.NoError(t, err)
 
-	// Act: 获取全局配置
-	globalConfig := manager.GetGlobalConfig()
+	// 需要先 Load 才能访问 Config 字段
+	require.NoError(t, manager.Load())
+
+	// Act: 直接访问 Config 字段
+	globalConfig := manager.Config
 
 	// Assert: 验证默认 log level
 	assert.NotNil(t, globalConfig)
@@ -458,4 +468,3 @@ func TestGlobalManager_GetConfigPath(t *testing.T) {
 	expectedPath := filepath.Join(tempDir, ".workflow", "config.toml")
 	assert.Equal(t, expectedPath, path)
 }
-
