@@ -10,25 +10,13 @@ import (
 	"github.com/zevwings/workflow/internal/util"
 )
 
-// VerifyOptions 验证选项
-// 保留此结构体以保持 API 兼容性，但当前不需要任何选项
-type VerifyOptions struct{}
-
-// DefaultVerifyOptions 返回默认验证选项
-func DefaultVerifyOptions() *VerifyOptions {
-	return &VerifyOptions{}
-}
-
 // VerifyJiraConfig 验证 Jira 配置
-func VerifyJiraConfig(msg *prompt.Message, jiraConfig *config.JiraConfig, opts *VerifyOptions) {
-	if jiraConfig.Email == "" && jiraConfig.APIToken == "" && jiraConfig.ServiceAddress == "" {
+func VerifyJiraConfig(jiraConfig *config.JiraConfig) {
+	if jiraConfig.Email == "" || jiraConfig.APIToken == "" || jiraConfig.ServiceAddress == "" {
 		return
 	}
 
-	if opts == nil {
-		opts = DefaultVerifyOptions()
-	}
-
+	msg := prompt.GetMessage()
 	msg.Info("Jira Configuration")
 	table := prompt.NewTable([]string{"Email", "Service Address", "API Token"})
 
@@ -74,15 +62,12 @@ func VerifyJiraConfig(msg *prompt.Message, jiraConfig *config.JiraConfig, opts *
 }
 
 // VerifyGitHubConfig 验证 GitHub 配置
-func VerifyGitHubConfig(msg *prompt.Message, githubConfig *config.GitHubConfig, opts *VerifyOptions) bool {
+func VerifyGitHubConfig(githubConfig *config.GitHubConfig) bool {
 	if len(githubConfig.Accounts) == 0 {
 		return true
 	}
 
-	if opts == nil {
-		opts = DefaultVerifyOptions()
-	}
-
+	msg := prompt.GetMessage()
 	msg.Info("GitHub Configuration")
 	table := prompt.NewTable([]string{"Name", "Email", "API Token", "Status", "Verification"})
 
@@ -158,66 +143,58 @@ func VerifyGitHubConfig(msg *prompt.Message, githubConfig *config.GitHubConfig, 
 	return allValid
 }
 
-// showConfigWithOptions 格式化显示配置，支持自定义选项
-func showConfigWithOptions(out *prompt.Message, cfg *config.GlobalConfig, showLogSeparator bool) {
-	// 日志配置
-	if cfg.Log.Level != "" {
-		if showLogSeparator {
-			out.Print("%s", "------------------------------------------  Configuration ------------------------------------------")
+// VerifyLLMConfig 验证 LLM 配置
+func VerifyLLMConfig(llmConfig *config.LLMConfig) {
+	if llmConfig.Provider == "" {
+		return
+	}
+
+	msg := prompt.GetMessage()
+	msg.Info("LLM Configuration")
+	table := prompt.NewTable([]string{"Provider", "Model", "Key", "Output Language"})
+
+	var model, key, language string
+	language = llmConfig.Language
+	if language == "" {
+		language = "en"
+	}
+
+	switch llmConfig.Provider {
+	case "openai":
+		model = llmConfig.OpenAI.Model
+		if model == "" {
+			model = "gpt-3.5-turbo"
 		}
-		out.Print("%s", fmt.Sprintf("Log Output Folder Name: %s", cfg.Log.Level))
-		out.Break()
-	}
-
-	// LLM 配置
-	if cfg.LLM.Provider != "" {
-		out.Info("LLM Configuration")
-		table := prompt.NewTable([]string{"Provider", "Model", "Key", "Output Language"})
-
-		var model, key, language string
-		language = cfg.LLM.Language
-		if language == "" {
-			language = "en"
+		key = util.MaskSensitiveValue(llmConfig.OpenAI.APIKey)
+	case "deepseek":
+		model = llmConfig.DeepSeek.Model
+		if model == "" {
+			model = "deepseek-chat"
 		}
-
-		switch cfg.LLM.Provider {
-		case "openai":
-			model = cfg.LLM.OpenAI.Model
-			if model == "" {
-				model = "gpt-3.5-turbo"
-			}
-			key = util.MaskSensitiveValue(cfg.LLM.OpenAI.APIKey)
-		case "deepseek":
-			model = cfg.LLM.DeepSeek.Model
-			if model == "" {
-				model = "deepseek-chat"
-			}
-			key = util.MaskSensitiveValue(cfg.LLM.DeepSeek.APIKey)
-		case "proxy":
-			model = cfg.LLM.Proxy.Model
-			if cfg.LLM.Proxy.URL != "" {
-				model = fmt.Sprintf("%s(%s)", model, cfg.LLM.Proxy.URL)
-			}
-			key = util.MaskSensitiveValue(cfg.LLM.Proxy.APIKey)
-		default:
-			model = "-"
-			key = "-"
+		key = util.MaskSensitiveValue(llmConfig.DeepSeek.APIKey)
+	case "proxy":
+		model = llmConfig.Proxy.Model
+		if llmConfig.Proxy.URL != "" {
+			model = fmt.Sprintf("%s(%s)", model, llmConfig.Proxy.URL)
 		}
-
-		table.AddRow([]string{cfg.LLM.Provider, model, key, language})
-		table.Render()
-		out.Break()
+		key = util.MaskSensitiveValue(llmConfig.Proxy.APIKey)
+	default:
+		model = "-"
+		key = "-"
 	}
 
-	// Jira 配置
-	if cfg.Jira.Email != "" || cfg.Jira.APIToken != "" || cfg.Jira.ServiceAddress != "" {
-		opts := DefaultVerifyOptions()
-		VerifyJiraConfig(out, &cfg.Jira, opts)
-	}
+	table.AddRow([]string{llmConfig.Provider, model, key, language})
+	table.Render()
+	msg.Break()
+}
 
-	// GitHub 配置
-	if len(cfg.GitHub.Accounts) > 0 {
-		opts := DefaultVerifyOptions()
-		VerifyGitHubConfig(out, &cfg.GitHub, opts)
+// VerifyLogConfig 验证日志配置
+func VerifyLogConfig(logConfig *config.LogConfig) {
+	if logConfig.Level == "" {
+		return
 	}
+	msg := prompt.GetMessage()
+	msg.Info("Log Configuration")
+	msg.Info("%s", fmt.Sprintf("Log Level: %s", logConfig.Level))
+	msg.Break()
 }

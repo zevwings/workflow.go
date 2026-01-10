@@ -10,12 +10,27 @@ import (
 
 // Message 消息输出工具
 type Message struct {
-	verbose bool
 }
 
-// NewMessage 创建新的消息输出工具
-func NewMessage(verbose bool) *Message {
-	return &Message{verbose: verbose}
+// defaultMessage 全局默认消息输出实例（非 verbose 模式）
+var defaultMessage = &Message{}
+
+// GetMessage 获取默认消息输出实例
+//
+// 返回一个全局单例的 Message 实例，适用于大多数场景。
+//
+// 使用示例:
+//
+//	msg := prompt.GetMessage()
+//	msg.Info("这是一条信息")
+//	msg.Success("操作成功")
+func GetMessage() *Message {
+	return defaultMessage
+}
+
+// newMessage 创建新的消息输出工具（私有函数，仅用于内部测试）
+func newMessage() *Message {
+	return &Message{}
 }
 
 // Info 输出信息
@@ -64,11 +79,9 @@ func (m *Message) Fatal(format string, args ...interface{}) {
 
 // Debug 输出调试信息
 func (m *Message) Debug(format string, args ...interface{}) {
-	if m.verbose {
-		msg := fmt.Sprintf(format, args...)
-		formatted := formatMessage("DEBUG:", msg, GetTheme().DebugStyle)
-		fmt.Println(formatted)
-	}
+	msg := fmt.Sprintf(format, args...)
+	formatted := formatMessage("DEBUG:", msg, GetTheme().DebugStyle)
+	fmt.Println(formatted)
 }
 
 // Print 格式化输出并换行
@@ -93,7 +106,7 @@ func (m *Message) Print(format string, args ...interface{}) {
 //
 // 使用示例:
 //
-//	msg := prompt.NewMessage(false)
+//	msg := prompt.GetMessage()
 //	// 输出换行符
 //	msg.Break()
 //

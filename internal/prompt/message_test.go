@@ -37,10 +37,10 @@ func captureOutput(t *testing.T, fn func()) string {
 }
 
 func TestNewMessage(t *testing.T) {
-	m1 := NewMessage(false)
+	m1 := newMessage()
 	require.NotNil(t, m1)
 
-	m2 := NewMessage(true)
+	m2 := newMessage()
 	require.NotNil(t, m2)
 }
 
@@ -50,7 +50,7 @@ func TestMessage_Info_Success_Warning_Error(t *testing.T) {
 	theme.EnableColor = false
 	SetTheme(theme)
 
-	m := NewMessage(false)
+	m := newMessage()
 
 	out := captureOutput(t, func() {
 		m.Info("info-%s", "msg")
@@ -75,28 +75,21 @@ func TestMessage_Fatal_ExitCode(t *testing.T) {
 	// 通过子进程方式测试会比较重，这里留给后续需要时再补充
 }
 
-func TestMessage_Debug_Verbose(t *testing.T) {
+func TestMessage_Debug(t *testing.T) {
 	theme := GetTheme()
 	theme.EnableColor = false
 	SetTheme(theme)
 
-	// verbose=true 时应输出 Debug
-	mVerbose := NewMessage(true)
-	outVerbose := captureOutput(t, func() {
-		mVerbose.Debug("value=%d", 42)
+	// Debug 总是输出
+	m := newMessage()
+	out := captureOutput(t, func() {
+		m.Debug("value=%d", 42)
 	})
-	require.Contains(t, outVerbose, "DEBUG: value=42")
-
-	// verbose=false 时不应输出 Debug
-	mSilent := NewMessage(false)
-	outSilent := captureOutput(t, func() {
-		mSilent.Debug("value=%d", 42)
-	})
-	require.Equal(t, "", strings.TrimSpace(outSilent))
+	require.Contains(t, out, "DEBUG: value=42")
 }
 
 func TestMessage_Print(t *testing.T) {
-	m := NewMessage(false)
+	m := newMessage()
 
 	out := captureOutput(t, func() {
 		m.Print("hello %s", "world")

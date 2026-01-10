@@ -34,7 +34,7 @@ func NewDemoCmd() *cobra.Command {
 }
 
 func runDemo(cmd *cobra.Command, args []string) error {
-	msg := prompt.NewMessage(false)
+	msg := prompt.GetMessage()
 
 	msg.Info("欢迎使用 Prompt 组件演示")
 	msg.Break()

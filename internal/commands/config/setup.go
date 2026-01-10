@@ -24,7 +24,7 @@ This command will guide you through the configuration process, including GitHub,
 }
 
 func runSetup(cmd *cobra.Command, args []string) error {
-	msg := prompt.NewMessage(false)
+	msg := prompt.GetMessage()
 
 	msg.Info("Starting Workflow CLI initialization...")
 
@@ -639,12 +639,13 @@ func verifyConfiguration(msg *prompt.Message, manager *config.GlobalManager) err
 		len(cfg.GitHub.Accounts) > 0
 
 	if hasConfig {
-		msg.Print("%s", "-------  Verifying Configuration -------")
 		msg.Break()
 	}
 
-	// 使用共用的 showConfig 函数，不显示日志分隔线
-	showConfigWithOptions(msg, cfg, false)
+	VerifyLogConfig(manager.LogConfig)
+	VerifyLLMConfig(manager.LLMConfig)
+	VerifyJiraConfig(manager.JiraConfig)
+	VerifyGitHubConfig(manager.GitHubConfig)
 
 	return nil
 }

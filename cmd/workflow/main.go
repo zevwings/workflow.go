@@ -8,7 +8,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/zevwings/workflow/internal/commands"
 	configCmd "github.com/zevwings/workflow/internal/commands/config"
 	"github.com/zevwings/workflow/internal/config"
 	"github.com/zevwings/workflow/internal/logging"
@@ -35,9 +34,9 @@ func main() {
 
 	// 注册子命令
 	rootCmd.AddCommand(configCmd.NewSetupCmd())
-	rootCmd.AddCommand(commands.NewVersionCmd(version, buildDate, gitCommit))
+	rootCmd.AddCommand(configCmd.NewVersionCmd(version, buildDate, gitCommit))
 	rootCmd.AddCommand(configCmd.NewConfigCmd())
-	rootCmd.AddCommand(commands.NewCheckCmd())
+	rootCmd.AddCommand(configCmd.NewCheckCmd())
 
 	// 设置版本模板
 	rootCmd.SetVersionTemplate(fmt.Sprintf("workflow version %s\nBuild Date: %s\nGit Commit: %s\n", version, buildDate, gitCommit))

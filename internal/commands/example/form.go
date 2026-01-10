@@ -27,7 +27,7 @@ func NewDemoFormCmd() *cobra.Command {
 }
 
 func runDemoForm(cmd *cobra.Command, args []string) error {
-	msg := prompt.NewMessage(false)
+	msg := prompt.GetMessage()
 
 	msg.Info("欢迎使用 Form 模块演示")
 	msg.Break()

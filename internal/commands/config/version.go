@@ -1,4 +1,4 @@
-package commands
+package config
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ func NewVersionCmd(version, buildDate, gitCommit string) *cobra.Command {
 		Short: "显示版本信息",
 		Long:  `显示 Workflow CLI 的版本信息，包括版本号、构建日期和 Git 提交哈希。`,
 		Run: func(cmd *cobra.Command, args []string) {
-			out := prompt.NewMessage(false)
+			out := prompt.GetMessage()
 			out.Print("%s", "Workflow CLI")
 			out.Break()
 			out.Print("%s", fmt.Sprintf("Version:    %s", version))

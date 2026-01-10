@@ -12,7 +12,5 @@ func NewConfigCmd() *cobra.Command {
 		Long:  `管理 Workflow CLI 配置文件。`,
 	}
 
-	cmd.AddCommand(newConfigShowCmd())
-
 	return cmd
 }
