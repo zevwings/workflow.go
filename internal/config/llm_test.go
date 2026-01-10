@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// ==================== CurrentProvider 测试 ====================
+// ==================== CurrentProvider Tests ====================
 
 func TestLLMConfig_CurrentProvider(t *testing.T) {
 	tests := []struct {
@@ -19,7 +19,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 		errMsg     string
 	}{
 		{
-			name: "OpenAI provider - 完整配置",
+			name: "OpenAI provider - complete configuration",
 			config: LLMConfig{
 				Provider: "openai",
 				OpenAI: struct {
@@ -36,7 +36,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 			wantErr:    false,
 		},
 		{
-			name: "OpenAI provider - 使用默认 model",
+			name: "OpenAI provider - use default model",
 			config: LLMConfig{
 				Provider: "openai",
 				OpenAI: struct {
@@ -44,16 +44,16 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 					Model  string `toml:"model,omitempty"`
 				}{
 					APIKey: "sk-test-key",
-					Model:  "", // 空 model，应该使用默认值
+					Model:  "", // Empty model, should use default value
 				},
 			},
 			wantAPIKey: "sk-test-key",
-			wantModel:  "gpt-3.5-turbo", // 默认值
+			wantModel:  "gpt-3.5-turbo", // Default value
 			wantURL:    "https://api.openai.com/v1",
 			wantErr:    false,
 		},
 		{
-			name: "DeepSeek provider - 完整配置",
+			name: "DeepSeek provider - complete configuration",
 			config: LLMConfig{
 				Provider: "deepseek",
 				DeepSeek: struct {
@@ -70,7 +70,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 			wantErr:    false,
 		},
 		{
-			name: "DeepSeek provider - 使用默认 model",
+			name: "DeepSeek provider - use default model",
 			config: LLMConfig{
 				Provider: "deepseek",
 				DeepSeek: struct {
@@ -78,16 +78,16 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 					Model  string `toml:"model,omitempty"`
 				}{
 					APIKey: "sk-deepseek-key",
-					Model:  "", // 空 model，应该使用默认值
+					Model:  "", // Empty model, should use default value
 				},
 			},
 			wantAPIKey: "sk-deepseek-key",
-			wantModel:  "deepseek-chat", // 默认值
+			wantModel:  "deepseek-chat", // Default value
 			wantURL:    "https://api.deepseek.com/v1",
 			wantErr:    false,
 		},
 		{
-			name: "Proxy provider - 完整配置",
+			name: "Proxy provider - complete configuration",
 			config: LLMConfig{
 				Provider: "proxy",
 				Proxy: struct {
@@ -106,7 +106,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 			wantErr:    false,
 		},
 		{
-			name: "Proxy provider - 缺少 model",
+			name: "Proxy provider - missing model",
 			config: LLMConfig{
 				Provider: "proxy",
 				Proxy: struct {
@@ -116,7 +116,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 				}{
 					URL:    "https://api.example.com/v1",
 					APIKey: "proxy-key",
-					Model:  "", // 缺少 model
+					Model:  "", // Missing model
 				},
 			},
 			wantAPIKey: "",
@@ -126,7 +126,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 			errMsg:     "model is required for proxy provider",
 		},
 		{
-			name: "Proxy provider - 缺少 URL",
+			name: "Proxy provider - missing URL",
 			config: LLMConfig{
 				Provider: "proxy",
 				Proxy: struct {
@@ -134,7 +134,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 					APIKey string `toml:"api_key,omitempty"`
 					Model  string `toml:"model,omitempty"`
 				}{
-					URL:    "", // 缺少 URL
+					URL:    "", // Missing URL
 					APIKey: "proxy-key",
 					Model:  "custom-model",
 				},
@@ -146,9 +146,9 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 			errMsg:     "URL is required for proxy provider",
 		},
 		{
-			name: "Provider 未配置",
+			name: "Provider not configured",
 			config: LLMConfig{
-				Provider: "", // 空 provider
+				Provider: "", // Empty provider
 			},
 			wantAPIKey: "",
 			wantModel:  "",
@@ -157,7 +157,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 			errMsg:     "LLM provider is not configured",
 		},
 		{
-			name: "无效的 provider",
+			name: "Invalid provider",
 			config: LLMConfig{
 				Provider: "invalid-provider",
 			},
@@ -171,10 +171,10 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Act: 获取当前 provider 配置
+			// Act: Get current provider configuration
 			apiKey, model, url, err := tt.config.CurrentProvider()
 
-			// Assert: 验证结果
+			// Assert: Verify results
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.errMsg != "" {
@@ -193,17 +193,17 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 	}
 }
 
-// ==================== 边界情况测试 ====================
+// ==================== Edge Case Tests ====================
 
 func TestLLMConfig_CurrentProvider_EdgeCases(t *testing.T) {
-	t.Run("OpenAI provider - APIKey 为空", func(t *testing.T) {
+	t.Run("OpenAI provider - APIKey is empty", func(t *testing.T) {
 		config := LLMConfig{
 			Provider: "openai",
 			OpenAI: struct {
 				APIKey string `toml:"api_key,omitempty"`
 				Model  string `toml:"model,omitempty"`
 			}{
-				APIKey: "", // 空 APIKey（允许，由调用方验证）
+				APIKey: "", // Empty APIKey (allowed, validated by caller)
 				Model:  "gpt-4",
 			},
 		}
@@ -215,14 +215,14 @@ func TestLLMConfig_CurrentProvider_EdgeCases(t *testing.T) {
 		assert.Equal(t, "https://api.openai.com/v1", url)
 	})
 
-	t.Run("DeepSeek provider - APIKey 为空", func(t *testing.T) {
+	t.Run("DeepSeek provider - APIKey is empty", func(t *testing.T) {
 		config := LLMConfig{
 			Provider: "deepseek",
 			DeepSeek: struct {
 				APIKey string `toml:"api_key,omitempty"`
 				Model  string `toml:"model,omitempty"`
 			}{
-				APIKey: "", // 空 APIKey（允许，由调用方验证）
+				APIKey: "", // Empty APIKey (allowed, validated by caller)
 				Model:  "deepseek-chat-v2",
 			},
 		}
@@ -234,7 +234,7 @@ func TestLLMConfig_CurrentProvider_EdgeCases(t *testing.T) {
 		assert.Equal(t, "https://api.deepseek.com/v1", url)
 	})
 
-	t.Run("Proxy provider - APIKey 为空但 model 和 URL 存在", func(t *testing.T) {
+	t.Run("Proxy provider - APIKey is empty but model and URL exist", func(t *testing.T) {
 		config := LLMConfig{
 			Provider: "proxy",
 			Proxy: struct {
@@ -243,7 +243,7 @@ func TestLLMConfig_CurrentProvider_EdgeCases(t *testing.T) {
 				Model  string `toml:"model,omitempty"`
 			}{
 				URL:    "https://api.example.com/v1",
-				APIKey: "", // 空 APIKey（允许，由调用方验证）
+				APIKey: "", // Empty APIKey (allowed, validated by caller)
 				Model:  "custom-model",
 			},
 		}
@@ -256,7 +256,7 @@ func TestLLMConfig_CurrentProvider_EdgeCases(t *testing.T) {
 	})
 }
 
-// ==================== CurrentLanguage 测试 ====================
+// ==================== CurrentLanguage Tests ====================
 
 func TestLLMConfig_CurrentLanguage(t *testing.T) {
 	tests := []struct {
@@ -267,15 +267,15 @@ func TestLLMConfig_CurrentLanguage(t *testing.T) {
 		errMsg   string
 	}{
 		{
-			name: "语言未设置 - 返回默认英文",
+			name: "Language not set - returns default English",
 			config: LLMConfig{
-				Language: "", // 未设置语言
+				Language: "", // Language not set
 			},
 			wantCode: "en",
 			wantErr:  false,
 		},
 		{
-			name: "设置英文语言",
+			name: "Set English language",
 			config: LLMConfig{
 				Language: "en",
 			},
@@ -283,7 +283,7 @@ func TestLLMConfig_CurrentLanguage(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "设置简体中文",
+			name: "Set Simplified Chinese",
 			config: LLMConfig{
 				Language: "zh-CN",
 			},
@@ -291,7 +291,7 @@ func TestLLMConfig_CurrentLanguage(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "设置繁体中文",
+			name: "Set Traditional Chinese",
 			config: LLMConfig{
 				Language: "zh-TW",
 			},
@@ -299,7 +299,7 @@ func TestLLMConfig_CurrentLanguage(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "设置日语",
+			name: "Set Japanese",
 			config: LLMConfig{
 				Language: "ja",
 			},
@@ -307,7 +307,7 @@ func TestLLMConfig_CurrentLanguage(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "设置韩语",
+			name: "Set Korean",
 			config: LLMConfig{
 				Language: "ko",
 			},
@@ -315,22 +315,22 @@ func TestLLMConfig_CurrentLanguage(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			name: "无效的语言代码",
+			name: "Invalid language code",
 			config: LLMConfig{
 				Language: "invalid-lang",
 			},
 			wantCode: "",
 			wantErr:  true,
-			errMsg:   "不支持的语言代码",
+			errMsg:   "unsupported language code",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Act: 获取当前语言配置
+			// Act: Get current language configuration
 			lang, err := tt.config.CurrentLanguage()
 
-			// Assert: 验证结果
+			// Assert: Verify results
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.errMsg != "" {
@@ -347,15 +347,15 @@ func TestLLMConfig_CurrentLanguage(t *testing.T) {
 }
 
 func TestLLMConfig_CurrentLanguage_DefaultEnglish(t *testing.T) {
-	// Arrange: 语言未设置的配置
+	// Arrange: Configuration with language not set
 	config := LLMConfig{
 		Language: "",
 	}
 
-	// Act: 获取当前语言配置
+	// Act: Get current language configuration
 	lang, err := config.CurrentLanguage()
 
-	// Assert: 应该返回默认英文配置
+	// Assert: Should return default English configuration
 	assert.NoError(t, err)
 	assert.NotNil(t, lang)
 	assert.Equal(t, "en", lang.Code)

@@ -64,10 +64,10 @@ internal/config/
   - `config.Global()` - 获取全局配置管理器
   - `repoManager.TemplateConfig` - 直接访问模板配置（推荐）
   - `repoManager.GetTemplateConfig()` - 获取模板配置（向后兼容）
-- **`internal/adapter/llm/`**：LLM 适配器使用配置
+- **`internal/infrastructure/llm/`**：LLM 基础设施层使用配置
   - `config.Global()` - 获取全局配置管理器
   - `manager.LLMConfig` - 访问 LLM 配置
-- **`internal/adapter/config/`**：配置适配器层
+- **`internal/infrastructure/config/`**：配置基础设施层
   - `config.GlobalRepoManager()` - 获取仓库配置管理器
 
 ---
@@ -339,13 +339,13 @@ config 模块被以下模块使用：
    - 使用 `manager.Config` 或便捷字段 - 访问配置
    - 使用 `manager.Save()` - 保存配置
 
-2. **`internal/adapter/llm/`**：LLM 适配器使用配置
+2. **`internal/infrastructure/llm/`**：LLM 适配器使用配置
    - 使用 `config.Global()` - 获取全局配置管理器
    - 使用 `manager.LLMConfig` - 访问 LLM 配置
    - 使用 `llmConfig.CurrentProvider()` - 获取 provider 配置
    - 使用 `llmConfig.CurrentLanguage()` - 获取语言配置
 
-3. **`internal/adapter/config/`**：配置适配器层
+3. **`internal/infrastructure/config/`**：配置适配器层
    - 使用 `config.GlobalRepoManager()` - 获取仓库配置管理器
    - 包装 git 模块，实现 `GitRepository` 接口
 
@@ -440,17 +440,17 @@ if err := manager.Save(); err != nil {
 **功能说明**：管理仓库级别的配置，包括项目公共配置和个人偏好配置。
 
 **流程**：
-1. 调用 `adapterconfig.NewRepoManagerWithDefaultGit()` 获取仓库配置管理器
+1. 调用 `infrastructureconfig.NewRepoManagerWithDefaultGit()` 获取仓库配置管理器
 2. 调用 `repoManager.Load()` 加载配置
 3. 通过方法访问配置（如 `repoManager.GetBranchPrefix()`）
 4. 调用 `repoManager.SaveTemplateConfig()` 保存模板配置
 
 **示例**：
 ```go
-import adapterconfig "github.com/zevwings/workflow/internal/adapter/config"
+import infrastructureconfig "github.com/zevwings/workflow/internal/infrastructure/config"
 
 // 获取仓库配置管理器
-repoManager, err := adapterconfig.NewRepoManagerWithDefaultGit("")
+repoManager, err := infrastructureconfig.NewRepoManagerWithDefaultGit("")
 if err != nil {
     return err
 }
@@ -577,10 +577,10 @@ if err := manager.Save(); err != nil {
 ```go
 import (
     "github.com/zevwings/workflow/internal/config"
-    adapterconfig "github.com/zevwings/workflow/internal/adapter/config"
+    infrastructureconfig "github.com/zevwings/workflow/internal/infrastructure/config"
 )
 
-repoManager, err := adapterconfig.NewRepoManagerWithDefaultGit("")
+repoManager, err := infrastructureconfig.NewRepoManagerWithDefaultGit("")
 if err != nil {
     panic(err)
 }

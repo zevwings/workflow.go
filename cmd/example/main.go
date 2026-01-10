@@ -21,30 +21,30 @@ var (
 )
 
 func main() {
-	// 初始化日志系统
+	// Initialize logging system
 	initLogging()
 
-	// 创建根命令
+	// Create root command
 	rootCmd := &cobra.Command{
 		Use:   "example",
-		Short: "Workflow CLI Example - 演示和测试工具",
-		Long: `Workflow CLI Example 是一个演示和测试工具，
-用于展示 Workflow CLI 的各种功能和组件。
+		Short: "Workflow CLI Example - Demonstration and testing tool",
+		Long: `Workflow CLI Example is a demonstration and testing tool,
+used to showcase various features and components of Workflow CLI.
 
-此工具包含以下演示命令：
-- demo-prompt: 演示所有 Prompt 组件的交互功能
-- demo-form: 演示 Form 模块的交互式表单功能`,
+This tool includes the following demo commands:
+- demo-prompt: Demonstrate interactive features of all Prompt components
+- demo-form: Demonstrate interactive form features of Form module`,
 		Version: version,
 	}
 
-	// 注册示例命令
+	// Register example commands
 	rootCmd.AddCommand(example.NewDemoCmd())
 	rootCmd.AddCommand(example.NewDemoFormCmd())
 
-	// 设置版本模板
+	// Set version template
 	rootCmd.SetVersionTemplate(fmt.Sprintf("example version %s\nBuild Date: %s\nGit Commit: %s\n", version, buildDate, gitCommit))
 
-	// 执行命令
+	// Execute command
 	if err := rootCmd.Execute(); err != nil {
 		logger := logging.GetLogger()
 		logger.WithError(err).Error("Command execution failed")
@@ -52,17 +52,17 @@ func main() {
 	}
 }
 
-// initLogging 初始化日志系统
+// initLogging initializes the logging system
 func initLogging() {
-	// 如果 Logger 还未初始化，先初始化一个默认的
+	// If Logger is not yet initialized, initialize a default one first
 	if logging.Logger == nil {
 		logging.Init("info", "text", nil)
 	}
-	// 使用全局 logger（此时模块 logger 还未初始化）
+	// Use global logger (module logger is not yet initialized at this point)
 	logger := logging.Logger
 	logger.Info("Initializing logging system")
 
-	// 获取日志目录（使用 XDG_STATE_HOME）
+	// Get log directory (using XDG_STATE_HOME)
 	var logDir string
 	workflowStateDir, err := config.StateDir()
 	if err == nil {
@@ -72,34 +72,34 @@ func initLogging() {
 		logDir = ""
 	}
 
-	// 尝试加载配置以获取日志级别
+	// Try to load configuration to get log level
 	manager, err := config.Global()
 	if err != nil {
-		// 如果配置管理器创建失败，使用默认设置
+		// If config manager creation fails, use default settings
 		logger.WithError(err).Warn("Failed to create config manager, using default logging settings")
 		logging.InitWithFiles("info", "text", nil, logDir, false)
 		return
 	}
 
-	// 尝试加载配置
+	// Try to load configuration
 	if err := manager.Load(); err != nil {
-		// 配置文件不存在时使用默认设置
+		// Use default settings when config file does not exist
 		logger.Debug("Config file not found, using default logging settings")
 		logging.InitWithFiles("info", "text", nil, logDir, false)
 		return
 	}
 
-	// 从配置中获取日志级别和格式
-	// 直接访问配置字段
+	// Get log level and format from configuration
+	// Directly access configuration fields
 	logLevel := manager.LogConfig.Level
 	if logLevel == "" {
 		logLevel = "info"
 	}
 
-	logFormat := "text" // 默认文本格式
+	logFormat := "text" // Default text format
 	logging.InitWithFiles(logLevel, logFormat, nil, logDir, false)
 
-	// 记录初始化完成
+	// Record initialization completion
 	logger.WithFields(logrus.Fields{
 		"level":   logLevel,
 		"format":  logFormat,

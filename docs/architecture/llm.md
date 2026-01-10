@@ -67,12 +67,12 @@ internal/llm/
 
 ### 模块集成
 
-- **`internal/adapter/llm/`**：适配器层，提供便捷的构造函数
+- **`internal/infrastructure/llm/`**：基础设施层，提供便捷的构造函数
   - `NewLLMConfigProvider()` - 创建配置提供者
   - `NewPullRequestLLMClient()` - 创建 PR LLM 客户端
   - `NewBranchLLMClient()` - 创建分支 LLM 客户端
 - **`cmd/`**：命令层使用 LLM 功能
-  - 通过适配器层创建 LLM 客户端
+  - 通过基础设施层创建 LLM 客户端
   - 调用 PR 生成、总结、翻译等功能
 
 ---
@@ -253,13 +253,13 @@ internal/llm/
 
 LLM 模块被以下模块使用：
 
-1. **`internal/adapter/llm/`**：适配器层，提供便捷的构造函数
+1. **`internal/infrastructure/llm/`**：基础设施层，提供便捷的构造函数
    - 使用 `llm.NewPullRequestLLMClient()` - 创建 PR LLM 客户端
    - 使用 `llm.NewBranchLLMClient()` - 创建分支 LLM 客户端
    - 实现 `llm.LLMConfigProvider` 接口 - 从配置模块获取配置
 
 2. **`cmd/`**：命令层使用 LLM 功能
-   - 通过适配器层创建 LLM 客户端
+   - 通过基础设施层创建 LLM 客户端
    - 调用 `GenerateContent()` - 生成 PR 内容
    - 调用 `Summarize()` - 总结 PR
    - 调用 `Reword()` - 重写 PR
@@ -272,7 +272,7 @@ LLM 模块被以下模块使用：
 ```
 命令层 (cmd/)
   ↓
-适配器层 (adapter/llm/)
+基础设施层 (adapter/llm/)
   ↓ NewPullRequestLLMClient(provider)
 LLM 模块 (llm/)
   ↓ global(provider) → client.Global(providerConfig)
@@ -295,7 +295,7 @@ PR 客户端 (llm/pr/)
 ```
 命令层 (cmd/)
   ↓
-适配器层 (adapter/llm/)
+基础设施层 (adapter/llm/)
   ↓ NewPullRequestLLMClient(provider)
 LLM 模块 (llm/)
   ↓ global(provider) → client.Global(providerConfig)
@@ -318,7 +318,7 @@ PR 客户端 (llm/pr/)
 ```
 命令层 (cmd/)
   ↓
-适配器层 (adapter/llm/)
+基础设施层 (adapter/llm/)
   ↓ NewBranchLLMClient(provider)
 LLM 模块 (llm/)
   ↓ global(provider) → client.Global(providerConfig)
@@ -354,10 +354,10 @@ LLM 客户端 (llm/client/)
 
 **示例**：
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建 PR LLM 客户端
-prClient := adapterllm.NewPullRequestLLMClient()
+prClient := infrastructurellm.NewPullRequestLLMClient()
 
 // 生成 PR 内容
 content, err := prClient.GenerateContent("fix: bug in authentication", nil, gitDiff)
@@ -385,10 +385,10 @@ fmt.Println("Description:", *content.Description)
 
 **示例**：
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建 PR LLM 客户端
-prClient := adapterllm.NewPullRequestLLMClient()
+prClient := infrastructurellm.NewPullRequestLLMClient()
 
 // 生成 PR 总结
 summary, err := prClient.Summarize("Add user authentication", prDiff)
@@ -414,10 +414,10 @@ fmt.Println("Summary:", summary.Summary)
 
 **示例**：
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建 PR LLM 客户端
-prClient := adapterllm.NewPullRequestLLMClient()
+prClient := infrastructurellm.NewPullRequestLLMClient()
 
 // 重写 PR
 currentTitle := "fix bug"
@@ -444,10 +444,10 @@ fmt.Println("Description:", *reword.Description)
 
 **示例**：
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建 PR LLM 客户端
-prClient := adapterllm.NewPullRequestLLMClient()
+prClient := infrastructurellm.NewPullRequestLLMClient()
 
 // 总结文件变更
 summary, err := prClient.SummarizeFileChange("src/auth/login.ts", fileDiff)
@@ -472,10 +472,10 @@ fmt.Println("File Summary:", summary)
 
 **示例**：
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建分支 LLM 客户端
-branchClient := adapterllm.NewBranchLLMClient()
+branchClient := infrastructurellm.NewBranchLLMClient()
 
 // 翻译文本
 translated, err := branchClient.TranslateToEnglish("你好")
@@ -495,14 +495,14 @@ fmt.Println("Translated:", translated) // "Hello"
 
 ```go
 import (
-    adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+    infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 )
 
-// 方式 1: 使用适配器层的便捷函数（推荐，最简单）
-prClient := adapterllm.NewPullRequestLLMClient()
+// 方式 1: 使用基础设施层的便捷函数（推荐，最简单）
+prClient := infrastructurellm.NewPullRequestLLMClient()
 
 // 方式 2: 使用适配器创建 provider 并传入
-provider := adapterllm.NewLLMConfigProvider()
+provider := infrastructurellm.NewLLMConfigProvider()
 prClient := llm.NewPullRequestLLMClient(provider)
 
 // 方式 3: 手动实现 LLMConfigProvider 接口并传入
@@ -513,10 +513,10 @@ prClient := llm.NewPullRequestLLMClient(provider)
 ### 生成 PR 内容
 
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建 PR LLM 客户端
-prClient := adapterllm.NewPullRequestLLMClient()
+prClient := infrastructurellm.NewPullRequestLLMClient()
 
 // 生成 PR 内容
 content, err := prClient.GenerateContent(
@@ -542,10 +542,10 @@ if content.Scope != nil {
 ### 总结 PR
 
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建 PR LLM 客户端
-prClient := adapterllm.NewPullRequestLLMClient()
+prClient := infrastructurellm.NewPullRequestLLMClient()
 
 // 生成 PR 总结
 summary, err := prClient.Summarize("Add user authentication", prDiff)
@@ -561,10 +561,10 @@ fmt.Println("Summary:", summary.Summary)
 ### 翻译文本
 
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建分支 LLM 客户端
-branchClient := adapterllm.NewBranchLLMClient()
+branchClient := infrastructurellm.NewBranchLLMClient()
 
 // 翻译文本
 translated, err := branchClient.TranslateToEnglish("修复认证错误")
@@ -623,7 +623,7 @@ func (c *PullRequestLLMClient) NewFeature(input string) (*NewFeatureResult, erro
 1. 在 `internal/llm/` 目录下创建新的子包（如 `internal/llm/newcomponent/`）
 2. 实现客户端结构体和方法
 3. 在 `llm.go` 中导出类型和构造函数
-4. 在适配器层添加便捷的构造函数（如果需要）
+4. 在基础设施层添加便捷的构造函数（如果需要）
 
 **示例**：
 ```go
@@ -653,7 +653,7 @@ func NewNewComponentLLMClient(provider LLMConfigProvider) *NewComponentLLMClient
 ### 添加新的 LLM 提供商
 
 1. 在配置模块中添加新提供商的配置结构
-2. 在适配器层实现配置提供者，支持新提供商
+2. 在基础设施层实现配置提供者，支持新提供商
 3. LLM 客户端会自动适配，因为所有提供商使用相同的 API 格式（OpenAI Chat Completions API 标准）
 
 **注意**：LLM 客户端已经支持通过配置区分不同的提供商，无需修改客户端代码。

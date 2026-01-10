@@ -1,4 +1,4 @@
-package config
+package commands
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/zevwings/workflow/internal/config"
+	"github.com/zevwings/workflow/internal/infrastructure/verify"
 	"github.com/zevwings/workflow/internal/prompt"
 	"github.com/zevwings/workflow/internal/prompt/form"
 )
@@ -662,7 +663,7 @@ func handleLogConfig(msg *prompt.Message, cfg *config.GlobalConfig) error {
 	return nil
 }
 
-// verifyConfiguration 验证配置
+// verifyConfiguration verifies the configuration
 func verifyConfiguration(msg *prompt.Message, manager *config.GlobalManager) error {
 	cfg := manager.Config
 
@@ -670,7 +671,7 @@ func verifyConfiguration(msg *prompt.Message, manager *config.GlobalManager) err
 	msg.Info("Verifying configuration...")
 	msg.Break()
 
-	// 检查是否有任何配置需要验证
+	// Check if there is any configuration to verify
 	hasConfig := cfg.Log.Level != "" || cfg.LLM.Provider != "" ||
 		(cfg.Jira.Email != "" || cfg.Jira.APIToken != "" || cfg.Jira.ServiceAddress != "") ||
 		len(cfg.GitHub.Accounts) > 0
@@ -679,10 +680,10 @@ func verifyConfiguration(msg *prompt.Message, manager *config.GlobalManager) err
 		msg.Break()
 	}
 
-	VerifyLogConfig(manager.LogConfig)
-	VerifyLLMConfig(manager.LLMConfig)
-	VerifyJiraConfig(manager.JiraConfig)
-	VerifyGitHubConfig(manager.GitHubConfig)
+	verify.VerifyLogConfig(manager.LogConfig)
+	verify.VerifyLLMConfig(manager.LLMConfig)
+	verify.VerifyJiraConfig(manager.JiraConfig)
+	verify.VerifyGitHubConfig(manager.GitHubConfig)
 
 	return nil
 }

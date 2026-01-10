@@ -10,16 +10,16 @@ import (
 	"github.com/zevwings/workflow/internal/prompt/form"
 )
 
-// NewDemoFormCmd 创建一个演示 Form 模块功能的命令
+// NewDemoFormCmd creates a command to demonstrate Form module features
 func NewDemoFormCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "demo-form",
-		Short: "演示 Form 模块的交互式表单功能",
-		Long: `演示 Form 模块的功能：
-- 基本流程：多层顺序执行（confirm -> input -> select -> input），支持 title
-- 复杂流程：嵌套表单与条件字段的组合，支持嵌套表单的 title
+		Short: "Demonstrate interactive form features of Form module",
+		Long: `Demonstrate Form module features:
+- Basic flow: Multi-layer sequential execution (confirm -> input -> select -> input), supports title
+- Complex flow: Combination of nested forms and conditional fields, supports nested form title
 
-这个 demo 展示了 Form 模块的核心使用场景，包括 title 功能。`,
+This demo showcases the core usage scenarios of the Form module, including title functionality.`,
 		RunE: runDemoForm,
 	}
 
@@ -29,115 +29,115 @@ func NewDemoFormCmd() *cobra.Command {
 func runDemoForm(cmd *cobra.Command, args []string) error {
 	msg := prompt.GetMessage()
 
-	msg.Info("欢迎使用 Form 模块演示")
+	msg.Info("Welcome to Form module demonstration")
 	msg.Break()
-	msg.Info("本演示将展示以下场景：")
-	msg.Print("  1. 基本流程 - 多层顺序执行（confirm -> input -> select -> input）")
-	msg.Print("  2. 复杂流程 - 嵌套表单与条件字段组合")
+	msg.Info("This demo will demonstrate the following scenarios:")
+	msg.Print("  1. Basic flow - Multi-layer sequential execution (confirm -> input -> select -> input)")
+	msg.Print("  2. Complex flow - Nested forms and conditional field combination")
 	msg.Break()
 
-	// 1. 基本流程 - 多层顺序执行
-	msg.Info("=== 1. 基本流程 - 多层顺序执行 ===")
+	// 1. Basic flow - Multi-layer sequential execution
+	msg.Info("=== 1. Basic Flow - Multi-layer Sequential Execution ===")
 	result1, err := prompt.Form().
-		SetTitle("用户注册表单").
+		SetTitle("User Registration Form").
 		AddConfirm(form.ConfirmFormField{
 			Key:          "agree",
-			Prompt:       "是否同意？",
+			Prompt:       "Do you agree?",
 			DefaultValue: false,
 		}).
 		AddInput(form.InputFormField{
 			Key:          "name",
-			Prompt:       "请输入姓名",
+			Prompt:       "Please enter your name",
 			DefaultValue: "",
 			Validator:    nil,
 		}).
 		AddInput(form.InputFormField{
 			Key:          "email",
-			Prompt:       "请输入邮箱",
+			Prompt:       "Please enter your email",
 			DefaultValue: "",
 			Validator:    prompt.ValidateEmail(),
 		}).
 		AddSelect(form.SelectFormField{
 			Key:          "role",
-			Prompt:       "请选择角色",
+			Prompt:       "Please select a role",
 			Options:      []string{"Admin", "User"},
 			DefaultIndex: 0,
 		}).
 		AddInput(form.InputFormField{
 			Key:          "department",
-			Prompt:       "请输入部门",
+			Prompt:       "Please enter department",
 			DefaultValue: "",
 			Validator:    nil,
 		}).
 		AddInput(form.InputFormField{
 			Key:          "remark",
-			Prompt:       "请输入备注",
+			Prompt:       "Please enter remarks",
 			DefaultValue: "",
 			Validator:    nil,
 		}).
 		Run()
 	if err != nil {
-		return fmt.Errorf("表单执行失败: %w", err)
+		return fmt.Errorf("form execution failed: %w", err)
 	}
 	roleIndex := result1.GetInt("role")
 	roles := []string{"Admin", "User"}
-	msg.Success("表单结果：")
+	msg.Success("Form results:")
 	msg.Print("  agree: %v", result1.GetBool("agree"))
 	msg.Print("  name: %s", result1.GetString("name"))
 	msg.Print("  email: %s", result1.GetString("email"))
-	msg.Print("  role: %s (索引: %d)", roles[roleIndex], roleIndex)
+	msg.Print("  role: %s (index: %d)", roles[roleIndex], roleIndex)
 	msg.Print("  department: %s", result1.GetString("department"))
 	msg.Print("  remark: %s", result1.GetString("remark"))
 	msg.Break()
 
-	// 2. 复杂流程 - 嵌套表单与条件字段组合
-	msg.Info("=== 2. 复杂流程 - 嵌套表单与条件字段组合 ===")
+	// 2. Complex flow - Nested forms and conditional field combination
+	msg.Info("=== 2. Complex Flow - Nested Forms and Conditional Field Combination ===")
 	innerUserForm := prompt.Form().
-		SetTitle("用户信息").
+		SetTitle("User Information").
 		AddInput(form.InputFormField{
 			Key:          "name",
-			Prompt:       "姓名",
+			Prompt:       "Name",
 			DefaultValue: "",
 			Validator:    prompt.ValidateRequired(),
 		}).
 		AddInput(form.InputFormField{
 			Key:          "email",
-			Prompt:       "邮箱",
+			Prompt:       "Email",
 			DefaultValue: "",
 			Validator:    prompt.ValidateEmail(),
 		}).
 		AddSelect(form.SelectFormField{
 			Key:          "role",
-			Prompt:       "角色",
+			Prompt:       "Role",
 			Options:      []string{"Admin", "User"},
 			DefaultIndex: 0,
 		})
 
 	innerAddressForm := prompt.Form().
-		SetTitle("地址信息").
+		SetTitle("Address Information").
 		AddInput(form.InputFormField{
 			Key:          "city",
-			Prompt:       "城市",
+			Prompt:       "City",
 			DefaultValue: "",
 			Validator:    nil,
 		}).
 		AddInput(form.InputFormField{
 			Key:          "street",
-			Prompt:       "街道",
+			Prompt:       "Street",
 			DefaultValue: "",
 			Validator:    nil,
 		})
 
 	result2, err := prompt.Form().
-		SetTitle("创建用户").
+		SetTitle("Create User").
 		AddConfirm(form.ConfirmFormField{
 			Key:          "createUser",
-			Prompt:       "是否创建用户？",
+			Prompt:       "Do you want to create a user?",
 			DefaultValue: false,
 		}).
 		AddForm(form.NestedFormField{
 			Key:        "user",
-			Prompt:     "用户信息",
+			Prompt:     "User Information",
 			NestedForm: innerUserForm,
 			Condition: func(r *prompt.FormResult) bool {
 				return r.GetBool("createUser")
@@ -145,12 +145,12 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 		}).
 		AddConfirm(form.ConfirmFormField{
 			Key:          "hasAddress",
-			Prompt:       "是否有地址？",
+			Prompt:       "Do you have an address?",
 			DefaultValue: false,
 		}).
 		AddForm(form.NestedFormField{
 			Key:        "address",
-			Prompt:     "地址信息",
+			Prompt:     "Address Information",
 			NestedForm: innerAddressForm,
 			Condition: func(r *prompt.FormResult) bool {
 				return r.GetBool("hasAddress")
@@ -158,15 +158,15 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 		}).
 		AddMultiSelect(form.MultiSelectFormField{
 			Key:             "tags",
-			Prompt:          "标签",
+			Prompt:          "Tags",
 			Options:         []string{"VIP", "Premium", "Standard"},
 			DefaultSelected: []int{},
 		}).
 		Run()
 	if err != nil {
-		return fmt.Errorf("表单执行失败: %w", err)
+		return fmt.Errorf("form execution failed: %w", err)
 	}
-	msg.Success("表单结果：")
+	msg.Success("Form results:")
 	msg.Print("  createUser: %v", result2.GetBool("createUser"))
 	if result2.GetBool("createUser") {
 		userResult := result2.GetForm("user")
@@ -175,10 +175,10 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 			roles2 := []string{"Admin", "User"}
 			msg.Print("  user.name: %s", userResult.GetString("name"))
 			msg.Print("  user.email: %s", userResult.GetString("email"))
-			msg.Print("  user.role: %s (索引: %d)", roles2[roleIndex2], roleIndex2)
+			msg.Print("  user.role: %s (index: %d)", roles2[roleIndex2], roleIndex2)
 		}
 	} else {
-		msg.Print("  user: (未填写，因为 createUser 为 false)")
+		msg.Print("  user: (not filled, because createUser is false)")
 	}
 	msg.Print("  hasAddress: %v", result2.GetBool("hasAddress"))
 	if result2.GetBool("hasAddress") {
@@ -188,7 +188,7 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 			msg.Print("  address.street: %s", addressResult.GetString("street"))
 		}
 	} else {
-		msg.Print("  address: (未填写，因为 hasAddress 为 false)")
+		msg.Print("  address: (not filled, because hasAddress is false)")
 	}
 	tags := result2.GetIntSlice("tags")
 	tagNames := []string{"VIP", "Premium", "Standard"}
@@ -201,7 +201,7 @@ func runDemoForm(cmd *cobra.Command, args []string) error {
 	msg.Print("  tags: %v", selectedTags)
 	msg.Break()
 
-	msg.Success("Form 模块演示完成！")
+	msg.Success("Form module demonstration completed!")
 
 	return nil
 }

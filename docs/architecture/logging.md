@@ -48,7 +48,7 @@ internal/logging/
 
 - **`internal/http/`**：HTTP 客户端模块
   - 使用 `GetLogger()` - 记录 HTTP 请求日志
-- **`internal/adapter/http/`**：HTTP 适配器模块
+- **`internal/infrastructure/http/`**：HTTP 基础设施模块
   - 使用 `WithField("module", "http")` - 标识 HTTP 模块日志
 - **`internal/llm/`**：LLM 客户端模块
   - 使用 `GetLogger()` - 记录 LLM API 调用日志
@@ -219,7 +219,7 @@ Logging 模块被以下模块使用：
    - 使用 `GetLogger()` - 记录 HTTP 请求和响应日志
    - 使用场景：请求发送前、响应后、错误处理
 
-2. **`internal/adapter/http/`**：HTTP 适配器模块
+2. **`internal/infrastructure/http/`**：HTTP 适配器模块
    - 使用 `logging.WithField("module", "http")` - 标识 HTTP 模块日志（全局函数）
    - 使用场景：Resty 日志适配，将 Resty 的日志转发到 logging 包
    - 说明：适配器场景中无法使用 `GetLogger()` 自动识别模块名，因此使用全局函数手动指定

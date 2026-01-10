@@ -59,23 +59,23 @@ internal/llm/
 ### 创建 PR LLM 客户端
 
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
-// 使用适配器层的便捷函数（推荐，最简单）
-prClient := adapterllm.NewPullRequestLLMClient()
+// 使用基础设施层的便捷函数（推荐，最简单）
+prClient := infrastructurellm.NewPullRequestLLMClient()
 
-// 或者使用适配器创建 provider 并传入
-provider := adapterllm.NewLLMConfigProvider()
+// 或者使用基础设施层创建 provider 并传入
+provider := infrastructurellm.NewLLMConfigProvider()
 prClient := llm.NewPullRequestLLMClient(provider)
 ```
 
 ### 生成 PR 内容
 
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建 PR LLM 客户端
-prClient := adapterllm.NewPullRequestLLMClient()
+prClient := infrastructurellm.NewPullRequestLLMClient()
 
 // 生成 PR 内容
 content, err := prClient.GenerateContent(
@@ -101,10 +101,10 @@ if content.Scope != nil {
 ### 总结 PR
 
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建 PR LLM 客户端
-prClient := adapterllm.NewPullRequestLLMClient()
+prClient := infrastructurellm.NewPullRequestLLMClient()
 
 // 生成 PR 总结
 summary, err := prClient.Summarize("Add user authentication", prDiff)
@@ -120,10 +120,10 @@ fmt.Println("Summary:", summary.Summary)
 ### 翻译文本
 
 ```go
-import adapterllm "github.com/zevwings/workflow/internal/adapter/llm"
+import infrastructurellm "github.com/zevwings/workflow/internal/infrastructure/llm"
 
 // 创建分支 LLM 客户端
-branchClient := adapterllm.NewBranchLLMClient()
+branchClient := infrastructurellm.NewBranchLLMClient()
 
 // 翻译文本
 translated, err := branchClient.TranslateToEnglish("你好")

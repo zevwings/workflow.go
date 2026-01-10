@@ -2,7 +2,7 @@ package config
 
 import "fmt"
 
-// LLMConfig LLM 配置
+// LLMConfig LLM configuration
 type LLMConfig struct {
 	Provider string `toml:"provider,omitempty"`
 	Language string `toml:"language,omitempty"`
@@ -21,16 +21,16 @@ type LLMConfig struct {
 	} `toml:"proxy,omitempty"`
 }
 
-// CurrentProvider 获取当前 provider 的配置
+// CurrentProvider gets current provider configuration
 //
-// 根据 LLMConfig.Provider 返回对应的配置信息（APIKey、Model、URL）。
-// 如果 provider 未设置或不存在，返回错误。
+// Returns corresponding configuration information (APIKey, Model, URL) based on LLMConfig.Provider.
+// If provider is not set or does not exist, returns error.
 //
-// 返回:
-//   - APIKey: API 密钥
-//   - Model: 模型名称（如果未设置，返回默认值）
-//   - URL: API URL（openai/deepseek 使用默认 URL，proxy 需要配置）
-//   - error: 如果 provider 未配置或无效，返回错误
+// Returns:
+//   - APIKey: API key
+//   - Model: Model name (if not set, returns default value)
+//   - URL: API URL (openai/deepseek use default URL, proxy needs configuration)
+//   - error: Returns error if provider is not configured or invalid
 func (c *LLMConfig) CurrentProvider() (apiKey, model, url string, err error) {
 	switch c.Provider {
 	case "openai":
@@ -60,29 +60,29 @@ func (c *LLMConfig) CurrentProvider() (apiKey, model, url string, err error) {
 	}
 }
 
-// CurrentLanguage 获取当前语言的配置
+// CurrentLanguage gets current language configuration
 //
-// 根据 LLMConfig.Language 返回对应的语言配置信息。
-// 如果 language 未设置，返回默认英文配置。
-// 如果 language 设置了但找不到匹配的语言，返回错误。
+// Returns corresponding language configuration information based on LLMConfig.Language.
+// If language is not set, returns default English configuration.
+// If language is set but no matching language is found, returns error.
 //
-// 返回:
-//   - *SupportedLanguage: 语言配置信息（如果未设置，返回默认英文配置）
-//   - error: 如果 language 配置了但无效，返回错误
+// Returns:
+//   - *SupportedLanguage: Language configuration information (if not set, returns default English configuration)
+//   - error: Returns error if language is configured but invalid
 func (c *LLMConfig) CurrentLanguage() (*SupportedLanguage, error) {
-	// 如果语言未设置，返回默认英文配置
+	// If language is not set, return default English configuration
 	if c.Language == "" {
 		lang := FindLanguage("en")
 		if lang == nil {
-			return nil, fmt.Errorf("默认语言（英文）配置不可用")
+			return nil, fmt.Errorf("default language (English) configuration is not available")
 		}
 		return lang, nil
 	}
 
-	// 查找匹配的语言
+	// Find matching language
 	lang := FindLanguage(c.Language)
 	if lang == nil {
-		return nil, fmt.Errorf("不支持的语言代码: %s", c.Language)
+		return nil, fmt.Errorf("unsupported language code: %s", c.Language)
 	}
 
 	return lang, nil

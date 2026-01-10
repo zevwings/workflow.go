@@ -9,70 +9,70 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	adapterhttp "github.com/zevwings/workflow/internal/adapter/http"
+	adapterhttp "github.com/zevwings/workflow/internal/infrastructure/http"
 	"github.com/zevwings/workflow/internal/logging"
 )
 
 var (
-	// globalClient 全局 HTTP 客户端单例
+	// globalClient global HTTP client singleton
 	globalClient *httpClient
 	globalOnce   sync.Once
 )
 
-// Client HTTP 客户端接口
+// Client HTTP client interface
 //
-// 提供统一的 HTTP 请求接口，封装了底层 resty 客户端。
-// 支持 GET、POST、PUT、DELETE、PATCH 等 HTTP 方法，以及流式请求和 multipart 请求。
+// Provides unified HTTP request interface, encapsulates underlying resty client.
+// Supports GET, POST, PUT, DELETE, PATCH and other HTTP methods, as well as streaming requests and multipart requests.
 type Client interface {
-	// SetAuth 设置认证 Token
+	// SetAuth sets authentication token
 	SetAuth(token string)
-	// SetBasicAuth 设置 Basic Auth
+	// SetBasicAuth sets Basic Auth
 	SetBasicAuth(username, password string)
-	// SetProxy 设置代理
+	// SetProxy sets proxy
 	SetProxy(proxyURL string)
-	// Get 发送 GET 请求（旧版 API，保持向后兼容）
+	// Get sends GET request (legacy API, maintained for backward compatibility)
 	Get(url string) (*resty.Response, error)
-	// Post 发送 POST 请求（旧版 API，保持向后兼容）
+	// Post sends POST request (legacy API, maintained for backward compatibility)
 	Post(url string, body interface{}) (*resty.Response, error)
-	// Put 发送 PUT 请求（旧版 API，保持向后兼容）
+	// Put sends PUT request (legacy API, maintained for backward compatibility)
 	Put(url string, body interface{}) (*resty.Response, error)
-	// Delete 发送 DELETE 请求（旧版 API，保持向后兼容）
+	// Delete sends DELETE request (legacy API, maintained for backward compatibility)
 	Delete(url string) (*resty.Response, error)
-	// Patch 发送 PATCH 请求（旧版 API，保持向后兼容）
+	// Patch sends PATCH request (legacy API, maintained for backward compatibility)
 	Patch(url string, body interface{}) (*resty.Response, error)
-	// GetWithConfig 发送 GET 请求（新版 API，支持 RequestConfig）
+	// GetWithConfig sends GET request (new API, supports RequestConfig)
 	GetWithConfig(url string, config *RequestConfig) (*HttpResponse, error)
-	// PostWithConfig 发送 POST 请求（新版 API，支持 RequestConfig）
+	// PostWithConfig sends POST request (new API, supports RequestConfig)
 	PostWithConfig(url string, config *RequestConfig) (*HttpResponse, error)
-	// PutWithConfig 发送 PUT 请求（新版 API，支持 RequestConfig）
+	// PutWithConfig sends PUT request (new API, supports RequestConfig)
 	PutWithConfig(url string, config *RequestConfig) (*HttpResponse, error)
-	// DeleteWithConfig 发送 DELETE 请求（新版 API，支持 RequestConfig）
+	// DeleteWithConfig sends DELETE request (new API, supports RequestConfig)
 	DeleteWithConfig(url string, config *RequestConfig) (*HttpResponse, error)
-	// PatchWithConfig 发送 PATCH 请求（新版 API，支持 RequestConfig）
+	// PatchWithConfig sends PATCH request (new API, supports RequestConfig)
 	PatchWithConfig(url string, config *RequestConfig) (*HttpResponse, error)
-	// Stream 流式请求
+	// Stream streaming request
 	Stream(method HttpMethod, url string, config *RequestConfig) (io.ReadCloser, error)
-	// PostMultipart POST Multipart 请求
+	// PostMultipart POST Multipart request
 	PostMultipart(url string, config *MultipartRequestConfig) (*HttpResponse, error)
-	// GetRestyClient 获取底层 resty 客户端（用于高级用法）
+	// GetRestyClient gets underlying resty client (for advanced usage)
 	GetRestyClient() *resty.Client
 }
 
-// httpClient HTTP 客户端实现
+// httpClient HTTP client implementation
 type httpClient struct {
 	client *resty.Client
 }
 
-// DefaultRetryCondition 默认的重试条件函数（导出以供其他包使用）
+// DefaultRetryCondition default retry condition function (exported for use by other packages)
 func DefaultRetryCondition(r *resty.Response, err error) bool {
-	// 网络错误或连接错误应该重试
+	// Network errors or connection errors should be retried
 	if err != nil {
 		return isRetryableNetworkError(err)
 	}
 
-	// HTTP 状态码判断
+	// HTTP status code judgment
 	statusCode := r.StatusCode()
-	// 5xx 服务器错误和 429 Too Many Requests 可重试
+	// 5xx server errors and 429 Too Many Requests are retryable
 	if statusCode >= 500 && statusCode < 600 {
 		return true
 	}
@@ -80,96 +80,96 @@ func DefaultRetryCondition(r *resty.Response, err error) bool {
 		return true
 	}
 
-	// 4xx 客户端错误不可重试
+	// 4xx client errors are not retryable
 	return false
 }
 
-// DefaultRetryAfter 默认的重试延迟函数（导出以供其他包使用）
+// DefaultRetryAfter default retry delay function (exported for use by other packages)
 func DefaultRetryAfter(client *resty.Client, resp *resty.Response) (time.Duration, error) {
-	// 如果响应包含 Retry-After header，使用它
+	// If response contains Retry-After header, use it
 	if retryAfter := resp.Header().Get("Retry-After"); retryAfter != "" {
 		if duration, err := parseRetryAfter(retryAfter); err == nil {
 			return duration, nil
 		}
 	}
 
-	// 否则使用指数退避：根据重试次数计算延迟
-	// resty 会自动处理指数退避，这里返回 0 让 resty 使用默认的指数退避
+	// Otherwise use exponential backoff: calculate delay based on retry count
+	// resty will automatically handle exponential backoff, return 0 here to let resty use default exponential backoff
 	return 0, nil
 }
 
-// newClient 创建新的 HTTP 客户端（内部函数，不导出）
+// newClient creates a new HTTP client (internal function, not exported)
 //
-// 外部代码应该使用 Global() 获取单例客户端，而不是直接创建新实例。
+// External code should use Global() to get singleton client, rather than directly creating new instances.
 func newClient() *httpClient {
 	client := resty.New()
 	client.SetTimeout(30 * time.Second)
 
-	// 设置 Logrus Logger（通过 adapter 实现）
+	// Set Logrus Logger (implemented through adapter)
 	client.SetLogger(adapterhttp.NewLogrusLogger())
 
-	// 配置默认重试策略
+	// Configure default retry strategy
 	client.SetRetryCount(3)
 	client.SetRetryWaitTime(1 * time.Second)
 	client.SetRetryMaxWaitTime(30 * time.Second)
 	client.AddRetryCondition(DefaultRetryCondition)
 	client.SetRetryAfter(DefaultRetryAfter)
 
-	// 添加日志 Hook
+	// Add logging hooks
 	setupLoggingHooks(client)
 
 	return &httpClient{client: client}
 }
 
-// setupLoggingHooks 设置 HTTP 请求日志 Hook
+// setupLoggingHooks sets up HTTP request logging hooks
 //
-// 使用 Resty 的 Hook 机制记录 HTTP 请求的各个阶段：
-//   - OnBeforeRequest: 记录请求发送前（Info 级别）
-//   - OnAfterResponse: 记录请求成功/失败（Info/Warn 级别）
-//   - OnError: 记录请求错误（Error 级别）
+// Uses Resty's Hook mechanism to record various stages of HTTP requests:
+//   - OnBeforeRequest: Record before request is sent (Info level)
+//   - OnAfterResponse: Record request success/failure (Info/Warn level)
+//   - OnError: Record request errors (Error level)
 //
-// 所有日志输出前都会自动过滤敏感信息（URL 中的 API Key、请求头中的敏感信息等）。
+// All log output automatically filters sensitive information before output (API keys in URLs, sensitive information in request headers, etc.).
 func setupLoggingHooks(client *resty.Client) {
-	// 请求发送前 Hook
+	// Before request hook
 	client.OnBeforeRequest(func(c *resty.Client, req *resty.Request) error {
-		// 过滤 URL 中的敏感信息
+		// Filter sensitive information in URL
 		filteredURL := FilterSensitiveURL(req.URL)
 		logging.GetLogger().Infof("HTTP %s request to %s", req.Method, filteredURL)
 		return nil
 	})
 
-	// 响应后 Hook
+	// After response hook
 	client.OnAfterResponse(func(c *resty.Client, resp *resty.Response) error {
 		method := resp.Request.Method
-		// 过滤 URL 中的敏感信息
+		// Filter sensitive information in URL
 		filteredURL := FilterSensitiveURL(resp.Request.URL)
 		statusCode := resp.StatusCode()
 
 		if resp.IsSuccess() {
-			// 2xx 状态码：成功
+			// 2xx status code: success
 			logging.GetLogger().Infof("HTTP %s request to %s succeeded: %d", method, filteredURL, statusCode)
 		} else if statusCode >= 400 && statusCode < 500 {
-			// 4xx 状态码：客户端错误
+			// 4xx status code: client error
 			logging.GetLogger().Warnf("HTTP %s request to %s returned client error: %d", method, filteredURL, statusCode)
 		} else if statusCode >= 500 {
-			// 5xx 状态码：服务器错误
+			// 5xx status code: server error
 			logging.GetLogger().Warnf("HTTP %s request to %s returned server error: %d", method, filteredURL, statusCode)
 		}
 
 		return nil
 	})
 
-	// 错误 Hook
+	// Error hook
 	client.OnError(func(req *resty.Request, err error) {
 		if err != nil {
-			// 过滤 URL 中的敏感信息
+			// Filter sensitive information in URL
 			filteredURL := FilterSensitiveURL(req.URL)
 			logging.GetLogger().Errorf("HTTP %s request to %s failed: %v", req.Method, filteredURL, err)
 		}
 	})
 }
 
-// isRetryableNetworkError 判断网络错误是否可重试
+// isRetryableNetworkError determines if network error is retryable
 func isRetryableNetworkError(err error) bool {
 	if err == nil {
 		return false
@@ -177,7 +177,7 @@ func isRetryableNetworkError(err error) bool {
 
 	errStr := err.Error()
 
-	// 网络连接错误可重试
+	// Network connection errors are retryable
 	retryableKeywords := []string{
 		"timeout",
 		"connection",
@@ -198,43 +198,43 @@ func isRetryableNetworkError(err error) bool {
 	return false
 }
 
-// parseRetryAfter 解析 Retry-After header 值
+// parseRetryAfter parses Retry-After header value
 func parseRetryAfter(value string) (time.Duration, error) {
-	// Retry-After 可以是秒数（数字）或 HTTP 日期
-	// 这里简化处理，只支持秒数
+	// Retry-After can be seconds (number) or HTTP date
+	// Here simplified processing, only supports seconds
 	if seconds, err := parseInt(value); err == nil {
 		return time.Duration(seconds) * time.Second, nil
 	}
 
-	// 如果无法解析，返回错误
+	// If unable to parse, return error
 	return 0, fmt.Errorf("invalid Retry-After value: %s", value)
 }
 
-// contains 检查字符串是否包含子串（不区分大小写）
+// contains checks if string contains substring (case-insensitive)
 func contains(s, substr string) bool {
 	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }
 
-// parseInt 尝试将字符串解析为整数
+// parseInt attempts to parse string as integer
 func parseInt(s string) (int, error) {
 	return strconv.Atoi(strings.TrimSpace(s))
 }
 
-// Global 获取全局 HttpClient 单例
+// Global gets global HttpClient singleton
 //
-// 返回进程级别的 HttpClient 单例，使用默认配置。
-// 单例会在首次调用时初始化，后续调用会复用同一个实例。
+// Returns process-level HttpClient singleton with default configuration.
+// Singleton is initialized on first call, subsequent calls reuse the same instance.
 //
-// 这是获取 HTTP 客户端的推荐方式，外部代码应该使用此方法而不是直接创建新实例。
+// This is the recommended way to get HTTP client, external code should use this method rather than directly creating new instances.
 //
-// 优势:
-//   - 复用连接池：所有请求共享同一个连接池，提高性能
-//   - 减少资源消耗：避免重复创建客户端实例
-//   - 线程安全：可以在多线程环境中安全使用
-//   - 封装性：返回接口类型，隐藏实现细节，防止外部直接访问内部结构
+// Advantages:
+//   - Reuse connection pool: All requests share the same connection pool, improving performance
+//   - Reduce resource consumption: Avoid duplicate client instance creation
+//   - Thread-safe: Can be safely used in multi-threaded environments
+//   - Encapsulation: Returns interface type, hides implementation details, prevents external direct access to internal structure
 //
-// 返回:
-//   - Client: 全局 HTTP 客户端接口实例
+// Returns:
+//   - Client: Global HTTP client interface instance
 func Global() Client {
 	globalOnce.Do(func() {
 		globalClient = newClient()
@@ -242,62 +242,62 @@ func Global() Client {
 	return globalClient
 }
 
-// SetAuth 设置认证 Token
+// SetAuth sets authentication token
 func (c *httpClient) SetAuth(token string) {
 	c.client.SetAuthToken(token)
 }
 
-// SetBasicAuth 设置 Basic Auth
+// SetBasicAuth sets Basic Auth
 func (c *httpClient) SetBasicAuth(username, password string) {
 	c.client.SetBasicAuth(username, password)
 }
 
-// SetProxy 设置代理
+// SetProxy sets proxy
 func (c *httpClient) SetProxy(proxyURL string) {
 	c.client.SetProxy(proxyURL)
 }
 
-// Get 发送 GET 请求（旧版 API，保持向后兼容）
+// Get sends GET request (legacy API, maintained for backward compatibility)
 func (c *httpClient) Get(url string) (*resty.Response, error) {
 	return c.client.R().Get(url)
 }
 
-// Post 发送 POST 请求（旧版 API，保持向后兼容）
+// Post sends POST request (legacy API, maintained for backward compatibility)
 func (c *httpClient) Post(url string, body interface{}) (*resty.Response, error) {
 	return c.client.R().SetBody(body).Post(url)
 }
 
-// Put 发送 PUT 请求（旧版 API，保持向后兼容）
+// Put sends PUT request (legacy API, maintained for backward compatibility)
 func (c *httpClient) Put(url string, body interface{}) (*resty.Response, error) {
 	return c.client.R().SetBody(body).Put(url)
 }
 
-// Delete 发送 DELETE 请求（旧版 API，保持向后兼容）
+// Delete sends DELETE request (legacy API, maintained for backward compatibility)
 func (c *httpClient) Delete(url string) (*resty.Response, error) {
 	return c.client.R().Delete(url)
 }
 
-// Patch 发送 PATCH 请求（旧版 API，保持向后兼容）
+// Patch sends PATCH request (legacy API, maintained for backward compatibility)
 func (c *httpClient) Patch(url string, body interface{}) (*resty.Response, error) {
 	return c.client.R().SetBody(body).Patch(url)
 }
 
-// doRequest 执行 HTTP 请求的通用方法
+// doRequest common method to execute HTTP request
 //
-// 参数:
-//   - method: HTTP 方法
-//   - url: 请求 URL
-//   - config: 请求配置（可选，如果为 nil 则使用默认配置）
+// Parameters:
+//   - method: HTTP method
+//   - url: Request URL
+//   - config: Request configuration (optional, if nil uses default configuration)
 //
-// 返回:
-//   - *HttpResponse: 封装后的 HTTP 响应
-//   - error: 如果请求失败，返回错误
+// Returns:
+//   - *HttpResponse: Encapsulated HTTP response
+//   - error: Returns error if request fails
 func (c *httpClient) doRequest(method HttpMethod, url string, config *RequestConfig) (*HttpResponse, error) {
 	if config == nil {
 		config = NewRequestConfig()
 	}
 
-	// 如果提供了自定义重试配置，创建临时客户端
+	// If custom retry configuration is provided, create temporary client
 	var client *resty.Client
 	if config.Retry != nil {
 		client = applyRetryConfig(c.client, config.Retry)
@@ -333,83 +333,83 @@ func (c *httpClient) doRequest(method HttpMethod, url string, config *RequestCon
 	return FromRestyResponse(resp)
 }
 
-// GetWithConfig 发送 GET 请求（新版 API，支持 RequestConfig）
+// GetWithConfig sends GET request (new API, supports RequestConfig)
 //
-// 参数:
-//   - url: 请求 URL
-//   - config: 请求配置（可选，如果为 nil 则使用默认配置）
+// Parameters:
+//   - url: Request URL
+//   - config: Request configuration (optional, if nil uses default configuration)
 //
-// 返回:
-//   - *HttpResponse: 封装后的 HTTP 响应
-//   - error: 如果请求失败，返回错误
+// Returns:
+//   - *HttpResponse: Encapsulated HTTP response
+//   - error: Returns error if request fails
 func (c *httpClient) GetWithConfig(url string, config *RequestConfig) (*HttpResponse, error) {
 	return c.doRequest(MethodGet, url, config)
 }
 
-// PostWithConfig 发送 POST 请求（新版 API，支持 RequestConfig）
+// PostWithConfig sends POST request (new API, supports RequestConfig)
 //
-// 参数:
-//   - url: 请求 URL
-//   - config: 请求配置（可选，如果为 nil 则使用默认配置）
+// Parameters:
+//   - url: Request URL
+//   - config: Request configuration (optional, if nil uses default configuration)
 //
-// 返回:
-//   - *HttpResponse: 封装后的 HTTP 响应
-//   - error: 如果请求失败，返回错误
+// Returns:
+//   - *HttpResponse: Encapsulated HTTP response
+//   - error: Returns error if request fails
 func (c *httpClient) PostWithConfig(url string, config *RequestConfig) (*HttpResponse, error) {
 	return c.doRequest(MethodPost, url, config)
 }
 
-// PutWithConfig 发送 PUT 请求（新版 API，支持 RequestConfig）
+// PutWithConfig sends PUT request (new API, supports RequestConfig)
 //
-// 参数:
-//   - url: 请求 URL
-//   - config: 请求配置（可选，如果为 nil 则使用默认配置）
+// Parameters:
+//   - url: Request URL
+//   - config: Request configuration (optional, if nil uses default configuration)
 //
-// 返回:
-//   - *HttpResponse: 封装后的 HTTP 响应
-//   - error: 如果请求失败，返回错误
+// Returns:
+//   - *HttpResponse: Encapsulated HTTP response
+//   - error: Returns error if request fails
 func (c *httpClient) PutWithConfig(url string, config *RequestConfig) (*HttpResponse, error) {
 	return c.doRequest(MethodPut, url, config)
 }
 
-// DeleteWithConfig 发送 DELETE 请求（新版 API，支持 RequestConfig）
+// DeleteWithConfig sends DELETE request (new API, supports RequestConfig)
 //
-// 参数:
-//   - url: 请求 URL
-//   - config: 请求配置（可选，如果为 nil 则使用默认配置）
+// Parameters:
+//   - url: Request URL
+//   - config: Request configuration (optional, if nil uses default configuration)
 //
-// 返回:
-//   - *HttpResponse: 封装后的 HTTP 响应
-//   - error: 如果请求失败，返回错误
+// Returns:
+//   - *HttpResponse: Encapsulated HTTP response
+//   - error: Returns error if request fails
 func (c *httpClient) DeleteWithConfig(url string, config *RequestConfig) (*HttpResponse, error) {
 	return c.doRequest(MethodDelete, url, config)
 }
 
-// PatchWithConfig 发送 PATCH 请求（新版 API，支持 RequestConfig）
+// PatchWithConfig sends PATCH request (new API, supports RequestConfig)
 //
-// 参数:
-//   - url: 请求 URL
-//   - config: 请求配置（可选，如果为 nil 则使用默认配置）
+// Parameters:
+//   - url: Request URL
+//   - config: Request configuration (optional, if nil uses default configuration)
 //
-// 返回:
-//   - *HttpResponse: 封装后的 HTTP 响应
-//   - error: 如果请求失败，返回错误
+// Returns:
+//   - *HttpResponse: Encapsulated HTTP response
+//   - error: Returns error if request fails
 func (c *httpClient) PatchWithConfig(url string, config *RequestConfig) (*HttpResponse, error) {
 	return c.doRequest(MethodPatch, url, config)
 }
 
-// Stream 流式请求
+// Stream streaming request
 //
-// 发送请求并返回响应流，用于处理大文件或流式数据。
+// Sends request and returns response stream, used for handling large files or streaming data.
 //
-// 参数:
-//   - method: HTTP 方法
-//   - url: 请求 URL
-//   - config: 请求配置（可选，如果为 nil 则使用默认配置）
+// Parameters:
+//   - method: HTTP method
+//   - url: Request URL
+//   - config: Request configuration (optional, if nil uses default configuration)
 //
-// 返回:
-//   - io.ReadCloser: 响应流
-//   - error: 如果请求失败，返回错误
+// Returns:
+//   - io.ReadCloser: Response stream
+//   - error: Returns error if request fails
 func (c *httpClient) Stream(method HttpMethod, url string, config *RequestConfig) (io.ReadCloser, error) {
 	if config == nil {
 		config = NewRequestConfig()
@@ -417,7 +417,7 @@ func (c *httpClient) Stream(method HttpMethod, url string, config *RequestConfig
 
 	req := c.client.R()
 	req = config.applyToRequest(req)
-	// 设置不自动解析响应，以便支持流式读取
+	// Set not to automatically parse response to support streaming read
 	req.SetDoNotParseResponse(true)
 
 	var resp *resty.Response
@@ -445,23 +445,23 @@ func (c *httpClient) Stream(method HttpMethod, url string, config *RequestConfig
 	return resp.RawBody(), nil
 }
 
-// PostMultipart POST Multipart 请求
+// PostMultipart POST Multipart request
 //
-// 发送 multipart/form-data 请求，通常用于文件上传。
+// Sends multipart/form-data request, typically used for file uploads.
 //
-// 参数:
-//   - url: 请求 URL
-//   - config: Multipart 请求配置
+// Parameters:
+//   - url: Request URL
+//   - config: Multipart request configuration
 //
-// 返回:
-//   - *HttpResponse: 封装后的 HTTP 响应
-//   - error: 如果请求失败，返回错误
+// Returns:
+//   - *HttpResponse: Encapsulated HTTP response
+//   - error: Returns error if request fails
 func (c *httpClient) PostMultipart(url string, config *MultipartRequestConfig) (*HttpResponse, error) {
 	if config == nil {
 		return nil, &ConfigError{Message: "MultipartRequestConfig is required for multipart requests"}
 	}
 
-	// 如果提供了自定义重试配置，创建临时客户端
+	// If custom retry configuration is provided, create temporary client
 	var client *resty.Client
 	if config.Retry != nil {
 		client = applyRetryConfig(c.client, config.Retry)
@@ -480,12 +480,12 @@ func (c *httpClient) PostMultipart(url string, config *MultipartRequestConfig) (
 	return FromRestyResponse(resp)
 }
 
-// GetRestyClient 获取底层 resty 客户端（用于高级用法）
+// GetRestyClient gets underlying resty client (for advanced usage)
 func (c *httpClient) GetRestyClient() *resty.Client {
 	return c.client
 }
 
-// InvalidMethodError 无效的 HTTP 方法错误
+// InvalidMethodError invalid HTTP method error
 type InvalidMethodError struct {
 	Method string
 }
@@ -494,7 +494,7 @@ func (e *InvalidMethodError) Error() string {
 	return "invalid HTTP method: " + e.Method
 }
 
-// ConfigError 配置错误
+// ConfigError configuration error
 type ConfigError struct {
 	Message string
 }

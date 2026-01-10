@@ -198,15 +198,24 @@ func GlobalRepoManager(gitRepo GitRepository) (*RepoManager, error) {
 	return repoManager, repoErr
 }
 
-// Load 加载仓库配置
+// Load 加载仓库公共配置
 //
-// 加载顺序：
-// 1. 先加载项目公共配置（如果存在）
-// 2. 再加载项目私有配置（如果存在）
-// 3. 私有配置覆盖公共配置
+// 加载项目公共配置（.workflow/config.toml）到内存，并更新 Config 字段。
+// 此方法只加载公共配置，私有配置通过 LoadPrivateConfig() 或按需延迟加载。
 //
-// 从配置文件加载配置到内存，并更新 Config 字段。
+// 注意：
+// - 公共配置和私有配置是分离的，不会合并
+// - 公共配置：项目标准，可提交到 Git
+// - 私有配置：个人偏好，不提交到 Git，通过 GetBranchPrefix() 等方法按需加载
 func (r *RepoManager) Load() error {
+	return r.LoadPublicConfig()
+}
+
+// LoadPublicConfig 加载仓库公共配置
+//
+// 加载项目公共配置（.workflow/config.toml）到内存，并更新 Config 字段。
+// 公共配置包含模板配置（提交、分支、PR 模板），可以提交到 Git 与团队共享。
+func (r *RepoManager) LoadPublicConfig() error {
 	logger := logging.GetLogger()
 
 	// 加载项目公共配置（如果存在）
@@ -223,13 +232,6 @@ func (r *RepoManager) Load() error {
 
 	// 更新便捷字段的指针（确保指向最新的 Config）
 	r.TemplateConfig = &r.Config.Template
-
-	// 加载项目私有配置（如果存在）
-	// 注意：私有配置的加载逻辑会在后续方法中实现
-	// 这里先不实现，因为需要解析 TOML 并合并到 publicViper
-	if _, err := os.Stat(r.privatePath); err == nil {
-		logger.Debugf("Loading private config from: %s", r.privatePath)
-	}
 
 	return nil
 }
@@ -431,6 +433,33 @@ func (r *RepoManager) GetPrivateConfigPath() string {
 // GetRepoID 获取仓库 ID
 func (r *RepoManager) GetRepoID() string {
 	return r.repoID
+}
+
+// LoadPrivateConfig 加载私有配置
+//
+// 加载项目私有配置（~/.workflow/config/repository.toml）到内存。
+// 私有配置包含个人偏好（分支前缀、自动接受变更类型等），不提交到 Git。
+//
+// 此方法使用延迟加载和缓存机制：
+// - 首次调用时从文件加载并缓存
+// - 后续调用直接返回缓存结果
+// - 如果配置文件不存在或解析失败，返回 nil（不返回错误，因为私有配置是可选的）
+//
+// 返回:
+//   - *PrivateRepoConfig: 私有配置，如果不存在或解析失败返回 nil
+func (r *RepoManager) LoadPrivateConfig() *PrivateRepoConfig {
+	return r.loadPrivateConfig()
+}
+
+// SavePrivateConfig 保存私有配置
+//
+// 保存私有配置到文件。
+func (r *RepoManager) SavePrivateConfig(cfg *PrivateRepoConfig) error {
+	// 更新缓存
+	r.privateConfig = cfg
+
+	// 保存到文件
+	return SaveConfigToFile(r.privatePath, cfg)
 }
 
 // generateRepoIDWithGit 使用 Git 接口生成仓库 ID

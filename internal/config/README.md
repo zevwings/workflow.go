@@ -72,11 +72,11 @@ err = manager.Save()
 
 ```go
 import (
-    adapterconfig "github.com/zevwings/workflow/internal/adapter/config"
+    infrastructureconfig "github.com/zevwings/workflow/internal/infrastructure/config"
 )
 
 // 获取仓库配置管理器单例
-repoManager, err := adapterconfig.NewRepoManagerWithDefaultGit("")
+repoManager, err := infrastructureconfig.NewRepoManagerWithDefaultGit("")
 if err != nil {
     // 处理错误
 }

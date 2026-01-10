@@ -11,22 +11,22 @@ import (
 	"github.com/zevwings/workflow/internal/prompt"
 )
 
-// NewDemoCmd 创建一个演示所有 Prompt 组件功能的命令
+// NewDemoCmd creates a command to demonstrate all Prompt component features
 func NewDemoCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "demo-prompt",
-		Short: "演示所有 Prompt 组件的交互功能",
-		Long: `演示所有 Prompt 组件的功能：
-- Message: 消息输出（Info、Success、Warning、Error）
-- Confirm: 是/否确认
-- Input: 文本输入
-- Password: 密码输入
-- Select: 单选
-- MultiSelect: 多选
-- Spinner: 加载指示器
-- Table: 表格显示
+		Short: "Demonstrate interactive features of all Prompt components",
+		Long: `Demonstrate features of all Prompt components:
+- Message: Message output (Info, Success, Warning, Error)
+- Confirm: Yes/No confirmation
+- Input: Text input
+- Password: Password input
+- Select: Single selection
+- MultiSelect: Multiple selection
+- Spinner: Loading indicator
+- Table: Table display
 
-这个 demo 会依次展示所有组件的基本用法。`,
+This demo will sequentially demonstrate the basic usage of all components.`,
 		RunE: runDemo,
 	}
 
@@ -36,139 +36,139 @@ func NewDemoCmd() *cobra.Command {
 func runDemo(cmd *cobra.Command, args []string) error {
 	msg := prompt.GetMessage()
 
-	msg.Info("欢迎使用 Prompt 组件演示")
+	msg.Info("Welcome to Prompt component demonstration")
 	msg.Break()
-	msg.Info("本演示将依次展示以下组件：")
-	msg.Print("  1. Message - 消息输出")
-	msg.Print("  2. Confirm - 确认对话框")
-	msg.Print("  3. Input - 文本输入")
-	msg.Print("  4. Password - 密码输入")
-	msg.Print("  5. Select - 单选")
-	msg.Print("  6. MultiSelect - 多选")
-	msg.Print("  7. Spinner - 加载指示器")
-	msg.Print("  8. Table - 表格显示")
-	msg.Break()
-
-	// 1. Message 演示
-	msg.Info("=== 1. Message 消息输出 ===")
-	msg.Success("成功消息示例")
-	msg.Warning("警告消息示例")
-	msg.Error("错误消息示例")
+	msg.Info("This demo will sequentially demonstrate the following components:")
+	msg.Print("  1. Message - Message output")
+	msg.Print("  2. Confirm - Confirmation dialog")
+	msg.Print("  3. Input - Text input")
+	msg.Print("  4. Password - Password input")
+	msg.Print("  5. Select - Single selection")
+	msg.Print("  6. MultiSelect - Multiple selection")
+	msg.Print("  7. Spinner - Loading indicator")
+	msg.Print("  8. Table - Table display")
 	msg.Break()
 
-	// 2. Confirm 演示
-	msg.Info("=== 2. Confirm 确认对话框 ===")
+	// 1. Message demonstration
+	msg.Info("=== 1. Message Output ===")
+	msg.Success("Success message example")
+	msg.Warning("Warning message example")
+	msg.Error("Error message example")
+	msg.Break()
+
+	// 2. Confirm demonstration
+	msg.Info("=== 2. Confirm Dialog ===")
 	confirm, err := prompt.AskConfirm(prompt.ConfirmField{
-		Message:    "是否继续演示？",
+		Message:    "Do you want to continue the demonstration?",
 		DefaultYes: true,
 	})
 	if err != nil {
-		return fmt.Errorf("确认失败: %w", err)
+		return fmt.Errorf("confirmation failed: %w", err)
 	}
 	if confirm {
-		msg.Success("您选择了: 是")
+		msg.Success("You selected: Yes")
 	} else {
-		msg.Warning("您选择了: 否")
+		msg.Warning("You selected: No")
 	}
 	msg.Break()
 
-	// 3. Input 演示
-	msg.Info("=== 3. Input 文本输入 ===")
+	// 3. Input demonstration
+	msg.Info("=== 3. Text Input ===")
 	name, err := prompt.Input().
-		Prompt("请输入您的姓名").
-		DefaultValue("张三").
+		Prompt("Please enter your name").
+		DefaultValue("John").
 		Validate(prompt.ValidateRequired()).
 		Run()
 	if err != nil {
-		return fmt.Errorf("输入失败: %w", err)
+		return fmt.Errorf("input failed: %w", err)
 	}
-	msg.Success("您输入的姓名是: %s", name)
+	msg.Success("Your name is: %s", name)
 	msg.Break()
 
-	// 4. Password 演示
-	msg.Info("=== 4. Password 密码输入 ===")
+	// 4. Password demonstration
+	msg.Info("=== 4. Password Input ===")
 	password, err := prompt.Password().
-		Prompt("请输入密码（至少 6 个字符）").
+		Prompt("Please enter password (at least 6 characters)").
 		Validate(func(s string) error {
 			if len(s) < 6 {
-				return fmt.Errorf("长度至少需要 6 个字符")
+				return fmt.Errorf("length must be at least 6 characters")
 			}
 			return nil
 		}).
 		Run()
 	if err != nil {
-		return fmt.Errorf("输入失败: %w", err)
+		return fmt.Errorf("input failed: %w", err)
 	}
 	maskedPassword := maskPassword(password)
-	msg.Success("密码已输入（长度: %d 字符，显示: %s）", len(password), maskedPassword)
+	msg.Success("Password entered (length: %d characters, display: %s)", len(password), maskedPassword)
 	msg.Break()
 
-	// 5. Select 演示
-	msg.Info("=== 5. Select 单选 ===")
-	msg.Print("提示：使用 ↑/↓ 箭头键导航，回车键确认")
-	options := []string{"选项 A", "选项 B", "选项 C", "选项 D"}
+	// 5. Select demonstration
+	msg.Info("=== 5. Single Selection ===")
+	msg.Print("Tip: Use ↑/↓ arrow keys to navigate, Enter to confirm")
+	options := []string{"Option A", "Option B", "Option C", "Option D"}
 	selectedIndex, err := prompt.Select().
-		Prompt("请选择一个选项").
+		Prompt("Please select an option").
 		Options(options).
 		Default(0).
 		Run()
 	if err != nil {
-		return fmt.Errorf("选择失败: %w", err)
+		return fmt.Errorf("selection failed: %w", err)
 	}
-	msg.Success("您选择了: %s (索引: %d)", options[selectedIndex], selectedIndex)
+	msg.Success("You selected: %s (index: %d)", options[selectedIndex], selectedIndex)
 	msg.Break()
 
-	// 6. MultiSelect 演示
-	msg.Info("=== 6. MultiSelect 多选 ===")
-	msg.Print("提示：使用 ↑/↓ 箭头键导航，空格键切换选择，回车键确认")
-	features := []string{"功能 A", "功能 B", "功能 C", "功能 D"}
+	// 6. MultiSelect demonstration
+	msg.Info("=== 6. Multiple Selection ===")
+	msg.Print("Tip: Use ↑/↓ arrow keys to navigate, Space to toggle selection, Enter to confirm")
+	features := []string{"Feature A", "Feature B", "Feature C", "Feature D"}
 	selectedIndices, err := prompt.MultiSelect().
-		Prompt("请选择要启用的功能（可多选）").
+		Prompt("Please select features to enable (multiple selection allowed)").
 		Options(features).
 		Default([]int{0}).
 		Run()
 	if err != nil {
-		return fmt.Errorf("选择失败: %w", err)
+		return fmt.Errorf("selection failed: %w", err)
 	}
 	if len(selectedIndices) == 0 {
-		msg.Warning("您没有选择任何功能")
+		msg.Warning("You did not select any features")
 	} else {
 		var selectedNames []string
 		for _, idx := range selectedIndices {
 			selectedNames = append(selectedNames, features[idx])
 		}
-		msg.Success("您选择了: %s (索引: %v)", strings.Join(selectedNames, ", "), selectedIndices)
+		msg.Success("You selected: %s (indices: %v)", strings.Join(selectedNames, ", "), selectedIndices)
 	}
 	msg.Break()
 
-	// 7. Spinner 演示
-	msg.Info("=== 7. Spinner 加载指示器 ===")
-	spinner := prompt.NewSpinner("正在处理中...")
+	// 7. Spinner demonstration
+	msg.Info("=== 7. Loading Indicator ===")
+	spinner := prompt.NewSpinner("Processing...")
 	spinner.Start()
 	time.Sleep(2 * time.Second)
-	spinner.WithSuccess("处理完成")
+	spinner.WithSuccess("Processing completed")
 	msg.Break()
 
-	// 8. Table 演示
-	msg.Info("=== 8. Table 表格显示 ===")
-	table := prompt.NewTable([]string{"组件", "状态", "说明"})
-	table.AddRow([]string{"Message", "✓", "消息输出功能正常"})
-	table.AddRow([]string{"Confirm", "✓", "确认对话框功能正常"})
-	table.AddRow([]string{"Input", "✓", "文本输入功能正常"})
-	table.AddRow([]string{"Password", "✓", "密码输入功能正常"})
-	table.AddRow([]string{"Select", "✓", "单选功能正常"})
-	table.AddRow([]string{"MultiSelect", "✓", "多选功能正常"})
-	table.AddRow([]string{"Spinner", "✓", "加载指示器功能正常"})
-	table.AddRow([]string{"Table", "✓", "表格显示功能正常"})
+	// 8. Table demonstration
+	msg.Info("=== 8. Table Display ===")
+	table := prompt.NewTable([]string{"Component", "Status", "Description"})
+	table.AddRow([]string{"Message", "✓", "Message output function is normal"})
+	table.AddRow([]string{"Confirm", "✓", "Confirmation dialog function is normal"})
+	table.AddRow([]string{"Input", "✓", "Text input function is normal"})
+	table.AddRow([]string{"Password", "✓", "Password input function is normal"})
+	table.AddRow([]string{"Select", "✓", "Single selection function is normal"})
+	table.AddRow([]string{"MultiSelect", "✓", "Multiple selection function is normal"})
+	table.AddRow([]string{"Spinner", "✓", "Loading indicator function is normal"})
+	table.AddRow([]string{"Table", "✓", "Table display function is normal"})
 	table.Render()
 	msg.Break()
 
-	msg.Success("演示完成！所有组件功能正常。")
+	msg.Success("Demonstration completed! All components are functioning normally.")
 
 	return nil
 }
 
-// maskPassword 掩码显示密码（只显示前 2 个字符）
+// maskPassword masks password display (only shows first 2 characters)
 func maskPassword(password string) string {
 	if len(password) <= 2 {
 		return strings.Repeat("*", len(password))
