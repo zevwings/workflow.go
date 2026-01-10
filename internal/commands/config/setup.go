@@ -560,6 +560,43 @@ func handleLLMConfig(msg *prompt.Message, cfg *config.GlobalConfig, configExists
 		}
 	}
 
+	// Select Output Language
+	languageOptions := config.GetSupportedLanguageDisplayNames()
+	languageCodes := config.GetSupportedLanguageCodes()
+	defaultLanguageIndex := 0 // English is the default
+
+	// If configuration exists, find the corresponding index
+	if cfg.LLM.Language != "" {
+		for i, code := range languageCodes {
+			if code == cfg.LLM.Language {
+				defaultLanguageIndex = i
+				break
+			}
+		}
+	}
+
+	languagePrompt := "Please select your output language (required)"
+	if cfg.LLM.Language != "" {
+		lang := config.FindLanguage(cfg.LLM.Language)
+		if lang != nil {
+			languagePrompt = fmt.Sprintf("Please select your output language [current: %s]", lang.NativeName)
+		} else {
+			languagePrompt = fmt.Sprintf("Please select your output language [current: %s]", cfg.LLM.Language)
+		}
+	}
+
+	languageIndex, err := prompt.AskSelect(prompt.SelectField{
+		Message:      languagePrompt,
+		Options:      languageOptions,
+		DefaultIndex: defaultLanguageIndex,
+		ResultTitle:  "Your output language",
+	})
+	if err != nil {
+		return err
+	}
+
+	cfg.LLM.Language = languageCodes[languageIndex]
+
 	return nil
 }
 
