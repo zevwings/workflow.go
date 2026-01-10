@@ -29,7 +29,7 @@ type LLMConfig struct {
 // 返回:
 //   - APIKey: API 密钥
 //   - Model: 模型名称（如果未设置，返回默认值）
-//   - URL: API URL（仅 proxy provider 需要）
+//   - URL: API URL（openai/deepseek 使用默认 URL，proxy 需要配置）
 //   - error: 如果 provider 未配置或无效，返回错误
 func (c *LLMConfig) CurrentProvider() (apiKey, model, url string, err error) {
 	switch c.Provider {
@@ -39,29 +39,23 @@ func (c *LLMConfig) CurrentProvider() (apiKey, model, url string, err error) {
 		if model == "" {
 			model = "gpt-3.5-turbo"
 		}
-		return apiKey, model, "", nil
+		return apiKey, model, "https://api.openai.com/v1", nil
 	case "deepseek":
 		apiKey = c.DeepSeek.APIKey
 		model = c.DeepSeek.Model
 		if model == "" {
 			model = "deepseek-chat"
 		}
-		return apiKey, model, "", nil
+		return apiKey, model, "https://api.deepseek.com/v1", nil
 	case "proxy":
 		apiKey = c.Proxy.APIKey
 		model = c.Proxy.Model
 		url = c.Proxy.URL
-		if model == "" {
-			return "", "", "", fmt.Errorf("model is required for proxy provider")
-		}
-		if url == "" {
-			return "", "", "", fmt.Errorf("URL is required for proxy provider")
+		if model == "" || url == "" || apiKey == "" {
+			return "", "", "", fmt.Errorf("model, URL and API key are required for proxy provider")
 		}
 		return apiKey, model, url, nil
 	default:
-		if c.Provider == "" {
-			return "", "", "", fmt.Errorf("LLM provider is not configured")
-		}
 		return "", "", "", fmt.Errorf("unsupported LLM provider: %s", c.Provider)
 	}
 }

@@ -88,6 +88,7 @@ func runCheck(cmd *cobra.Command, args []string) error {
 
 	VerifyLogConfig(manager.LogConfig)
 	VerifyLLMConfig(manager.LLMConfig)
+	VerifyLLMConnection(manager.LLMConfig)
 	VerifyJiraConfig(manager.JiraConfig)
 	VerifyGitHubConfig(manager.GitHubConfig)
 

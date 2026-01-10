@@ -2,9 +2,12 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
+	llmadapter "github.com/zevwings/workflow/internal/adapter/llm"
 	"github.com/zevwings/workflow/internal/config"
 	"github.com/zevwings/workflow/internal/jira"
+	llmclient "github.com/zevwings/workflow/internal/llm/client"
 	"github.com/zevwings/workflow/internal/pr/github"
 	"github.com/zevwings/workflow/internal/prompt"
 	"github.com/zevwings/workflow/internal/util"
@@ -196,5 +199,97 @@ func VerifyLogConfig(logConfig *config.LogConfig) {
 	msg := prompt.GetMessage()
 	msg.Info("Log Configuration")
 	msg.Info("%s", fmt.Sprintf("Log Level: %s", logConfig.Level))
+	msg.Break()
+}
+
+// VerifyLLMConnection 验证 LLM 连接
+//
+// 通过发送一个简单的 "hello" 测试请求来验证 LLM 配置和连接是否正常。
+// 验证包括：
+//   - 配置完整性检查
+//   - API 连接测试
+//   - API Key 有效性验证
+//   - LLM 响应验证
+func VerifyLLMConnection(llmConfig *config.LLMConfig) {
+	if llmConfig.Provider == "" {
+		return
+	}
+
+	msg := prompt.GetMessage()
+	msg.Info("LLM Connection Verification")
+
+	// 1. 配置完整性验证
+	apiKey, _, _, err := llmConfig.CurrentProvider()
+	if err != nil {
+		msg.Error("LLM 配置验证失败: %v", err)
+		msg.Break()
+		return
+	}
+
+	if apiKey == "" {
+		msg.Error("LLM API Key 未配置")
+		msg.Break()
+		return
+	}
+
+	// 2. 创建 LLM 客户端并发送测试请求
+	var response string
+
+	spinner := prompt.NewSpinner("Verifying LLM connection...")
+	err = spinner.Do(func() error {
+		// 创建配置提供者
+		provider := llmadapter.NewLLMConfigProvider()
+
+		// 获取 ProviderConfig
+		providerConfig, err := provider.GetProviderConfig()
+		if err != nil {
+			return fmt.Errorf("获取 LLM provider 配置失败: %w", err)
+		}
+
+		// 创建 LLM 客户端
+		llmClient := llmclient.Global(providerConfig)
+
+		// 发送简单的测试请求
+		params := &llmclient.LLMRequestParams{
+			SystemPrompt: "You are a helpful assistant.",
+			UserPrompt:   "Say hello",
+			Temperature:  0.7,
+			// MaxTokens:    intPtr(10), // 限制 token 数，节省成本
+		}
+
+		response, err = llmClient.Call(params)
+		if err != nil {
+			return err
+		}
+
+		// 验证响应不为空
+		if response == "" {
+			return fmt.Errorf("LLM 返回空响应")
+		}
+
+		return nil
+	})
+	// 注意：spinner.Do() 内部已经通过 defer 自动调用 Stop()，无需手动调用
+
+	// 3. 显示验证结果
+	if err != nil {
+		// 根据错误类型提供不同的提示
+		errorMsg := err.Error()
+		if strings.Contains(errorMsg, "API key") || strings.Contains(errorMsg, "API Key") {
+			msg.Error("LLM API Key 无效或未配置")
+		} else if strings.Contains(errorMsg, "timeout") {
+			msg.Error("LLM API 连接超时，请检查网络连接")
+		} else if strings.Contains(errorMsg, "network") || strings.Contains(errorMsg, "连接") {
+			msg.Error("无法连接到 LLM API，请检查网络连接")
+		} else {
+			msg.Error("LLM 验证失败: %v", err)
+		}
+		msg.Break()
+		return
+	}
+
+	// 验证成功
+	msg.Success("LLM 验证成功！")
+	msg.Info("测试响应: %s", response)
 	msg.Break()
 }

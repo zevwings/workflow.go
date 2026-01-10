@@ -10,8 +10,8 @@ import (
 
 func TestLLMConfig_CurrentProvider(t *testing.T) {
 	tests := []struct {
-		name      string
-		config    LLMConfig
+		name       string
+		config     LLMConfig
 		wantAPIKey string
 		wantModel  string
 		wantURL    string
@@ -32,7 +32,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 			},
 			wantAPIKey: "sk-test-key",
 			wantModel:  "gpt-4",
-			wantURL:    "",
+			wantURL:    "https://api.openai.com/v1",
 			wantErr:    false,
 		},
 		{
@@ -49,7 +49,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 			},
 			wantAPIKey: "sk-test-key",
 			wantModel:  "gpt-3.5-turbo", // 默认值
-			wantURL:    "",
+			wantURL:    "https://api.openai.com/v1",
 			wantErr:    false,
 		},
 		{
@@ -66,7 +66,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 			},
 			wantAPIKey: "sk-deepseek-key",
 			wantModel:  "deepseek-chat-v2",
-			wantURL:    "",
+			wantURL:    "https://api.deepseek.com/v1",
 			wantErr:    false,
 		},
 		{
@@ -83,7 +83,7 @@ func TestLLMConfig_CurrentProvider(t *testing.T) {
 			},
 			wantAPIKey: "sk-deepseek-key",
 			wantModel:  "deepseek-chat", // 默认值
-			wantURL:    "",
+			wantURL:    "https://api.deepseek.com/v1",
 			wantErr:    false,
 		},
 		{
@@ -212,7 +212,7 @@ func TestLLMConfig_CurrentProvider_EdgeCases(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Empty(t, apiKey)
 		assert.Equal(t, "gpt-4", model)
-		assert.Empty(t, url)
+		assert.Equal(t, "https://api.openai.com/v1", url)
 	})
 
 	t.Run("DeepSeek provider - APIKey 为空", func(t *testing.T) {
@@ -231,7 +231,7 @@ func TestLLMConfig_CurrentProvider_EdgeCases(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Empty(t, apiKey)
 		assert.Equal(t, "deepseek-chat-v2", model)
-		assert.Empty(t, url)
+		assert.Equal(t, "https://api.deepseek.com/v1", url)
 	})
 
 	t.Run("Proxy provider - APIKey 为空但 model 和 URL 存在", func(t *testing.T) {
@@ -362,4 +362,3 @@ func TestLLMConfig_CurrentLanguage_DefaultEnglish(t *testing.T) {
 	assert.Equal(t, "English", lang.Name)
 	assert.Equal(t, "English", lang.NativeName)
 }
-

@@ -198,7 +198,13 @@ func (c *llmClient) Call(params *LLMRequestParams) (string, error) {
 		WithRetry(http.NewRetryConfig().WithRetryCount(3)) // 最多重试 3 次
 
 	// 记录 HTTP 请求发送前
-	logger.Debugf("Sending LLM HTTP POST request to %s (timeout: 60s, retries: 3)", url)
+	logger.WithFields(logging.Fields{
+		"url":     url,
+		"payload": payload,
+		"headers": headers,
+		"timeout": 180 * time.Second,
+		"retries": 3,
+	}).Info("Sending LLM HTTP POST request (timeout: 60s, retries: 3)")
 
 	// 发送请求
 	resp, err := c.httpClient.PostWithConfig(url, reqConfig)
@@ -262,7 +268,7 @@ func (c *llmClient) buildURL() (string, error) {
 	if url == "" {
 		return "", fmt.Errorf("URL 未配置")
 	}
-	return url, nil
+	return fmt.Sprintf("%s/chat/completions", url), nil
 }
 
 // buildHeaders 构建请求头
@@ -320,7 +326,8 @@ func (c *llmClient) buildPayload(params *LLMRequestParams) (map[string]interface
 	}
 
 	payload := map[string]interface{}{
-		"model": model,
+		"model":  model,
+		"stream": false, // 明确设置为 false，避免代理服务器使用流式响应导致超时
 		"messages": []map[string]interface{}{
 			{
 				"role":    "system",
